@@ -48,10 +48,10 @@ export default function Profile() {
 
   return (
     <div className="flex h-screen w-full bg-[#F8FAFC] font-sans text-[#0A192F]">
-      <Sidebar role="user" activeLabel="Settlement" />
+      <Sidebar />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Navbar role="user" activeTab="Dashboard" />
+        <Navbar />
 
         <main className="flex-1 overflow-y-auto p-8">
           <div className="flex items-start justify-between">

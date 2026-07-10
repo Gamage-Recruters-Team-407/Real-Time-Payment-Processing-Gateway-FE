@@ -216,12 +216,12 @@ export default function Dashboard() {
   return (
     <div className="flex h-screen w-full bg-[#F8FAFC] font-sans text-[#0A192F]">
       {/* ---------------- Sidebar ---------------- */}
-      <Sidebar role="user" activeLabel="" />
+      <Sidebar />
 
       {/* ---------------- Main ---------------- */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top nav */}
-        <Navbar role="user" activeTab="Dashboard" />
+        <Navbar />
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto p-8">
