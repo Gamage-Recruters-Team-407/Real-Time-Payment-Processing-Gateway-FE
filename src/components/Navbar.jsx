@@ -1,4 +1,6 @@
+import { useNavigate } from "react-router-dom";
 const Navbar = () => {
+const navigate = useNavigate();
   return (
     <div className="w-full bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
       {/* Left side - Title only (no ADMIN badge) */}
@@ -29,8 +31,10 @@ const Navbar = () => {
           🔔
           <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
         </span>
-
-        <div className="flex items-center gap-2 cursor-pointer pl-2 border-l border-gray-200">
+        <div 
+            onClick={() => navigate("/profile")} 
+            className="flex items-center gap-2 cursor-pointer pl-2 border-l border-gray-200"
+        >
           <div className="w-8 h-8 rounded-full bg-[#8A192F] flex items-center justify-center text-white text-xs font-medium">
             U
           </div>
