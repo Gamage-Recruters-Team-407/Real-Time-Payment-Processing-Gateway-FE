@@ -285,6 +285,12 @@ export default function CardForm({
                         Save card details
                     </span>
                 </label>
+
+                {errors.submit && (
+                    <div className="p-3 bg-red-50 text-red-700 rounded-lg text-xs font-semibold font-mono border border-red-200 mt-2">
+                        ⚠️ {errors.submit}
+                    </div>
+                )}
             </div>
         </form>
     );
