@@ -1,9 +1,12 @@
+import DashboardLayout from './layouts/DashboardLayout'
+import FraudDetection from './pages/FraudDetection'
+
 function App() {
   return (
-    <h1 className="text-4xl font-bold text-blue-600">
-      Tailwind CSS v3 Working!
-    </h1>
-  );
+    <DashboardLayout>
+      <FraudDetection />
+    </DashboardLayout>
+  )
 }
 
-export default App;
+export default App
