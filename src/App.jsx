@@ -5,6 +5,8 @@ import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/AdminDashboard";
 import CardPayment from "./pages/CardPayment";
 import Setting from "./pages/Setting";
+// Notification import eka methanata ekathu kala
+import Notification from "./pages/Notification"; 
 
 function App() {
   return (
@@ -17,6 +19,9 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Setting />} />
+        
+        {/* Notification Route eka aluthin ekathu kala */}
+        <Route path="/notifications" element={<Notification />} />
 
         {/* Card Payment Route */}
         <Route path="/card-payment" element={<CardPayment />} />
@@ -31,4 +36,4 @@ function App() {
   );
 }
 
-export default App;
+export default App;
