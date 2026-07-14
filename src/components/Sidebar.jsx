@@ -1,64 +1,96 @@
-import { 
-  CheckCircle, 
-  ShieldCheck, 
-  Activity, 
-  Briefcase, 
-  Headset, 
-  BadgeCheck, 
-  Users, 
-  BellRing,
-  Shield
-} from 'lucide-react';
+import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { CreditCard, Bell, Settings, ReceiptText, ShieldCheck } from 'lucide-react';
 
-export default function Sidebar() {
-  const navItems = [
-    { name: 'Payment Validation', icon: <CheckCircle size={20} /> },
-    { name: 'Fraud Detection', icon: <ShieldCheck size={20} />, active: true },
-    { name: 'Risk Analysis', icon: <Activity size={20} /> },
-    { name: 'Settlement', icon: <Briefcase size={20} /> },
-    { name: 'Support', icon: <Headset size={20} /> },
-    { name: 'Verification Status', icon: <BadgeCheck size={20} /> },
-    { name: 'Account Management', icon: <Users size={20} /> },
-    { name: 'Notifications', icon: <BellRing size={20} /> },
-  ];
+const menuItems = [
+  { name: 'Settlement', icon: CreditCard, path: '/' },
+  { name: 'Fraud Detection', icon: ShieldCheck, path: '/fraud-detection' },
+  { name: 'Notifications', icon: Bell, path: '/notifications' },
+  { name: 'Settings', icon: Settings, path: '/settings' },
+];
+
+const getActiveItemFromPath = (pathname) => {
+  if (pathname === '/transaction-management') {
+    return 'Transaction Management';
+  }
+  if (pathname === '/fraud-detection') {
+    return 'Fraud Detection';
+  }
+  if (pathname === '/notifications') {
+    return 'Notifications';
+  }
+  if (pathname === '/settings') {
+    return 'Settings';
+  }
+  return 'Settlement';
+};
+
+const Sidebar = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [activeItem, setActiveItem] = useState(() => getActiveItemFromPath(location.pathname));
+
+  const handleNavigation = (item) => {
+    setActiveItem(item.name);
+    if (item.path) {
+      navigate(item.path);
+    }
+  };
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-logo">
-        Gamage <span className="highlight">Pay</span>
-      </div>
-      
-      <div className="sidebar-status">
-        <div className="status-dot"></div>
-        System Active
-      </div>
-
-      <nav className="sidebar-nav">
-        <ul>
-          {navItems.map((item) => (
-            <li key={item.name} className={`nav-item ${item.active ? 'active' : ''}`}>
-              <div className="icon">{item.icon}</div>
-              <span>{item.name}</span>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      <div className="sidebar-footer">
-        <div className="system-status-box">
-          <div className="shield-icon">
-            <Shield size={20} />
-          </div>
-          <div>
-            <div className="text-sm font-bold">System Active</div>
-            <div className="text-xs text-muted">All nodes operational</div>
+    <div className="relative z-30 w-64 min-h-screen bg-white border-r border-gray-100 flex flex-col justify-between py-6 px-4 shrink-0">
+      <div>
+        {/* Logo - Title at top */}
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-[#0F1117]">
+            Gamage<span className="text-[#10B981]">Pay</span>
+          </h1>
+          <div className="flex items-center gap-1.5 mt-2">
+            <span className="w-2 h-2 rounded-full bg-[#10B981]"></span>
+            <span className="text-gray-500 text-xs font-medium">System Active</span>
           </div>
         </div>
-        
-        <button className="btn-primary">
-          New Analysis
+
+        {/* Menu Items */}
+        <nav className="flex flex-col gap-4">
+          {menuItems.map((item) => (
+            <button
+              type="button"
+              key={item.name}
+              onClick={() => handleNavigation(item)}
+              className={`flex items-center gap-3 rounded-xl px-4 py-4 text-left transition-colors ${
+                item.name === activeItem
+                  ? 'bg-[#10B981] text-white shadow-sm'
+                  : 'bg-transparent text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <item.icon size={18} className={item.name === activeItem ? 'text-white' : 'text-[#8A8FA3]'} />
+              <span className="text-sm font-semibold">{item.name}</span>
+            </button>
+          ))}
+        </nav>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveItem('Transaction Management');
+            navigate('/transaction-management');
+          }}
+          className={`mt-6 flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-left transition-colors ${
+            activeItem === 'Transaction Management'
+              ? 'bg-[#10B981] text-white shadow-sm'
+              : 'bg-transparent text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <ReceiptText
+            size={18}
+            className={activeItem === 'Transaction Management' ? 'text-white' : 'text-[#8A8FA3]'}
+          />
+          <span className="text-sm font-semibold">Transaction Management</span>
         </button>
       </div>
-    </aside>
+    </div>
   );
-}
+};
+
+export default Sidebar;
