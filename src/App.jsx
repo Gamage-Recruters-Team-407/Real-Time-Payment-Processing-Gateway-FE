@@ -1,19 +1,7 @@
-<<<<<<< HEAD
-import DashboardLayout from './layouts/DashboardLayout'
-import FraudDetection from './pages/FraudDetection'
-
-function App() {
-  return (
-    <DashboardLayout>
-      <FraudDetection />
-    </DashboardLayout>
-  )
-}
-
-export default App
-=======
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import DashboardLayout from './layouts/DashboardLayout';
+import FraudDetection from './pages/FraudDetection';
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -29,6 +17,14 @@ function App() {
 
         {/* User Routes */}
         <Route path="/dashboard" element={<Dashboard />} />
+        
+        {/* Fraud Detection Route */}
+        <Route path="/fraud-detection" element={
+          <DashboardLayout>
+            <FraudDetection />
+          </DashboardLayout>
+        } />
+
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Setting />} />
 
@@ -46,4 +42,3 @@ function App() {
 }
 
 export default App;
->>>>>>> 7a051d36abc14e415ae16a765d38c7d41f42a337
