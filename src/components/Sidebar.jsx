@@ -1,16 +1,28 @@
 import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { CreditCard, Bell, Settings, ReceiptText } from 'lucide-react';
 
 const menuItems = [
-  { name: 'Settlement', icon: '💳' },
-  { name: 'Notifications', icon: '🔔' },
-  { name: 'Settings', icon: '⚙️' },
+  { name: 'Settlement', icon: CreditCard },
+  { name: 'Notifications', icon: Bell },
+  { name: 'Settings', icon: Settings },
 ];
 
+const getActiveItemFromPath = (pathname) => {
+  if (pathname === '/transaction-management') {
+    return 'Transaction Management';
+  }
+
+  return 'Settlement';
+};
+
 const Sidebar = () => {
-  const [activeItem, setActiveItem] = useState('Settlement');
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [activeItem, setActiveItem] = useState(() => getActiveItemFromPath(location.pathname));
 
   return (
-    <div className="w-64 min-h-screen bg-white border-r border-gray-100 flex flex-col justify-between py-6 px-4">
+    <div className="relative z-30 w-64 min-h-screen bg-white border-r border-gray-100 flex flex-col justify-between py-6 px-4 shrink-0">
       <div>
         {/* Logo - Title at top */}
         <div className="mb-6">
@@ -24,28 +36,43 @@ const Sidebar = () => {
         </div>
 
         {/* Menu Items */}
-        <nav className="flex flex-col gap-1">
+        <nav className="flex flex-col gap-4">
           {menuItems.map((item) => (
-            <div
+            <button
+              type="button"
               key={item.name}
               onClick={() => setActiveItem(item.name)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
+              className={`flex items-center gap-3 rounded-xl px-4 py-4 text-left transition-colors ${
                 item.name === activeItem
-                  ? 'bg-[#10B981] text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-[#10B981] text-white shadow-sm'
+                  : 'bg-transparent text-gray-700 hover:bg-gray-50'
               }`}
             >
-              <span className="text-base">{item.icon}</span>
-              <span className="text-sm font-medium">{item.name}</span>
-            </div>
+              <item.icon size={18} className={item.name === activeItem ? 'text-white' : 'text-[#8A8FA3]'} />
+              <span className="text-sm font-semibold">{item.name}</span>
+            </button>
           ))}
         </nav>
-      </div>
 
-      {/* Bottom Button - New Analysis */}
-      <button className="bg-[#0F1117] text-white text-sm font-medium py-2.5 rounded-lg hover:bg-gray-800 transition-colors">
-        + New Analysis
-      </button>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveItem('Transaction Management');
+            navigate('/transaction-management');
+          }}
+          className={`mt-6 flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-left transition-colors ${
+            activeItem === 'Transaction Management'
+              ? 'bg-[#10B981] text-white shadow-sm'
+              : 'bg-transparent text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <ReceiptText
+            size={18}
+            className={activeItem === 'Transaction Management' ? 'text-white' : 'text-[#8A8FA3]'}
+          />
+          <span className="text-sm font-semibold">Transaction Management</span>
+        </button>
+      </div>
     </div>
   );
 };
