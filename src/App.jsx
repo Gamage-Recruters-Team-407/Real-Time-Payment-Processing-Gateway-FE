@@ -4,6 +4,7 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/AdminDashboard";
 import TransactionManagement from "./pages/TransactionManagement";
+import Setting from "./pages/Setting";
 
 function App() {
   return (
@@ -15,7 +16,7 @@ function App() {
         {/* User Routes */}
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
-
+        <Route path="/settings" element={<Setting />} />
         {/* Admin Route */}
         <Route path="/admin" element={<AdminDashboard />} />
 
