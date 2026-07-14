@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Base URL eka backend server eka indicate karanawa
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = "http://localhost:5000/api" ;
+ 
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -10,7 +10,6 @@ const api = axios.create({
   },
 });
 
-// Request Interceptor - Okkoma API call ekakma token eka auto add karanawa
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -24,7 +23,6 @@ api.interceptors.request.use(
   }
 );
 
-// Response Interceptor - Token expire unoth automatically logout karanawa
 api.interceptors.response.use(
   (response) => response,
   (error) => {
