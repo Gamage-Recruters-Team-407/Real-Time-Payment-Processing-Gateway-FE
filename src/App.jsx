@@ -12,6 +12,9 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Setting from "./pages/Setting";
+import Notification from "./pages/Notification";
+
+// Payment
 import CardPayment from "./pages/CardPayment";
 
 // Admin pages
@@ -19,6 +22,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 
 // Transaction Management
 import TransactionManagement from "./pages/TransactionManagement";
+
 
 function App() {
   return (
@@ -29,6 +33,7 @@ function App() {
           {/* Auth Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+
 
           {/* Default Route */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -44,6 +49,7 @@ function App() {
             }
           />
 
+
           <Route
             path="/profile"
             element={
@@ -52,6 +58,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
 
           <Route
             path="/settings"
@@ -63,7 +70,18 @@ function App() {
           />
 
 
-          {/* Payment Route */}
+          {/* Notification Route */}
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <Notification />
+              </ProtectedRoute>
+            }
+          />
+
+
+          {/* Card Payment Route */}
           <Route
             path="/card-payment"
             element={
@@ -98,6 +116,7 @@ function App() {
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
 
         </Routes>
       </AuthProvider>
