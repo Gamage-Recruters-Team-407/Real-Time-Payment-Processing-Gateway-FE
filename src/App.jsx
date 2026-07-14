@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -16,17 +17,24 @@ import CardPayment from "./pages/CardPayment";
 // Admin pages
 import AdminDashboard from "./pages/AdminDashboard";
 
+// Transaction Management
+import TransactionManagement from "./pages/TransactionManagement";
+
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+
+          {/* Auth Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-         
+          {/* Default Route */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
+
+          {/* User Routes */}
           <Route
             path="/dashboard"
             element={
@@ -35,6 +43,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/profile"
             element={
@@ -43,6 +52,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/settings"
             element={
@@ -52,6 +62,8 @@ function App() {
             }
           />
 
+
+          {/* Payment Route */}
           <Route
             path="/card-payment"
             element={
@@ -61,6 +73,19 @@ function App() {
             }
           />
 
+
+          {/* Transaction Management */}
+          <Route
+            path="/transaction-management"
+            element={
+              <ProtectedRoute>
+                <TransactionManagement />
+              </ProtectedRoute>
+            }
+          />
+
+
+          {/* Admin Route */}
           <Route
             path="/admin"
             element={
@@ -70,7 +95,10 @@ function App() {
             }
           />
 
+
+          {/* Fallback */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
         </Routes>
       </AuthProvider>
     </BrowserRouter>
