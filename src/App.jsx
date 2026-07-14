@@ -5,8 +5,8 @@ import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/AdminDashboard";
 import CardPayment from "./pages/CardPayment";
 import Setting from "./pages/Setting";
-// Notification import eka methanata ekathu kala
 import Notification from "./pages/Notification"; 
+import TransactionManagement from "./pages/TransactionManagement";
 
 function App() {
   return (
@@ -28,6 +28,9 @@ function App() {
 
         {/* Admin Route */}
         <Route path="/admin" element={<AdminDashboard />} />
+
+        {/* Transaction Management */}
+        <Route path="/transaction-management" element={<TransactionManagement />} />
 
         {/* Fallback for unknown routes */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
