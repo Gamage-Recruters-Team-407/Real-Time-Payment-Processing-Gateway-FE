@@ -10,6 +10,11 @@ export const getAlerts = async () => {
   return response.data;
 };
 
+export const getAlertById = async (id) => {
+  const response = await api.get(`/fraud/alerts/${id}`);
+  return response.data;
+};
+
 export const getTransactions = async (params) => {
   const response = await api.get('/fraud/transactions', { params });
   return response.data;

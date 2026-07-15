@@ -44,13 +44,13 @@ export default function LiveFeedDrawer({ isOpen, onClose, onInvestigateClick, on
             return (
             <div key={alert._id || alert.transactionId} className={`alert-card border-${type}`}>
               <div className="alert-top">
-                <span className="alert-time">{new Date(alert.timestamp).toLocaleTimeString() || 'Just now'}</span>
-                <span className={`alert-badge badge-${type}`}>{riskScore}% RISK</span>
+                <span className="alert-time">{alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString() : 'Just now'}</span>
+                <span className={`alert-badge badge-${type}`}>{Math.round(riskScore)}% RISK</span>
               </div>
-              <div className="alert-account">{alert.userId || 'Unknown Account'}</div>
-              <div className="alert-amount">$ {alert.amount?.toFixed(2)}</div>
+              <div className="alert-account">{alert.accountId || 'Unknown Account'}</div>
+              <div className="alert-amount">$ {alert.amount?.toFixed(2) || '0.00'}</div>
               <div className="alert-merchant">Merchant: {alert.merchant || 'Unknown'}</div>
-              <div className={`alert-reason text-${type}`}>{alert.mlExplanation || 'Suspicious activity detected'}</div>
+              <div className={`alert-reason text-${type}`}>{alert.alertReason || 'Suspicious activity detected'}</div>
               
               <div className="alert-actions">
                 {type === 'danger' && (

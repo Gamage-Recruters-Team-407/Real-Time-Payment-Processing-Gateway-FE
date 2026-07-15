@@ -21,6 +21,8 @@ import FraudDetection from './pages/FraudDetection';
 
 // Payment
 import CardPayment from "./pages/CardPayment";
+import PaymentHistory from "./pages/PaymentHistory";
+import RefundRequest from "./pages/RefundRequest";
 
 // OTP Verification
 import OTPVerification from "./pages/OTPVerification"; 
@@ -111,7 +113,33 @@ function App() {
           {/* OTP Verification Route */}
           <Route path="/otp-verification" element={<OTPVerification />} />
 
+          {/* Payment History Route */}
+          <Route
+            path="/payment-history"
+            element={
+              <ProtectedRoute>
+                <PaymentHistory />
+              </ProtectedRoute>
+            }
+          />
 
+          {/* Refund Request Routes */}
+          <Route
+            path="/refund"
+            element={
+              <ProtectedRoute>
+                <RefundRequest />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/refund/:transactionId"
+            element={
+              <ProtectedRoute>
+                <RefundRequest />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Transaction Management */}
           <Route

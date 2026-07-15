@@ -421,7 +421,7 @@ ul {
 
 .tooltip-card {
   position: absolute;
-  bottom: 20px;
+  top: 20px;
   left: 20px;
   width: 320px;
   background: white;
@@ -555,18 +555,28 @@ ul {
 
 .cell-account {
   font-weight: 600;
+}
+
+.cell-account-inner {
   display: flex;
   align-items: center;
   gap: 8px;
+  font-family: monospace;
+  font-size: 0.95rem;
 }
 
 .cell-transaction {
+}
+
+.cell-transaction-inner {
   display: flex;
   flex-direction: column;
 }
 
 .tx-amount {
-  font-weight: 600;
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: #1A1D20;
 }
 
 .tx-merchant {
