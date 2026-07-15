@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ShieldCheck,
   Plus,
@@ -12,6 +13,7 @@ import {
   ChevronRight,
   SlidersHorizontal,
   Search,
+  RotateCcw,
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
@@ -205,6 +207,7 @@ function TransactionDetails({ txn, onClose }) {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [selectedTxn, setSelectedTxn] = useState(null);
 
   const [dashboardData, setDashboardData] = useState(null);
@@ -369,8 +372,18 @@ export default function Dashboard() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3 text-slate-400">
-                          <Eye size={15} className="hover:text-[#0A192F]" />
-                          <ArrowDown size={15} className="hover:text-[#0A192F]" />
+                          <Eye size={15} className="hover:text-[#0A192F] cursor-pointer" />
+                          <ArrowDown size={15} className="hover:text-[#0A192F] cursor-pointer" />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/refund/${txn.id}`);
+                            }}
+                            title="Request Refund"
+                            className="text-rose-500 hover:text-rose-700 transition-colors"
+                          >
+                            <RotateCcw size={15} />
+                          </button>
                         </div>
                       </td>
                     </tr>
