@@ -23,6 +23,10 @@ import AdminDashboard from "./pages/AdminDashboard";
 // Transaction Management
 import TransactionManagement from "./pages/TransactionManagement";
 
+// OTP Verification
+import OTPVerification from "./pages/OTPVerification"; 
+
+
 
 function App() {
   return (
@@ -90,6 +94,10 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* OTP Verification Route */}
+          <Route path="/otp-verification" element={<OTPVerification />} />
+
 
 
           {/* Transaction Management */}
