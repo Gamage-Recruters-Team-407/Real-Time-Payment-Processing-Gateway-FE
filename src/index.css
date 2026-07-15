@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --color-primary: #1FDC8D;
   --color-primary-light: rgba(31, 220, 141, 0.15);

@@ -1,10 +1,16 @@
+import { useState, useEffect } from 'react';
+import { getRegionalVelocity } from '../../services/fraudApi';
 
 export default function RegionalVelocity() {
-  const regions = [
-    { name: 'East Asia Cluster', status: 'HIGH RISK', type: 'danger' },
-    { name: 'Eastern Europe', status: 'CRITICAL', type: 'critical' },
-    { name: 'North America', status: 'STABLE', type: 'success' },
-  ];
+  const [regions, setRegions] = useState([
+    { name: 'Loading...', riskLevel: 'STABLE' }
+  ]);
+
+  useEffect(() => {
+    getRegionalVelocity().then(data => {
+      if (data && data.regions) setRegions(data.regions);
+    }).catch(console.error);
+  }, []);
 
   return (
     <div className="card" style={{ height: '100%' }}>
@@ -21,11 +27,12 @@ export default function RegionalVelocity() {
             <span>{r.name}</span>
             <span className={
               `badge ` + 
-              (r.type === 'danger' ? 'badge-danger ' : '') + 
-              (r.type === 'critical' ? 'badge-danger ' : '') + 
-              (r.type === 'success' ? 'badge-success ' : '')
-            } style={r.type === 'critical' ? { backgroundColor: '#FCE7F3', color: '#BE185D' } : {}}>
-              {r.status}
+              (r.riskLevel === 'CRITICAL' ? 'badge-danger ' : '') + 
+              (r.riskLevel === 'HIGH' ? 'badge-danger ' : '') + 
+              (r.riskLevel === 'MEDIUM' ? 'badge-warning ' : '') + 
+              (r.riskLevel === 'STABLE' || r.riskLevel === 'LOW' ? 'badge-success ' : '')
+            } style={r.riskLevel === 'CRITICAL' ? { backgroundColor: '#FCE7F3', color: '#BE185D' } : {}}>
+              {r.riskLevel} {r.fraudRate ? `(${r.fraudRate}%)` : ''}
             </span>
           </div>
         ))}

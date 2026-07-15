@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchMetrics } from '../redux/slices/metricsSlice';
 import StatCard from '../components/widgets/StatCard';
 import EntityLinkAnalysis from '../components/widgets/EntityLinkAnalysis';
 import RegionalVelocity from '../components/widgets/RegionalVelocity';
@@ -17,26 +19,33 @@ export default function FraudDetection() {
   const [isEscalateOpen, setIsEscalateOpen] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
 
+  const dispatch = useDispatch();
+  const { data: metrics } = useSelector(state => state.metrics);
+
+  useEffect(() => {
+    dispatch(fetchMetrics());
+  }, [dispatch]);
+
   return (
     <div className="dashboard-grid">
       <div className="stats-row">
         <StatCard 
           title="Blocked Attempts" 
-          value="12,842" 
+          value={metrics.blockedTransactions?.toLocaleString() || "0"} 
           trend="up" 
-          trendValue="+14.2% from last 24h" 
+          trendValue="Live Updates" 
           icon={<XCircle size={24} />} 
         />
         <StatCard 
           title="Suspicious Patterns" 
-          value="84" 
+          value={metrics.totalAlerts?.toLocaleString() || "0"} 
           trend="neutral" 
           trendValue="Real-time AI monitoring active" 
           icon={<ActivitySquare size={24} />} 
         />
         <StatCard 
           title="High Risk Entities" 
-          value="12" 
+          value={metrics.highRiskEntities?.toLocaleString() || "0"} 
           trend="danger" 
           trendValue="●●●" 
           icon={<AlertTriangle size={24} />}
@@ -46,7 +55,7 @@ export default function FraudDetection() {
           title="Investigation Center" 
           value="" 
           trend="cases" 
-          trendValue={{ open: 3, escalated: 1 }} 
+          trendValue={{ open: metrics.pendingInvestigations || 0, escalated: 0 }} 
           icon={<FolderGit2 size={24} />} 
         />
       </div>

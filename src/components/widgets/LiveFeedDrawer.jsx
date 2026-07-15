@@ -1,86 +1,20 @@
 import { X } from 'lucide-react';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchAlerts } from '../../redux/slices/alertsSlice';
 
 export default function LiveFeedDrawer({ isOpen, onClose, onInvestigateClick, onReviewClick }) {
+  const dispatch = useDispatch();
+  const { items: alerts, loading } = useSelector(state => state.alerts);
+
+  useEffect(() => {
+    if (isOpen) {
+      dispatch(fetchAlerts());
+    }
+  }, [isOpen, dispatch]);
+
   if (!isOpen) return null;
 
-  const alerts = [
-    {
-      id: 1,
-      timestamp: '14:02:49',
-      account: 'GP-8839-XXXX',
-      amount: '$ 4,950.00',
-      merchant: 'Merchant: UNK_TECH_HKG',
-      riskScore: 94,
-      riskLabel: '94% RISK',
-      reason: 'Multiple transactions in short time window',
-      type: 'danger',
-      actions: [
-        { label: 'INVESTIGATE', type: 'dark-red' },
-        { label: 'FREEZE', type: 'outline-red' },
-        { label: 'DISMISS', type: 'text' }
-      ]
-    },
-    {
-      id: 2,
-      timestamp: '14:02:41',
-      account: 'GP-1039-XXXX',
-      amount: '$ 890.00',
-      merchant: 'Merchant: CRYPTO_GATE_IE',
-      riskScore: 62,
-      riskLabel: '62% RISK',
-      reason: 'Unusual geographic location detected',
-      type: 'warning',
-      actions: [
-        { label: 'INVESTIGATE', type: 'dark' },
-        { label: 'REVIEW', type: 'outline-yellow' },
-        { label: 'DISMISS', type: 'text' }
-      ]
-    },
-    {
-      id: 3,
-      timestamp: '14:02:38',
-      account: 'GP-5512-XXXX',
-      amount: '$ 12,000.00',
-      merchant: 'Merchant: LUX_RETAIL_LON',
-      riskScore: 100,
-      riskLabel: 'MAX RISK',
-      reason: 'Amount exceeds threshold by 140%',
-      type: 'danger',
-      actions: [
-        { label: 'INVESTIGATE', type: 'dark' },
-        { label: 'BLOCK', type: 'dark-red' },
-        { label: 'DISMISS', type: 'text' }
-      ]
-    },
-    {
-      id: 4,
-      timestamp: '14:02:45',
-      account: 'GP-2201-XXXX',
-      amount: '$ 22.40',
-      merchant: 'Merchant: STARBUCKS_SEA',
-      riskScore: 2,
-      riskLabel: '02% RISK',
-      reason: 'Normal transaction pattern - Cleared by system',
-      type: 'success',
-      actions: [
-        { label: 'CLEARED', type: 'full-green' }
-      ]
-    },
-    {
-      id: 5,
-      timestamp: '14:02:45',
-      account: 'GP-2201-XXXX',
-      amount: '$ 22.40',
-      merchant: 'Merchant: STARBUCKS_SEA',
-      riskScore: 2,
-      riskLabel: '02% RISK',
-      reason: 'Normal transaction pattern - Cleared by system',
-      type: 'success',
-      actions: [
-        { label: 'CLEARED', type: 'full-green' }
-      ]
-    }
-  ];
 
   return (
     <>
@@ -93,7 +27,7 @@ export default function LiveFeedDrawer({ isOpen, onClose, onInvestigateClick, on
             </h2>
             <div className="drawer-subtitle">
               <span>AUTO-REFRESH: 5S</span>
-              <span style={{ marginLeft: '12px' }}>SHOWING 4 OF 12 ALERTS</span>
+              <span style={{ marginLeft: '12px' }}>SHOWING {alerts.length} ALERTS</span>
             </div>
           </div>
           <button className="drawer-close" onClick={onClose}>
@@ -102,31 +36,41 @@ export default function LiveFeedDrawer({ isOpen, onClose, onInvestigateClick, on
         </div>
 
         <div className="drawer-content">
-          {alerts.map((alert) => (
-            <div key={alert.id} className={`alert-card border-${alert.type}`}>
+          {loading && alerts.length === 0 ? <p style={{color: 'white', padding: '20px'}}>Loading alerts...</p> : null}
+          {alerts.map((alert) => {
+            const riskScore = alert.riskScore || 0;
+            const type = riskScore > 80 ? 'danger' : riskScore > 40 ? 'warning' : 'success';
+            
+            return (
+            <div key={alert._id || alert.transactionId} className={`alert-card border-${type}`}>
               <div className="alert-top">
-                <span className="alert-time">{alert.timestamp}</span>
-                <span className={`alert-badge badge-${alert.type}`}>{alert.riskLabel}</span>
+                <span className="alert-time">{new Date(alert.timestamp).toLocaleTimeString() || 'Just now'}</span>
+                <span className={`alert-badge badge-${type}`}>{riskScore}% RISK</span>
               </div>
-              <div className="alert-account">{alert.account}</div>
-              <div className="alert-amount">{alert.amount}</div>
-              <div className="alert-merchant">{alert.merchant}</div>
-              <div className={`alert-reason text-${alert.type}`}>{alert.reason}</div>
+              <div className="alert-account">{alert.userId || 'Unknown Account'}</div>
+              <div className="alert-amount">$ {alert.amount?.toFixed(2)}</div>
+              <div className="alert-merchant">Merchant: {alert.merchant || 'Unknown'}</div>
+              <div className={`alert-reason text-${type}`}>{alert.mlExplanation || 'Suspicious activity detected'}</div>
               
               <div className="alert-actions">
-                {alert.actions.map((action, i) => (
-                  <button 
-                    key={i} 
-                    className={`alert-btn btn-${action.type}`}
-                    style={action.type.startsWith('full') ? { width: '100%' } : {}}
-                    onClick={action.label === 'INVESTIGATE' ? onInvestigateClick : action.label === 'REVIEW' ? onReviewClick : undefined}
-                  >
-                    {action.label}
-                  </button>
-                ))}
+                {type === 'danger' && (
+                  <>
+                    <button className="alert-btn btn-dark-red" onClick={() => onInvestigateClick(alert._id)}>INVESTIGATE</button>
+                    <button className="alert-btn btn-outline-red">BLOCK</button>
+                  </>
+                )}
+                {type === 'warning' && (
+                  <>
+                    <button className="alert-btn btn-dark" onClick={() => onInvestigateClick(alert._id)}>INVESTIGATE</button>
+                    <button className="alert-btn btn-outline-yellow" onClick={onReviewClick}>REVIEW</button>
+                  </>
+                )}
+                {type === 'success' && (
+                  <button className="alert-btn btn-full-green">CLEARED</button>
+                )}
               </div>
             </div>
-          ))}
+          )})}
         </div>
 
         <div className="drawer-footer">
