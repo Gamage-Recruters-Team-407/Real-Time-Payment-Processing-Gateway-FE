@@ -9,7 +9,9 @@ const OTPVerification = () => {
   const location = useLocation();
   const { user } = useAuth();
   
+  // Separate states for email and userId to avoid mixing them up
   const [email, setEmail] = useState("");
+  const [userId, setUserId] = useState(""); 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -27,12 +29,16 @@ const OTPVerification = () => {
     const finalPurpose = urlPurpose || 'password_forgot'; 
     setPurpose(finalPurpose);
 
+    // Get userId from URL or from logged-in user if purpose is payment
     const finalUserId = urlUserId || (finalPurpose === 'payment' ? user?._id : '');
+    // Get email from URL or from logged-in user if purpose is password_forgot
     const finalEmail = urlEmail || (finalPurpose === 'password_forgot' ? user?.email : ''); 
 
-    if (finalUserId) setEmail(finalUserId);
+    // FIX: Set userId and email to their correct separate states
+    if (finalUserId) setUserId(finalUserId);
     if (finalEmail) setEmail(finalEmail);
 
+    // Auto-generate OTP if we have either userId or email
     if (finalUserId || finalEmail) {
       setIsOtpSent(true);
       handleAutoGenerateOTP(finalEmail, finalUserId, finalPurpose);
@@ -126,7 +132,13 @@ const OTPVerification = () => {
 
     try {
       const verifyData = { otp: otpString };
-      if (email) verifyData.email = email;
+      
+      // FIX: Send userId if available (for payment), otherwise send email (for forgot password)
+      if (userId) {
+        verifyData.userId = userId;
+      } else if (email) {
+        verifyData.email = email;
+      }
 
       const result = await otpService.verifyOTP(verifyData);
       
@@ -156,7 +168,8 @@ const OTPVerification = () => {
 
     try {
       const resendData = { purpose };
-      if (email) resendData.email = email;
+      if (userId) resendData.userId = userId;
+      else if (email) resendData.email = email;
 
       const result = await otpService.resendOTP(resendData);
       if (result.success) {
