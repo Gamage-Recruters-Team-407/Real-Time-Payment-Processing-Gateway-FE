@@ -22,11 +22,18 @@ import FraudDetection from './pages/FraudDetection';
 // Payment
 import CardPayment from "./pages/CardPayment";
 
+// OTP Verification
+import OTPVerification from "./pages/OTPVerification"; 
+
 // Admin pages
 import AdminDashboard from "./pages/AdminDashboard";
 
 // Transaction Management
 import TransactionManagement from "./pages/TransactionManagement";
+
+
+
+
 
 function App() {
   return (
@@ -100,6 +107,11 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* OTP Verification Route */}
+          <Route path="/otp-verification" element={<OTPVerification />} />
+
+
 
           {/* Transaction Management */}
           <Route
