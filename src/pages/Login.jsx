@@ -21,9 +21,11 @@ const Login = () => {
     setLoading(true);
 
     const result = await login(formData.email, formData.password);
+    console.log("Login result:", result);
 
     if (result.success) {
-      navigate(result.user.role === "admin" ? "/admin/dashboard" : "/dashboard");
+      console.log("User role:", result.user.role);
+      navigate(result.user.role === "admin" ? "/admin" : "/dashboard");
     } else {
       setError(result.message);
     }
