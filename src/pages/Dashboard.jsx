@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ShieldCheck,
   Plus,
@@ -15,22 +15,13 @@ import {
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
+import api from "../services/api";
 
-// ---- Design tokens (from Figma) -------------------------------------
-const COLORS = {
-  primary: "#0A192F", // deep navy - sidebar / headers
-  secondary: "#10B981", // emerald - success / brand accent
-  tertiary: "#64748B", // slate - secondary text
-  neutral: "#F8FAFC", // near-white - page background
-};
-
-// ---- Mock data (swap for real API data from userController.js) ------
-const STATS = [
-  { label: "Total Volume", value: "Rs.1,248,590.00", sub: "+12.5% from last month", trend: "up" },
-  { label: "Successful", value: "25", sub: "99.2% success rate", trend: "success" },
-  { label: "Failed", value: "4", sub: "System declines or bounce-backs", trend: "error" },
-];
-
+// ---- Mock transaction data --------------------------------------------
+// NOTE: the transaction table itself belongs to Dev 6 (Payment History) /
+// Dev 11 (Transaction Management) — swap TRANSACTIONS below for their
+// GET /api/transactions endpoint once it's ready. Only the 3 stat cards
+// above the table are wired to this module's own backend (userController.js).
 const TRANSACTIONS = [
   {
     id: "TXN_98214300",
@@ -103,6 +94,9 @@ const STATUS_STYLES = {
   FLAGGED: "bg-amber-50 text-amber-600 ring-1 ring-amber-200",
   FAILED: "bg-rose-50 text-rose-600 ring-1 ring-rose-200",
 };
+
+const formatCurrency = (value) =>
+  `Rs.${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 // -----------------------------------------------------------------------
 
@@ -213,6 +207,60 @@ function TransactionDetails({ txn, onClose }) {
 export default function Dashboard() {
   const [selectedTxn, setSelectedTxn] = useState(null);
 
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchDashboard() {
+      try {
+        setLoading(true);
+        setError("");
+        const res = await api.get("/users/me");
+        if (!cancelled) setDashboardData(res.data);
+      } catch (err) {
+        console.error("Dashboard fetch failed:", err);
+        if (!cancelled) {
+          setError(
+            err.response?.data?.message || "Couldn't load dashboard data. Please try again."
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchDashboard();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const stats = dashboardData?.stats;
+
+  const STATS = [
+    {
+      label: "Total Volume",
+      value: formatCurrency(stats?.totalVolume),
+      sub: "All-time settled volume",
+      trend: "up",
+    },
+    {
+      label: "Successful",
+      value: stats?.successful ?? 0,
+      sub: `${stats?.successRate ?? 0}% success rate`,
+      trend: "success",
+    },
+    {
+      label: "Failed",
+      value: stats?.failed ?? 0,
+      sub: "System declines or bounce-backs",
+      trend: "error",
+    },
+  ];
+
   return (
     <div className="flex h-screen w-full bg-[#F8FAFC] font-sans text-[#0A192F]">
       {/* ---------------- Sidebar ---------------- */}
@@ -227,7 +275,9 @@ export default function Dashboard() {
         <main className="flex-1 overflow-y-auto p-8">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-[#0A192F]">Payment History</h1>
+              <h1 className="text-2xl font-bold text-[#0A192F]">
+                {dashboardData?.name ? `Welcome, ${dashboardData.name}` : "Payment History"}
+              </h1>
               <p className="mt-1 text-sm text-slate-400">
                 Monitoring financial activities across all merchant terminals.
               </p>
@@ -242,11 +292,22 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {error && (
+            <div className="mt-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600 ring-1 ring-rose-200">
+              {error}
+            </div>
+          )}
+
           {/* Stats */}
           <div className="mt-6 flex gap-4">
-            {STATS.map((s) => (
-              <StatCard key={s.label} {...s} />
-            ))}
+            {loading
+              ? [1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-24 flex-1 animate-pulse rounded-xl bg-white ring-1 ring-slate-100"
+                  />
+                ))
+              : STATS.map((s) => <StatCard key={s.label} {...s} />)}
           </div>
 
           {/* Filter bar */}
@@ -271,7 +332,7 @@ export default function Dashboard() {
           </div>
 
           <div className="mt-6 flex gap-6">
-            {/* Table */}
+            {/* Table (still mock — belongs to Dev 6 / Dev 11's endpoint) */}
             <div className="flex-1 rounded-xl bg-white shadow-sm ring-1 ring-slate-100">
               <table className="w-full text-left text-sm">
                 <thead>

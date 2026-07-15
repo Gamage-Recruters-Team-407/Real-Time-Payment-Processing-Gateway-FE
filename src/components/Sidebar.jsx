@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CreditCard, Bell, Settings, ReceiptText, ShieldCheck } from 'lucide-react';
+import { CreditCard, Bell, Settings, ReceiptText, ShieldCheck, LayoutDashboard } from 'lucide-react';
 
 const menuItems = [
+  { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { name: 'Settlement', icon: CreditCard, path: '/' },
   { name: 'Fraud Detection', icon: ShieldCheck, path: '/fraud-detection' },
   { name: 'Notifications', icon: Bell, path: '/notifications' },
@@ -21,6 +22,12 @@ const getActiveItemFromPath = (pathname) => {
   }
   if (pathname === '/settings') {
     return 'Settings';
+  }
+  if (pathname === '/dashboard') {
+    return 'Dashboard';
+  }
+  if (pathname === '/profile') {
+    return ''; 
   }
   return 'Settlement';
 };
