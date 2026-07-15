@@ -62,6 +62,7 @@ export default function TransactionTable({
   total = 0,
   currentPage = 1,
   totalPages = 1,
+  merchantName = "Main Shop",
   onPageChange,
   onViewDetails,
   onViewReceipt,
@@ -71,7 +72,7 @@ export default function TransactionTable({
       <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Transaction Records</h2>
-          <p className="text-sm text-slate-500">Complete transaction history from MongoDB</p>
+          <p className="text-sm text-slate-500">{merchantName} transaction history from MongoDB</p>
         </div>
         <p className="text-sm text-slate-500">{total} total records</p>
       </div>
@@ -93,11 +94,11 @@ export default function TransactionTable({
                 <tr className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                   <th className="px-5 py-4">Transaction ID</th>
                   <th className="px-5 py-4">Date</th>
-                  <th className="px-5 py-4">Merchant</th>
                   <th className="px-5 py-4">Customer</th>
                   <th className="px-5 py-4">Amount</th>
                   <th className="px-5 py-4">Payment Method</th>
                   <th className="px-5 py-4">Status</th>
+                  <th className="px-5 py-4">Refund</th>
                   <th className="px-5 py-4">Payment Reference</th>
                   <th className="px-5 py-4">Actions</th>
                 </tr>
@@ -107,7 +108,6 @@ export default function TransactionTable({
                   <tr key={transaction._id} className="transition hover:bg-slate-50">
                     <td className="px-5 py-4 font-medium text-slate-900">{transaction.transactionId}</td>
                     <td className="px-5 py-4 text-sm text-slate-600">{formatDate(transaction.createdAt)}</td>
-                    <td className="px-5 py-4 text-sm text-slate-700">{transaction.merchantName}</td>
                     <td className="px-5 py-4 text-sm text-slate-700">
                       <div>{transaction.customerName || "-"}</div>
                       <div className="text-xs text-slate-500">{transaction.customerEmail || "-"}</div>
@@ -116,6 +116,11 @@ export default function TransactionTable({
                     <td className="px-5 py-4 text-sm text-slate-700">{transaction.paymentMethod || "-"}</td>
                     <td className="px-5 py-4">
                       <StatusBadge status={transaction.status} />
+                    </td>
+                    <td className="px-5 py-4 text-sm text-slate-700">
+                      {transaction.refundSummary?.hasRefundRequest
+                        ? transaction.refundSummary.latestRefundStatus || "Requested"
+                        : "None"}
                     </td>
                     <td className="px-5 py-4 text-sm text-slate-700">{transaction.paymentReference || "-"}</td>
                     <td className="px-5 py-4">
@@ -157,8 +162,8 @@ export default function TransactionTable({
 
                 <div className="mt-4 grid gap-3 text-sm">
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-slate-400">Merchant</p>
-                    <p className="font-medium text-slate-800">{transaction.merchantName}</p>
+                    <p className="text-xs uppercase tracking-wide text-slate-400">Shop</p>
+                    <p className="font-medium text-slate-800">{merchantName}</p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -179,6 +184,14 @@ export default function TransactionTable({
                       <p className="text-xs uppercase tracking-wide text-slate-400">Reference</p>
                       <p className="font-medium text-slate-800">{transaction.paymentReference || "-"}</p>
                     </div>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-slate-400">Refund</p>
+                    <p className="font-medium text-slate-800">
+                      {transaction.refundSummary?.hasRefundRequest
+                        ? transaction.refundSummary.latestRefundStatus || "Requested"
+                        : "None"}
+                    </p>
                   </div>
                 </div>
 
