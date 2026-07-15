@@ -1,3 +1,4 @@
+
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
@@ -34,8 +35,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import TransactionManagement from "./pages/TransactionManagement";
 
 
-
-
+import Payment from "./pages/Payment.jsx";
 
 function App() {
   return (
@@ -164,8 +164,16 @@ function App() {
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
 
+          {/* Developer 3 - Payment Processing */}
+        <Route path="/payment" element={<Payment />} />
+
         </Routes>
       </AuthProvider>
+
+      <Routes>
+
+
+      </Routes>
     </BrowserRouter>
   );
 }
