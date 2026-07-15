@@ -17,14 +17,16 @@ import Notification from "./pages/Notification";
 // Payment
 import CardPayment from "./pages/CardPayment";
 
+// OTP Verification
+import OTPVerification from "./pages/OTPVerification"; 
+
 // Admin pages
 import AdminDashboard from "./pages/AdminDashboard";
 
 // Transaction Management
 import TransactionManagement from "./pages/TransactionManagement";
 
-// OTP Verification
-import OTPVerification from "./pages/OTPVerification"; 
+
 
 
 
