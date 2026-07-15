@@ -1,9 +1,7 @@
+import UserManagement from './pages/UserManagement';
+
 function App() {
-  return (
-    <h1 className="text-4xl font-bold text-blue-600">
-      Tailwind CSS v3 Working!
-    </h1>
-  );
+  return <UserManagement />;
 }
 
 export default App;
