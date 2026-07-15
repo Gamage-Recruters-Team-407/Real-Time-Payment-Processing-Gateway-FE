@@ -1,25 +1,34 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CreditCard, Bell, Settings, ReceiptText, LayoutDashboard } from 'lucide-react';
+import { CreditCard, Bell, Settings, ReceiptText, ShieldCheck, LayoutDashboard } from 'lucide-react';
 
 const menuItems = [
-  { name: 'Dashboard', icon: LayoutDashboard },
-  { name: 'Settlement', icon: CreditCard },
-  { name: 'Notifications', icon: Bell },
-  { name: 'Settings', icon: Settings },
+  { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  { name: 'Settlement', icon: CreditCard, path: '/' },
+  { name: 'Fraud Detection', icon: ShieldCheck, path: '/fraud-detection' },
+  { name: 'Notifications', icon: Bell, path: '/notifications' },
+  { name: 'Settings', icon: Settings, path: '/settings' },
 ];
 
 const getActiveItemFromPath = (pathname) => {
   if (pathname === '/transaction-management') {
     return 'Transaction Management';
   }
+  if (pathname === '/fraud-detection') {
+    return 'Fraud Detection';
+  }
+  if (pathname === '/notifications') {
+    return 'Notifications';
+  }
+  if (pathname === '/settings') {
+    return 'Settings';
+  }
   if (pathname === '/dashboard') {
     return 'Dashboard';
   }
-   if (pathname === '/profile') {
+  if (pathname === '/profile') {
     return ''; 
   }
-
   return 'Settlement';
 };
 
@@ -27,6 +36,13 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeItem, setActiveItem] = useState(() => getActiveItemFromPath(location.pathname));
+
+  const handleNavigation = (item) => {
+    setActiveItem(item.name);
+    if (item.path) {
+      navigate(item.path);
+    }
+  };
 
   return (
     <div className="relative z-30 w-64 min-h-screen bg-white border-r border-gray-100 flex flex-col justify-between py-6 px-4 shrink-0">
@@ -48,10 +64,7 @@ const Sidebar = () => {
             <button
               type="button"
               key={item.name}
-              onClick={() => {
-                setActiveItem(item.name);
-                if (item.name === 'Dashboard') navigate('/dashboard');
-              }}
+              onClick={() => handleNavigation(item)}
               className={`flex items-center gap-3 rounded-xl px-4 py-4 text-left transition-colors ${
                 item.name === activeItem
                   ? 'bg-[#10B981] text-white shadow-sm'
