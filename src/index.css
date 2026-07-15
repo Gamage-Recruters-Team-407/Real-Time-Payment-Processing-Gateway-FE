@@ -420,16 +420,13 @@ ul {
 }
 
 .tooltip-card {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  width: 320px;
+  margin-top: 16px;
+  width: 100%;
   background: white;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 16px;
-  box-shadow: var(--shadow-md);
-  z-index: 10;
+  box-shadow: var(--shadow-sm);
 }
 
 .tooltip-header {
