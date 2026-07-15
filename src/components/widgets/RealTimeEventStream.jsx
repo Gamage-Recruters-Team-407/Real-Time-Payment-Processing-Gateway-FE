@@ -1,56 +1,6 @@
-import { Filter, Flag, MoreHorizontal, ArrowRight } from 'lucide-react';
+import { Filter, Flag, MoreHorizontal, ArrowRight, CheckCircle2, AlertTriangle } from 'lucide-react';
 
-export default function RealTimeEventStream({ onReviewClick }) {
-  const events = [
-    {
-      timestamp: '14:02:49.032',
-      account: 'GP-8839-XXXX',
-      isAlert: true,
-      amount: '$ 4,950.00',
-      merchant: 'Merchant: UNK_TECH_HKG',
-      riskScore: 94,
-      status: 'HIGH RISK',
-      statusType: 'danger',
-      action: 'FREEZE',
-      actionIcon: <Flag size={14} />
-    },
-    {
-      timestamp: '14:02:45.118',
-      account: 'GP-2201-XXXX',
-      isAlert: false,
-      amount: '$ 22.40',
-      merchant: 'Merchant: STARBUCKS_SEA',
-      riskScore: 2,
-      status: 'CLEARED',
-      statusType: 'success',
-      action: 'MORE',
-      actionIcon: <MoreHorizontal size={14} />
-    },
-    {
-      timestamp: '14:02:41.882',
-      account: 'GP-1039-XXXX',
-      isAlert: false,
-      amount: '$ 890.00',
-      merchant: 'Merchant: CRYPTO_GATE_IE',
-      riskScore: 62,
-      status: 'REVIEW',
-      statusType: 'warning',
-      action: 'REVIEW NOW',
-      actionIcon: null
-    },
-    {
-      timestamp: '14:02:38.991',
-      account: 'GP-5512-XXXX',
-      isAlert: false,
-      amount: '$ 12,000.00',
-      merchant: 'Merchant: LUX_RETAIL_LON',
-      riskScore: 100,
-      status: 'BLOCKED',
-      statusType: 'blocked',
-      action: 'RELEASE',
-      actionIcon: null
-    }
-  ];
+export default function RealTimeEventStream({ transactions = [], onReviewClick, onFreezeClick, onReleaseClick }) {
 
   return (
     <div className="card" style={{ marginTop: '24px' }}>
@@ -81,60 +31,77 @@ export default function RealTimeEventStream({ onReviewClick }) {
             </tr>
           </thead>
           <tbody>
-            {events.map((ev, i) => (
-              <tr key={i} className={ev.isAlert ? 'row-danger' : ''}>
-                <td className="cell-timestamp">{ev.timestamp}</td>
-                <td className="cell-account">
-                  {ev.account} 
-                  {ev.isAlert && <span style={{ color: '#E11D48' }}>⚠</span>}
-                </td>
-                <td className="cell-transaction">
-                  <span className="tx-amount">{ev.amount}</span>
-                  <span className="tx-merchant">{ev.merchant}</span>
-                </td>
-                <td>
-                  <div className="risk-bar-container">
-                    <div className="risk-bar">
-                      <div className="risk-fill" style={{ 
-                        width: `${ev.riskScore}%`,
-                        backgroundColor: ev.riskScore > 90 ? '#9F1239' : ev.riskScore > 80 ? '#E11D48' : ev.riskScore > 50 ? '#F59E0B' : '#10B981'
-                       }}></div>
+            {transactions.map((tx, i) => {
+              const isAlert = tx.status === 'HIGH_RISK' || tx.status === 'BLOCKED';
+              const statusType = tx.status === 'BLOCKED' ? 'blocked' : (tx.status === 'HIGH_RISK' ? 'danger' : (tx.status === 'REVIEW' ? 'warning' : 'success'));
+              const action = tx.status === 'BLOCKED' ? 'RELEASE' : (tx.status === 'HIGH_RISK' ? 'FREEZE' : (tx.status === 'REVIEW' ? 'REVIEW NOW' : 'MORE'));
+              
+              // Extract HH:mm:ss.SSS from ISO string if possible, else fallback
+              const timeString = tx.createdAt ? new Date(tx.createdAt).toISOString().slice(11, 23) : '00:00:00.000';
+
+              return (
+                <tr key={tx._id || i} className={isAlert ? 'row-danger' : ''}>
+                  <td className="cell-timestamp">{timeString}</td>
+                  <td className="cell-account">
+                    <div className="cell-account-inner">
+                      {tx.userId || 'Unknown'} 
+                      {isAlert && <AlertTriangle size={14} color="#9F1239" style={{ marginLeft: '8px' }} />}
                     </div>
-                    <span className="risk-score-text" style={{ color: ev.riskScore > 90 ? '#9F1239' : ev.riskScore > 80 ? '#E11D48' : ev.riskScore > 50 ? '#F59E0B' : '#10B981' }}>
-                      {ev.riskScore === 100 ? 'MAX' : `${String(ev.riskScore).padStart(2, '0')}%`}
+                  </td>
+                  <td className="cell-transaction">
+                    <div className="cell-transaction-inner">
+                      <span className="tx-amount">$ {tx.amount?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) || '0.00'}</span>
+                      <span className="tx-merchant" style={{ textTransform: 'uppercase' }}>Merchant: {tx.merchant}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="risk-bar-container">
+                      <div className="risk-bar">
+                        <div className="risk-fill" style={{ 
+                          width: `${tx.riskScore}%`,
+                          backgroundColor: tx.riskScore >= 90 ? '#7F1D1D' : tx.riskScore > 80 ? '#9F1239' : tx.riskScore > 50 ? '#F59E0B' : '#10B981'
+                        }}></div>
+                      </div>
+                      <span className="risk-score-text" style={{ color: tx.riskScore >= 90 ? '#7F1D1D' : tx.riskScore > 80 ? '#9F1239' : tx.riskScore > 50 ? '#F59E0B' : '#10B981' }}>
+                        {tx.riskScore === 100 ? 'MAX' : `${String(Math.round(tx.riskScore)).padStart(2, '0')}%`}
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    <span className={
+                      `badge ` + 
+                      (statusType === 'danger' ? 'badge-danger ' : '') + 
+                      (statusType === 'success' ? 'badge-success ' : '') + 
+                      (statusType === 'warning' ? 'badge-warning ' : '')
+                    } style={statusType === 'blocked' ? { backgroundColor: 'transparent', color: '#E11D48', padding: 0 } : {}}>
+                      {statusType === 'blocked' && <span style={{ marginRight: '4px' }}>⊘</span>}
+                      {tx.status}
                     </span>
-                  </div>
-                </td>
-                <td>
-                  <span className={
-                    `badge ` + 
-                    (ev.statusType === 'danger' ? 'badge-danger ' : '') + 
-                    (ev.statusType === 'success' ? 'badge-success ' : '') + 
-                    (ev.statusType === 'warning' ? 'badge-warning ' : '')
-                  } style={ev.statusType === 'blocked' ? { backgroundColor: 'transparent', color: '#E11D48', padding: 0 } : {}}>
-                    {ev.statusType === 'blocked' && <span style={{ marginRight: '4px' }}>⊘</span>}
-                    {ev.status}
-                  </span>
-                </td>
-                <td>
-                  <div className="action-buttons">
-                    {ev.action === 'MORE' ? (
-                      <button className="btn-action icon-only">{ev.actionIcon}</button>
-                    ) : (
-                      <>
-                        <button 
-                          className={`btn-action ${ev.action.toLowerCase().replace(' ', '-')}`}
-                          onClick={ev.action === 'REVIEW NOW' ? onReviewClick : undefined}
-                        >
-                          {ev.action}
-                        </button>
-                        {ev.actionIcon && <button className="btn-action icon-only">{ev.actionIcon}</button>}
-                      </>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td>
+                    <div className="action-buttons">
+                      {action === 'MORE' ? (
+                        <button className="btn-action icon-only"><MoreHorizontal size={14} /></button>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <button 
+                            className={`btn-action ${action.toLowerCase().replace(' ', '-')}`}
+                            onClick={() => {
+                              if (action === 'REVIEW NOW' && onReviewClick) onReviewClick(tx._id);
+                              else if (action === 'FREEZE' && onFreezeClick) onFreezeClick(tx._id);
+                              else if (action === 'RELEASE' && onReleaseClick) onReleaseClick(tx._id);
+                            }}
+                          >
+                            {action}
+                          </button>
+                          {action === 'FREEZE' && <Flag size={16} className="text-muted cursor-pointer" />}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
