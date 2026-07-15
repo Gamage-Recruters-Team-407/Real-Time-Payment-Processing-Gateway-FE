@@ -1,6 +1,24 @@
+import { useState, useEffect } from 'react';
 import { X, Search, Paperclip, FileText, Globe, User } from 'lucide-react';
+import { getAlertById } from '../../services/fraudApi';
+import { startInvestigation } from '../../services/investigationApi';
 
-export default function InvestigationDrawer({ isOpen, onClose, onEscalateClick }) {
+export default function InvestigationDrawer({ isOpen, onClose, targetId, onEscalateClick }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && targetId) {
+      setLoading(true);
+      getAlertById(targetId)
+        .then(res => setData(res))
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    } else {
+      setData(null);
+    }
+  }, [isOpen, targetId]);
+
   if (!isOpen) return null;
 
   return (
@@ -21,27 +39,31 @@ export default function InvestigationDrawer({ isOpen, onClose, onEscalateClick }
 
         <div className="drawer-content" style={{ padding: '20px', gap: '20px', backgroundColor: '#FFFFFF' }}>
           
+          {loading && <p>Loading case details...</p>}
+          {!loading && data && (
+            <>
           {/* Top Form Grid */}
           <div className="investigation-form-grid">
             <div className="form-group">
               <label>CASE STATUS</label>
-              <select defaultValue="Under Review">
-                <option>Under Review</option>
-                <option>Open</option>
-                <option>Closed</option>
+              <select defaultValue={data.investigationData?.status || 'CREATE'} disabled>
+                <option value="CREATE">Pending Creation</option>
+                <option value="UNDER_REVIEW">Under Review</option>
+                <option value="ESCALATED">Escalated</option>
+                <option value="CLOSED">Closed</option>
               </select>
             </div>
             <div className="form-group">
               <label>PRIORITY</label>
-              <select defaultValue="HIGH" className="text-danger font-bold">
+              <select defaultValue={data.investigationData?.priority || 'HIGH'} className="text-danger font-bold">
+                <option>CRITICAL</option>
                 <option>HIGH</option>
                 <option>MEDIUM</option>
-                <option>LOW</option>
               </select>
             </div>
             <div className="form-group">
               <label>ASSIGNED TO</label>
-              <select defaultValue="Analyst #4">
+              <select defaultValue={data.investigationData?.assignedTo || 'Unassigned'}>
                 <option>Analyst #4</option>
                 <option>Analyst #1</option>
                 <option>Unassigned</option>
@@ -49,7 +71,7 @@ export default function InvestigationDrawer({ isOpen, onClose, onEscalateClick }
             </div>
             <div className="form-group">
               <label>CREATED:</label>
-              <div className="created-text">2026-07-08</div>
+              <div className="created-text">{new Date(data.transactionDetails.timestamp).toLocaleDateString()}</div>
             </div>
           </div>
 
@@ -57,27 +79,27 @@ export default function InvestigationDrawer({ isOpen, onClose, onEscalateClick }
           <div className="entity-info-box">
             <div className="entity-header">
               <div>
-                <div className="entity-account">GP-8839-XXXX</div>
-                <div className="entity-merchant">Merchant Account</div>
+                <div className="entity-account">{data.entityLinks?.accountId || 'Unknown Account'}</div>
+                <div className="entity-merchant">{data.transactionDetails?.merchant || 'Merchant Account'}</div>
               </div>
-              <div className="badge badge-danger">94% HIGH RISK</div>
+              <div className="badge badge-danger">{Math.round(data.riskInformation?.riskScore || 0)}% HIGH RISK</div>
             </div>
             
             <div className="entity-details-grid">
               <div>
                 <div className="detail-label">DETECTED TIME</div>
-                <div className="detail-value">2026-07-08 14:02:11</div>
+                <div className="detail-value">{new Date(data.transactionDetails?.timestamp).toLocaleString()}</div>
               </div>
               <div>
-                <div className="detail-label">COUNTRY</div>
-                <div className="detail-value">Seychelles <span className="text-muted">(High Risk Jurisdiction)</span></div>
+                <div className="detail-label">AMOUNT</div>
+                <div className="detail-value">${data.transactionDetails?.amount?.toFixed(2)}</div>
               </div>
             </div>
 
             <div className="entity-reason">
               <div className="detail-label">RISK REASON</div>
               <div className="detail-value" style={{ fontSize: '0.8rem', lineHeight: '1.4' }}>
-                Velocity threshold exceeded: 24 transactions in 180 seconds totaling $42,800. IP origin mismatches previous 12-month profile. Possible account takeover detected.
+                {data.riskInformation?.alertReason || 'Suspicious activity detected.'}
               </div>
             </div>
           </div>
@@ -89,21 +111,16 @@ export default function InvestigationDrawer({ isOpen, onClose, onEscalateClick }
             </div>
             
             <div className="notes-list">
-              <div className="note-item">
-                <div className="note-avatar">A4</div>
-                <div className="note-content-box">
-                  <p>Cross-referencing transaction logs with known proxy exit nodes. Confirmed IP mismatch with last successful login.</p>
-                  <span className="note-time">2026-07-08 15:45</span>
+              {data.investigationData?.notes?.map((n, i) => (
+                <div key={i} className="note-item">
+                  <div className="note-avatar">{n.analyst?.substring(0, 2) || 'SYS'}</div>
+                  <div className="note-content-box">
+                    <p>{n.content}</p>
+                    <span className="note-time">{new Date(n.timestamp).toLocaleString()}</span>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="note-item">
-                <div className="note-avatar">A4</div>
-                <div className="note-content-box">
-                  <p>Initial flagging by automated engine for high velocity. Escalating for manual IP log review.</p>
-                  <span className="note-time">2026-07-08 14:38</span>
-                </div>
-              </div>
+              ))}
+              {!data.investigationData?.notes?.length && <p className="text-muted" style={{fontSize: '0.8rem'}}>No notes yet.</p>}
             </div>
 
             <div className="add-note-container">
@@ -130,37 +147,26 @@ export default function InvestigationDrawer({ isOpen, onClose, onEscalateClick }
           <div className="section-block">
             <div className="section-title" style={{ fontSize: '0.85rem' }}>Case History</div>
             <div className="timeline">
+              {data.actionHistory?.map((act, i) => (
+                <div key={i} className="timeline-item">
+                  <div className={`timeline-dot ${act === 'FREEZE' || act === 'BLOCK' ? 'dot-danger' : 'dot-success'}`}></div>
+                  <div className="timeline-content">
+                    <div className="timeline-title">Action taken: {act}</div>
+                    <div className="timeline-time">Completed</div>
+                  </div>
+                </div>
+              ))}
               <div className="timeline-item">
                 <div className="timeline-dot dot-neutral"></div>
                 <div className="timeline-content">
-                  <div className="timeline-title">Awaiting Evidence</div>
-                  <div className="timeline-time">2026-07-08 16:00</div>
-                </div>
-              </div>
-              <div className="timeline-item">
-                <div className="timeline-dot dot-danger"></div>
-                <div className="timeline-content">
-                  <div className="timeline-title">Analyst Assigned (Analyst #4)</div>
-                  <div className="timeline-time">2026-07-08 14:38</div>
-                </div>
-              </div>
-              <div className="timeline-item">
-                <div className="timeline-dot dot-success"></div>
-                <div className="timeline-content">
-                  <div className="timeline-title">Under Review</div>
-                  <div className="timeline-time">2026-07-08 14:15</div>
-                </div>
-              </div>
-              <div className="timeline-item">
-                <div className="timeline-dot dot-success"></div>
-                <div className="timeline-content">
-                  <div className="timeline-title">Case Created (Auto-Flagged)</div>
-                  <div className="timeline-time">2026-07-08 14:02</div>
+                  <div className="timeline-title">Case Initialized</div>
+                  <div className="timeline-time">{new Date(data.transactionDetails?.timestamp).toLocaleString()}</div>
                 </div>
               </div>
             </div>
           </div>
-          
+            </>
+          )}
         </div>
 
         {/* Footer Actions */}
