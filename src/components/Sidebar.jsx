@@ -3,14 +3,20 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { CreditCard, Bell, Settings, ReceiptText } from 'lucide-react';
 
 const menuItems = [
-  { name: 'Settlement', icon: CreditCard },
-  { name: 'Notifications', icon: Bell },
-  { name: 'Settings', icon: Settings },
+  { name: 'Settlement', icon: CreditCard, path: '/dashboard' },
+  { name: 'Notifications', icon: Bell, path: '/notifications' },
+  { name: 'Settings', icon: Settings, path: '/settings' },
 ];
 
 const getActiveItemFromPath = (pathname) => {
   if (pathname === '/transaction-management') {
     return 'Transaction Management';
+  }
+  if (pathname === '/settings') {
+    return 'Settings';
+  }
+  if (pathname === '/notifications') {
+    return 'Notifications';
   }
 
   return 'Settlement';
@@ -41,7 +47,10 @@ const Sidebar = () => {
             <button
               type="button"
               key={item.name}
-              onClick={() => setActiveItem(item.name)}
+              onClick={() => {
+                setActiveItem(item.name);
+                navigate(item.path);
+              }}
               className={`flex items-center gap-3 rounded-xl px-4 py-4 text-left transition-colors ${
                 item.name === activeItem
                   ? 'bg-[#10B981] text-white shadow-sm'

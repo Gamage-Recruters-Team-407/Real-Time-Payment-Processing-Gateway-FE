@@ -7,6 +7,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 // Auth pages
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ResetPassword from "./pages/ResetPassword";
 
 // User pages
 import Dashboard from "./pages/Dashboard";
@@ -33,6 +34,7 @@ function App() {
           {/* Auth Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
 
           {/* Default Route */}
