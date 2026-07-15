@@ -116,7 +116,7 @@ const Login = () => {
                   <label className="block text-xs font-medium text-slate-700">
                     Credentials
                   </label>
-                  <Link to="/forgot-password" className="text-xs text-emerald-600 hover:underline">
+                  <Link to="/otp-verification?purpose=password_forgot" className="text-xs text-emerald-600 hover:underline">
                     Forgot Access?
                   </Link>
                 </div>

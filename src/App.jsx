@@ -3,10 +3,12 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import DashboardLayout from './layouts/DashboardLayout';
 
 // Auth pages
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ResetPassword from "./pages/ResetPassword";
 
 // User pages
 import Dashboard from "./pages/Dashboard";
@@ -14,14 +16,23 @@ import Profile from "./pages/Profile";
 import Setting from "./pages/Setting";
 import Notification from "./pages/Notification";
 
+// Fraud Detection
+import FraudDetection from './pages/FraudDetection';
+
 // Payment
 import CardPayment from "./pages/CardPayment";
+
+// OTP Verification
+import OTPVerification from "./pages/OTPVerification"; 
 
 // Admin pages
 import AdminDashboard from "./pages/AdminDashboard";
 
 // Transaction Management
 import TransactionManagement from "./pages/TransactionManagement";
+
+
+
 
 
 function App() {
@@ -33,11 +44,10 @@ function App() {
           {/* Auth Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Default Route */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
 
           {/* User Routes */}
           <Route
@@ -49,6 +59,16 @@ function App() {
             }
           />
 
+          <Route
+            path="/fraud-detection"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <FraudDetection />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/profile"
@@ -59,7 +79,6 @@ function App() {
             }
           />
 
-
           <Route
             path="/settings"
             element={
@@ -68,7 +87,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
 
           {/* Notification Route */}
           <Route
@@ -80,7 +98,6 @@ function App() {
             }
           />
 
-
           {/* Card Payment Route */}
           <Route
             path="/card-payment"
@@ -90,6 +107,10 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* OTP Verification Route */}
+          <Route path="/otp-verification" element={<OTPVerification />} />
+
 
 
           {/* Transaction Management */}
@@ -102,7 +123,6 @@ function App() {
             }
           />
 
-
           {/* Admin Route */}
           <Route
             path="/admin"
@@ -113,10 +133,8 @@ function App() {
             }
           />
 
-
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
-
 
         </Routes>
       </AuthProvider>
