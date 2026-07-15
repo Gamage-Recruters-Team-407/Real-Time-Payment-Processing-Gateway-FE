@@ -23,6 +23,9 @@ import AdminDashboard from "./pages/AdminDashboard";
 // Transaction Management
 import TransactionManagement from "./pages/TransactionManagement";
 
+// Refund Management
+import RefundManagement from "./pages/RefundManagement";
+
 
 function App() {
   return (
@@ -112,10 +115,22 @@ function App() {
               </ProtectedRoute>
             }
           />
+        
+        {/* Refund Management */}
+         <Route
+           path="/refund-management"
+           element={
+              <ProtectedRoute>
+                <RefundManagement />
+              </ProtectedRoute>
+             }
+         />
 
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
+
 
 
         </Routes>
