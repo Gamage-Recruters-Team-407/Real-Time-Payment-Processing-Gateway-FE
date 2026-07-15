@@ -1,8 +1,16 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Payment from "./pages/Payment.jsx";
+
 function App() {
   return (
-    <h1 className="text-4xl font-bold text-blue-600">
-      Tailwind CSS v3 Working!
-    </h1>
+    <BrowserRouter>
+      <Routes>
+
+        {/* Developer 3 - Payment Processing */}
+        <Route path="/payment" element={<Payment />} />
+
+      </Routes>
+    </BrowserRouter>
   );
 }
 
