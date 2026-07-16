@@ -54,7 +54,7 @@ const UserTable = ({ users, onEdit, onDelete, currentPage, totalPages, onPageCha
             <tr key={user.id}>
               <td className="user-name-cell">
                 <div className="user-avatar">
-                  <img src={user.avatar} alt={user.name} />
+                  {user.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="user-info">
                   <span className="user-name">{user.name}</span>

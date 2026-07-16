@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import UserTable from '../components/UserTable';
 import AddUserModal from '../components/AddUserModal';
@@ -6,65 +6,41 @@ import EditUserModal from '../components/EditUserModal';
 import DeleteUserModal from '../components/DeleteUserModal';
 import './UserManagement.css';
 
+const STORAGE_KEY = 'admin-users';
+
 const UserManagement = () => {
-  const [activeItem, setActiveItem] = useState('users');
+  const [currentUser, setCurrentUser] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [users, setUsers] = useState([
-    {
-      id: 'UID-2901-X',
-      name: 'Julian Vance',
-      email: 'j.vance@paysecure.io',
-      phone: '0761298256',
-      lastPaymentDate: '2023-11-24',
-      avatar: 'https://i.pravatar.cc/150?img=1'
-    },
-    {
-      id: 'UID-4412-M',
-      name: 'Elena Rodriguez',
-      email: 'e.rod@paysecure.io',
-      phone: '0761298256',
-      lastPaymentDate: '2023-11-23',
-      avatar: 'https://i.pravatar.cc/150?img=2'
-    },
-    {
-      id: 'UID-1102-S',
-      name: 'Arthur Sterling',
-      email: 'sterling@paysecure.io',
-      phone: '0761298256',
-      lastPaymentDate: '2023-10-12',
-      avatar: 'https://i.pravatar.cc/150?img=3'
-    },
-    {
-      id: 'UID-8839-K',
-      name: 'Sasha Kovar',
-      email: 'skovar@paysecure.io',
-      phone: '0761298256',
-      lastPaymentDate: '2023-11-24',
-      avatar: 'https://i.pravatar.cc/150?img=4'
-    },
-    {
-      id: 'UID-5521-P',
-      name: 'Marcus Chen',
-      email: 'm.chen@paysecure.io',
-      phone: '0761298256',
-      lastPaymentDate: '2023-11-20',
-      avatar: 'https://i.pravatar.cc/150?img=5'
-    },
-    {
-      id: 'UID-3398-R',
-      name: 'Priya Patel',
-      email: 'p.patel@paysecure.io',
-      phone: '0761298256',
-      lastPaymentDate: '2023-11-18',
-      avatar: 'https://i.pravatar.cc/150?img=6'
+  const [users, setUsers] = useState(() => {
+    if (typeof window === 'undefined') return [];
+
+    try {
+      const storedUsers = localStorage.getItem(STORAGE_KEY);
+      return storedUsers ? JSON.parse(storedUsers) : [];
+    } catch (error) {
+      console.error('Failed to load users from storage:', error);
+      return [];
     }
-  ]);
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+    }
+  }, [users]);
 
   const totalPages = Math.ceil(users.length / 6);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   const handleAddUser = (formData) => {
     const newUser = {
@@ -75,21 +51,23 @@ const UserManagement = () => {
       lastPaymentDate: new Date().toISOString().split('T')[0],
       avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`
     };
-    setUsers([...users, newUser]);
+    setUsers(prevUsers => [...prevUsers, newUser]);
     setIsAddModalOpen(false);
   };
 
   const handleEditUser = (userId, formData) => {
-    setUsers(users.map(user => 
-      user.id === userId 
-        ? { ...user, name: formData.fullName, email: formData.email, phone: formData.phone }
-        : user
-    ));
+    setUsers(prevUsers =>
+      prevUsers.map(user =>
+        user.id === userId
+          ? { ...user, name: formData.fullName, email: formData.email, phone: formData.phone }
+          : user
+      )
+    );
     setIsEditModalOpen(false);
   };
 
   const handleDeleteUser = (userId) => {
-    setUsers(users.filter(user => user.id !== userId));
+    setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
   };
 
   const handleEditClick = (user) => {
@@ -103,12 +81,34 @@ const UserManagement = () => {
   };
 
   const handleExportReport = () => {
-    alert('Exporting user report...');
+    // Create CSV content
+    const headers = ['ID', 'Name', 'Email', 'Phone', 'Last Payment Date'];
+    const csvContent = [
+      headers.join(','),
+      ...users.map(user => [
+        user.id,
+        user.name,
+        user.email,
+        user.phone,
+        user.lastPaymentDate
+      ].join(','))
+    ].join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `user_report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
     <div className="user-management-container">
-      <Sidebar activeItem={activeItem} onItemClick={setActiveItem} />
+      <Sidebar />
       
       <div className="main-content">
         <div className="content-header">
@@ -116,7 +116,12 @@ const UserManagement = () => {
           <div className="header-actions">
             {/* <input type="text" placeholder="Search..." className="header-search" /> */}
             <div className="user-profile">
-              <img src="" alt="Admin" />
+              <span className="profile-name">
+                {currentUser?.name || 'Admin'}
+              </span>
+              <div className="profile-avatar">
+                {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'A'}
+              </div>
             </div>
           </div>
         </div>

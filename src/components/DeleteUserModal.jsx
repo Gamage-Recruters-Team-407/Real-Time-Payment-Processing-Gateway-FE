@@ -26,7 +26,7 @@ const DeleteUserModal = ({ isOpen, onClose, onDeleteUser, user }) => {
           {user && (
             <div className="user-preview">
               <div className="user-avatar">
-                <img src={user.avatar} alt={user.name} />
+                {user.name.charAt(0).toUpperCase()}
               </div>
               <div className="user-details">
                 <h4>{user.name}</h4>

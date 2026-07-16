@@ -64,18 +64,21 @@ const AddUserModal = ({ isOpen, onClose, onAddUser }) => {
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password">CORPORATE TEMPORARY PASSWORD</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter temporary password"
-              required
-            />
-          </div>
+         <div className="form-group">
+  <label htmlFor="password">CORPORATE TEMPORARY PASSWORD</label>
+  <input
+    type="password"
+    id="password"
+    name="password"
+    value={formData.password}
+    onChange={handleChange}
+    placeholder="Enter 6-digit password"
+    pattern="\d{6}"
+    maxLength="6"
+    inputMode="numeric"
+    required
+  />
+</div>
 
           <div className="form-group">
             <label htmlFor="phone">PHONE NUMBER</label>

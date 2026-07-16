@@ -8,7 +8,6 @@
 .main-content {
   flex: 1;
   padding: 2rem;
-  margin-left: 260px;
   overflow-y: auto;
 }
 
@@ -46,12 +45,30 @@
   border-color: #10b981;
 }
 
-.user-profile img {
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.profile-avatar {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
+  border-radius: 60%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #10b981;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
   border: 2px solid #10b981;
+}
+
+.profile-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #374151;
 }
 
 .stats-card {
