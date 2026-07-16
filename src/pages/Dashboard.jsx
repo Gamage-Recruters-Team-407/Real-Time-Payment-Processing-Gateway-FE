@@ -22,6 +22,7 @@ import api from "../services/api";
 // Dev 11 (Transaction Management) — swap TRANSACTIONS below for their
 // GET /api/transactions endpoint once it's ready. Only the 3 stat cards
 // above the table are wired to this module's own backend (userController.js).
+
 const TRANSACTIONS = [
   {
     id: "TXN_98214300",
@@ -286,8 +287,13 @@ export default function Dashboard() {
               <button className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
                 <FileText size={15} /> Export CSV
               </button>
-              <button className="flex items-center gap-2 rounded-lg bg-[#0A192F] px-4 py-2 text-sm font-medium text-white hover:bg-[#0d223f]">
-                <Plus size={15} /> New Transaction
+              <button
+                type="button"
+                onClick={() => navigate("/payment")}
+                className="flex items-center gap-2 rounded-lg bg-[#0A192F] px-4 py-2 text-sm font-medium text-white hover:bg-[#0d223f]"
+              >
+                <Plus size={15} />
+                New Transaction
               </button>
             </div>
           </div>
@@ -302,11 +308,11 @@ export default function Dashboard() {
           <div className="mt-6 flex gap-4">
             {loading
               ? [1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="h-24 flex-1 animate-pulse rounded-xl bg-white ring-1 ring-slate-100"
-                  />
-                ))
+                <div
+                  key={i}
+                  className="h-24 flex-1 animate-pulse rounded-xl bg-white ring-1 ring-slate-100"
+                />
+              ))
               : STATS.map((s) => <StatCard key={s.label} {...s} />)}
           </div>
 
@@ -350,9 +356,8 @@ export default function Dashboard() {
                     <tr
                       key={txn.id}
                       onClick={() => setSelectedTxn(txn)}
-                      className={`cursor-pointer border-b border-slate-50 last:border-0 hover:bg-slate-50 ${
-                        selectedTxn?.id === txn.id ? "bg-emerald-50/40" : ""
-                      }`}
+                      className={`cursor-pointer border-b border-slate-50 last:border-0 hover:bg-slate-50 ${selectedTxn?.id === txn.id ? "bg-emerald-50/40" : ""
+                        }`}
                     >
                       <td className="px-5 py-4">
                         <p className="font-medium text-[#0A192F]">{txn.date}</p>
