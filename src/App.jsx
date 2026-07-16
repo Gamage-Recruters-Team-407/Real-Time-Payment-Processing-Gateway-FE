@@ -1,3 +1,4 @@
+
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
@@ -35,9 +36,11 @@ import AdminDashboard from "./pages/AdminDashboard";
 // Transaction Management
 import TransactionManagement from "./pages/TransactionManagement";
 
+// Refund Management
+import RefundManagement from "./pages/RefundManagement";
 
 
-
+import Payment from "./pages/Payment.jsx";
 
 function App() {
   return (
@@ -164,12 +167,32 @@ function App() {
               </ProtectedRoute>
             }
           />
+        
+        {/* Refund Management */}
+         <Route
+           path="/refund-management"
+           element={
+              <ProtectedRoute>
+                <RefundManagement />
+              </ProtectedRoute>
+             }
+         />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
 
+          {/* Developer 3 - Payment Processing */}
+        <Route path="/payment" element={<Payment />} />
+
+
+
         </Routes>
       </AuthProvider>
+
+      <Routes>
+
+
+      </Routes>
     </BrowserRouter>
   );
 }
