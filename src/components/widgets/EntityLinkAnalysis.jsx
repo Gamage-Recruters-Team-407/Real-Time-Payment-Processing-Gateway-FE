@@ -58,7 +58,6 @@ export default function EntityLinkAnalysis({ onLiveFeedClick, onInvestigateClick
           <p className="panel-subtitle">Cluster mapping of suspicious account associations</p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button className="btn-outline">EXPORT GRAPH</button>
           <button className="btn-dark" onClick={onLiveFeedClick}>LIVE FEED</button>
         </div>
       </div>
@@ -66,23 +65,52 @@ export default function EntityLinkAnalysis({ onLiveFeedClick, onInvestigateClick
       <div className="graph-container" style={{ width: '100%', height: '300px', position: 'relative' }}>
         <ReactFlow nodes={nodes} edges={edges} fitView>
           <Background />
-          <Controls />
+          <Controls showInteractive={false} />
         </ReactFlow>
       </div>
 
       <div className="tooltip-card">
-        <div className="tooltip-header">
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#6C1E20' }}></div>
-            <span>Flagged Entity (Score &gt; 90)</span>
-        </div>
-        <p className="tooltip-desc">
-          System identified high-velocity lateral movement between peer accounts. Multi-node hop detected.
-        </p>
+        {alerts.length > 0 ? (
+          <>
+            <div className="tooltip-header">
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: alerts[0].riskScore >= 90 ? '#6C1E20' : '#F59E0B' }}></div>
+                <span>Flagged Entity (Score: {Math.round(alerts[0].riskScore || 0)})</span>
+            </div>
+            <p className="tooltip-desc">
+              {alerts[0].alertReason || "Suspicious activity detected. Account flagged for review."}
+              <br/><br/>
+              <strong>Account:</strong> {alerts[0].accountId || alerts[0].userId || 'Unknown'}<br/>
+              <strong>Transaction:</strong> {alerts[0].transactionId || alerts[0].id || 'Unknown'}
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="tooltip-header">
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#6C1E20' }}></div>
+                <span>Flagged Entity (Score &gt; 90)</span>
+            </div>
+            <p className="tooltip-desc">
+              System identified high-velocity lateral movement between peer accounts. Multi-node hop detected.
+            </p>
+          </>
+        )}
         <div className="tooltip-actions">
-          <button className="tooltip-btn btn-investigate" onClick={() => onInvestigateClick(alerts[0]?._id)}>
+          <button 
+            className="tooltip-btn btn-investigate" 
+            onClick={() => {
+              const targetId = alerts[0]?._id || alerts[0]?.id || alerts[0]?.transactionId;
+              if (targetId) onInvestigateClick(targetId);
+            }}
+          >
             <Search size={14} /> Investigate
           </button>
-          <button className="tooltip-btn btn-whitelist" onClick={onWhitelistClick}>
+          <button 
+            className="tooltip-btn btn-whitelist" 
+            onClick={() => {
+              const targetId = alerts[0]?._id || alerts[0]?.id || alerts[0]?.transactionId;
+              if (targetId) onWhitelistClick(targetId);
+            }}
+          >
             <span style={{ fontSize: '14px' }}>⚲</span> Whitelist
           </button>
         </div>

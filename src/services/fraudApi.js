@@ -29,3 +29,15 @@ export const getRegionalVelocity = async () => {
   const response = await api.get('/fraud/regional-velocity');
   return response.data;
 };
+
+export const handleTransactionAction = async (id, data) => {
+  // data: { action: 'FREEZE' | 'BLOCK' | 'RELEASE', notes, performedBy }
+  const response = await api.post(`/fraud/transactions/${id}/action`, data);
+  return response.data;
+};
+
+export const addToWhitelist = async (data) => {
+  // data: { entityType, entityId, reason, expiresAt, performedBy }
+  const response = await api.post('/fraud/whitelist', data);
+  return response.data;
+};

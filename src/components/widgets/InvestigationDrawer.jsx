@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { X, Search, Paperclip, FileText, Globe, User } from 'lucide-react';
-import { getAlertById } from '../../services/fraudApi';
-import { startInvestigation } from '../../services/investigationApi';
+import { getAlertById, handleTransactionAction } from '../../services/fraudApi';
+import { startInvestigation, addInvestigationNote } from '../../services/investigationApi';
 
-export default function InvestigationDrawer({ isOpen, onClose, targetId, onEscalateClick }) {
+export default function InvestigationDrawer({ isOpen, onClose, targetId, onEscalateClick, onActionComplete }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(null);
+  const [noteText, setNoteText] = useState('');
+  const [noteLoading, setNoteLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen && targetId) {
@@ -16,8 +19,61 @@ export default function InvestigationDrawer({ isOpen, onClose, targetId, onEscal
         .finally(() => setLoading(false));
     } else {
       setData(null);
+      setNoteText('');
     }
   }, [isOpen, targetId]);
+
+  const handleSubmitNote = async () => {
+    if (!noteText.trim()) return;
+    try {
+      setNoteLoading(true);
+      if (data?.investigationData?.caseId) {
+        await addInvestigationNote(data.investigationData.caseId, { content: noteText, analyst: 'Analyst #1' });
+      } else {
+        await startInvestigation(data?.transactionDetails?.id || targetId, { assignedTo: 'Analyst #1', priority: 'MEDIUM', notes: noteText });
+      }
+      setNoteText('');
+      // Refresh case data
+      const res = await getAlertById(targetId);
+      setData(res);
+      if (onActionComplete) onActionComplete();
+    } catch (e) {
+      console.error("Failed to submit note", e);
+      alert('Failed to submit note');
+    } finally {
+      setNoteLoading(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!data) return;
+    try {
+      setActionLoading('APPROVE');
+      await handleTransactionAction(targetId, { action: 'RELEASE', notes: 'Approved from investigation', performedBy: 'Analyst #1' });
+      if (onActionComplete) onActionComplete();
+      onClose();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to approve transaction');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleBlock = async () => {
+    if (!data) return;
+    try {
+      setActionLoading('BLOCK');
+      await handleTransactionAction(targetId, { action: 'BLOCK', notes: 'Blocked from investigation', performedBy: 'Analyst #1' });
+      if (onActionComplete) onActionComplete();
+      onClose();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to block transaction');
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -42,6 +98,13 @@ export default function InvestigationDrawer({ isOpen, onClose, targetId, onEscal
           {loading && <p>Loading case details...</p>}
           {!loading && data && (
             <>
+          {/* Escalation Warning Banner */}
+          {data.riskInformation?.status === 'ESCALATED' && (
+            <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5', color: '#9F1239', padding: '12px 16px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, fontSize: '0.85rem' }}>
+              <span style={{ fontSize: '1.2rem' }}>⚠️</span> This transaction has been escalated and requires senior analyst review.
+            </div>
+          )}
+
           {/* Top Form Grid */}
           <div className="investigation-form-grid">
             <div className="form-group">
@@ -124,10 +187,20 @@ export default function InvestigationDrawer({ isOpen, onClose, targetId, onEscal
             </div>
 
             <div className="add-note-container">
-              <textarea placeholder="Add investigation note..." className="note-textarea"></textarea>
+              <textarea 
+                placeholder="Add investigation note..." 
+                className="note-textarea"
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+              ></textarea>
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
-                <button className="btn-attachment">
-                  <Paperclip size={14} /> Add Attachment
+                <button 
+                  className="btn-evidence" 
+                  style={{ backgroundColor: '#6C1E20', color: 'white' }}
+                  onClick={handleSubmitNote}
+                  disabled={noteLoading || !noteText.trim()}
+                >
+                  {noteLoading ? 'Submitting...' : 'Submit Note'}
                 </button>
               </div>
             </div>
@@ -137,9 +210,32 @@ export default function InvestigationDrawer({ isOpen, onClose, targetId, onEscal
           <div className="section-block">
             <div className="section-title" style={{ fontSize: '0.85rem' }}>Available Evidence</div>
             <div className="evidence-buttons">
-              <button className="btn-evidence"><FileText size={14} /> Transaction Log</button>
-              <button className="btn-evidence"><Globe size={14} /> IP Log</button>
-              <button className="btn-evidence"><User size={14} /> Merchant Profile</button>
+              <button 
+                className="btn-evidence"
+                onClick={() => {
+                  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `evidence_${data.transactionDetails?.id || targetId}.json`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                <FileText size={14} /> Transaction Log
+              </button>
+              <button 
+                className="btn-evidence"
+                onClick={() => window.open(`https://whatismyipaddress.com/ip/${data.transactionDetails?.ip || ''}`, '_blank')}
+              >
+                <Globe size={14} /> IP Log
+              </button>
+              <button 
+                className="btn-evidence"
+                onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(data.transactionDetails?.merchant || '')}`, '_blank')}
+              >
+                <User size={14} /> Merchant Profile
+              </button>
             </div>
           </div>
 
@@ -149,10 +245,10 @@ export default function InvestigationDrawer({ isOpen, onClose, targetId, onEscal
             <div className="timeline">
               {data.actionHistory?.map((act, i) => (
                 <div key={i} className="timeline-item">
-                  <div className={`timeline-dot ${act === 'FREEZE' || act === 'BLOCK' ? 'dot-danger' : 'dot-success'}`}></div>
+                  <div className={`timeline-dot ${act?.action === 'FREEZE' || act?.action === 'BLOCK' ? 'dot-danger' : 'dot-success'}`}></div>
                   <div className="timeline-content">
-                    <div className="timeline-title">Action taken: {act}</div>
-                    <div className="timeline-time">Completed</div>
+                    <div className="timeline-title">Action taken: {typeof act === 'string' ? act : act?.action || 'UNKNOWN'}</div>
+                    <div className="timeline-time">{act?.timestamp ? new Date(act.timestamp).toLocaleString() : 'Completed'}</div>
                   </div>
                 </div>
               ))}
@@ -171,10 +267,37 @@ export default function InvestigationDrawer({ isOpen, onClose, targetId, onEscal
 
         {/* Footer Actions */}
         <div className="drawer-footer" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '20px' }}>
-          <button className="drawer-footer-btn" style={{ backgroundColor: '#10B981', color: 'white', border: 'none' }}>APPROVE</button>
-          <button className="drawer-footer-btn" style={{ backgroundColor: '#9F1239', color: 'white', border: 'none' }}>BLOCK</button>
-          <button className="drawer-footer-btn" style={{ backgroundColor: '#F59E0B', color: 'white', border: 'none' }} onClick={onEscalateClick}>ESCALATE</button>
-          <button className="drawer-footer-btn" style={{ backgroundColor: 'white', color: '#6B7280', border: '1px solid #E5E7EB' }}>CLOSE CASE</button>
+          <button 
+            className="drawer-footer-btn" 
+            style={{ backgroundColor: '#10B981', color: 'white', border: 'none', opacity: actionLoading ? 0.6 : 1 }}
+            onClick={handleApprove}
+            disabled={!!actionLoading}
+          >
+            {actionLoading === 'APPROVE' ? 'PROCESSING...' : 'MARK SAFE'}
+          </button>
+          <button 
+            className="drawer-footer-btn" 
+            style={{ backgroundColor: '#9F1239', color: 'white', border: 'none', opacity: actionLoading ? 0.6 : 1 }}
+            onClick={handleBlock}
+            disabled={!!actionLoading}
+          >
+            {actionLoading === 'BLOCK' ? 'PROCESSING...' : 'MARK FRAUD'}
+          </button>
+          <button 
+            className="drawer-footer-btn" 
+            style={{ backgroundColor: data?.riskInformation?.status === 'ESCALATED' ? '#F3F4F6' : '#F59E0B', color: data?.riskInformation?.status === 'ESCALATED' ? '#9CA3AF' : 'white', border: 'none', cursor: data?.riskInformation?.status === 'ESCALATED' ? 'not-allowed' : 'pointer' }} 
+            onClick={data?.riskInformation?.status === 'ESCALATED' ? undefined : onEscalateClick}
+            disabled={data?.riskInformation?.status === 'ESCALATED'}
+          >
+            {data?.riskInformation?.status === 'ESCALATED' ? 'ALREADY ESCALATED' : 'ESCALATE'}
+          </button>
+          <button 
+            className="drawer-footer-btn" 
+            style={{ backgroundColor: 'white', color: '#6B7280', border: '1px solid #E5E7EB' }}
+            onClick={onClose}
+          >
+            CLOSE CASE
+          </button>
         </div>
       </div>
     </>
