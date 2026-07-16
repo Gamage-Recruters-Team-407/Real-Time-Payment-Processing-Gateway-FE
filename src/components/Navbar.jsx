@@ -1,22 +1,60 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
 const Navbar = () => {
-const navigate = useNavigate();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  console.log("Navbar - User data:", user);
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user) return "U";
+    
+    // Try different possible name fields
+    const name = user.name || user.fullName || user.fullname || user.displayName || user.username || user.email;
+    
+    if (!name) return "U";
+    
+    if (typeof name === 'string') {
+      const names = name.split(" ");
+      if (names.length >= 2 && names[0] && names[1]) {
+        return `${names[0][0]}${names[1][0]}`.toUpperCase();
+      }
+      return name[0].toUpperCase();
+    }
+    
+    return "U";
+  };
+
+  // Get user display name
+  const getUserName = () => {
+    if (!user) return "User";
+    
+    // Try different possible name fields in order
+    if (user.name) return user.name;
+    if (user.fullName) return user.fullName;
+    if (user.fullname) return user.fullname;
+    if (user.displayName) return user.displayName;
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user.firstName) return user.firstName;
+    if (user.username) return user.username;
+    if (user.email) {
+      return user.email.split("@")[0];
+    }
+    
+    return "User";
+  };
+
   return (
     <div className="w-full bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-      {/* Left side - Title only (no ADMIN badge) */}
+      {/* Left side - Title only */}
       <div className="flex items-center gap-2">
         <span className="text-xl font-bold text-[#0F1117]">
           Gamage<span className="text-[#10B981]">Pay</span>
         </span>
-      </div>
-
-      {/* Center - Nav Links with Dashboard Active */}
-      <div className="flex items-center gap-6 text-sm text-gray-600">
-        <span className="cursor-pointer text-[#0F1117] font-medium border-b-2 border-[#10B981] pb-1">Dashboard</span>
-        <span className="cursor-pointer hover:text-[#0F1117] transition-colors">Reports</span>
-        <span className="cursor-pointer hover:text-[#0F1117] transition-colors">Transaction Fee/Security</span>
-        <span className="cursor-pointer hover:text-[#0F1117] transition-colors">Integrations</span>
-        <span className="cursor-pointer hover:text-[#0F1117] transition-colors">Payment History</span>
       </div>
 
       {/* Right side - Search and User */}
@@ -36,9 +74,9 @@ const navigate = useNavigate();
             className="flex items-center gap-2 cursor-pointer pl-2 border-l border-gray-200"
         >
           <div className="w-8 h-8 rounded-full bg-[#8A192F] flex items-center justify-center text-white text-xs font-medium">
-            U
+            {getUserInitials()}
           </div>
-          <span className="text-sm text-gray-700 font-medium">User</span>
+          <span className="text-sm text-gray-700 font-medium">{getUserName()}</span>
         </div>
       </div>
     </div>
