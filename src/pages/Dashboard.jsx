@@ -1,290 +1,196 @@
 import React, { useEffect, useState } from "react";
-import {
-  ShieldCheck,
-  Plus,
-  FileText,
-  Eye,
-  ArrowDown,
-  X,
-  Printer,
-  AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
-  SlidersHorizontal,
-  Search,
-} from "lucide-react";
+import { Plus, FileText, Eye, Download, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import api from "../services/api";
+import {
+  getPaymentSummary,
+  getPaymentHistory,
+} from "../services/paymentHistoryService";
+import { StatusBadge } from "./PaymentSuccess";
 
-// ---- Mock transaction data --------------------------------------------
-// NOTE: the transaction table itself belongs to Dev 6 (Payment History) /
-// Dev 11 (Transaction Management) — swap TRANSACTIONS below for their
-// GET /api/transactions endpoint once it's ready. Only the 3 stat cards
-// above the table are wired to this module's own backend (userController.js).
+const FILTERS = ["All", "Completed", "Pending", "Flagged", "Failed"];
+const PAGE_SIZE = 5;
 
-const TRANSACTIONS = [
-  {
-    id: "TXN_98214300",
-    date: "June 24, 2026",
-    time: "14:32:05",
-    method: "Visa •••• 4421",
-    amount: "$1,240.00",
-    amountSub: "Rs.",
-    status: "COMPLETED",
-    merchant: "Amazon Web Services",
-    network: "VISA NET (LK)",
-    fee: "Rs.14.88",
-    fixedFee: "Rs.0.30",
-    net: "Rs.1,224.82",
-    latency: "142ms",
-    risk: "0.02",
-  },
-  {
-    id: "TXN_98214295",
-    date: "June 20, 2026",
-    time: "12:15:11",
-    method: "Wire Transfer",
-    amount: "$55,000.00",
-    amountSub: "Rs.",
-    status: "FLAGGED",
-    merchant: "Silverline Traders",
-    network: "SWIFT",
-    fee: "Rs.660.00",
-    fixedFee: "Rs.0.30",
-    net: "Rs.54,339.70",
-    latency: "980ms",
-    risk: "0.71",
-  },
-  {
-    id: "TXN_98214211",
-    date: "June 18, 2026",
-    time: "22:01:44",
-    method: "G-Credits",
-    amount: "$12.45",
-    amountSub: "Rs.",
-    status: "COMPLETED",
-    merchant: "Google Play",
-    network: "G-CREDITS",
-    fee: "Rs.0.15",
-    fixedFee: "Rs.0.30",
-    net: "Rs.12.00",
-    latency: "88ms",
-    risk: "0.01",
-  },
-  {
-    id: "TXN_98214199",
-    date: "June 15, 2026",
-    time: "19:44:22",
-    method: "Visa •••• 1192",
-    amount: "$15.99",
-    amountSub: "Rs.",
-    status: "FAILED",
-    merchant: "Netflix",
-    network: "VISA NET (LK)",
-    fee: "Rs.0.00",
-    fixedFee: "Rs.0.00",
-    net: "Rs.0.00",
-    latency: "210ms",
-    risk: "0.05",
-  },
-];
+function formatAmount(amount, currency) {
+  const formatted = Number(amount).toLocaleString("en-LK", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return `${currency} ${formatted}`;
+}
 
-const STATUS_STYLES = {
-  COMPLETED: "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200",
-  FLAGGED: "bg-amber-50 text-amber-600 ring-1 ring-amber-200",
-  FAILED: "bg-rose-50 text-rose-600 ring-1 ring-rose-200",
-};
+function formatDateTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
 
-const formatCurrency = (value) =>
-  `Rs.${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const REFUND_WINDOW_DAYS = 7;
 
-// -----------------------------------------------------------------------
-
-function StatCard({ label, value, sub, trend }) {
-  const subColor =
-    trend === "success" ? "text-emerald-600" : trend === "error" ? "text-rose-500" : "text-slate-400";
+function computeIsRefundable(t) {
+  if (t.refundSummary?.isRefundable !== undefined) {
+    return t.refundSummary.isRefundable;
+  }
+  const transactionDate = new Date(t.createdAt || t.dateTime);
+  const differenceInDays =
+    (Date.now() - transactionDate.getTime()) / (1000 * 3600 * 24);
+  const isWithinWindow = differenceInDays <= REFUND_WINDOW_DAYS;
   return (
-    <div className="flex-1 rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-      <p className="text-sm text-slate-400">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-[#0A192F]">{value}</p>
-      <p className={`mt-1 text-xs ${subColor}`}>{sub}</p>
+    t.status === "Completed" &&
+    !t.refundSummary?.hasRefundRequest &&
+    isWithinWindow
+  );
+}
+
+function StatCard({ dotColor, label, value, caption }) {
+  return (
+    <div className="flex-1 bg-white rounded-xl border border-slate-200 p-4">
+      <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+        <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+        {label}
+      </div>
+      <p className="text-2xl font-bold text-slate-900 mt-1.5">{value}</p>
+      <p className="text-xs text-slate-400 mt-0.5 font-medium">{caption}</p>
     </div>
   );
 }
 
-function StatusPill({ status }) {
-  return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[status]}`}>
-      {status}
-    </span>
-  );
-}
-
-function TransactionDetails({ txn, onClose }) {
-  if (!txn) return null;
-  return (
-    <aside className="w-[340px] shrink-0 rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#0A192F]">Transaction Details</h3>
-        <button
-          onClick={onClose}
-          className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-          aria-label="Close transaction details"
-        >
-          <X size={16} />
-        </button>
-      </div>
-
-      <div className="mt-6 flex flex-col items-center text-center">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-          <ShieldCheck size={20} />
-        </div>
-        <p className="mt-3 text-2xl font-semibold text-[#0A192F]">{txn.amount}</p>
-        <p className="text-xs font-medium text-emerald-600">{txn.status}</p>
-      </div>
-
-      <dl className="mt-6 space-y-3 text-sm">
-        <div className="flex justify-between">
-          <dt className="text-slate-400">Merchant</dt>
-          <dd className="font-medium text-[#0A192F]">{txn.merchant}</dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-slate-400">Timestamp</dt>
-          <dd className="font-medium text-[#0A192F]">{txn.date} {txn.time}</dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-slate-400">Network</dt>
-          <dd className="font-medium text-[#0A192F]">{txn.network}</dd>
-        </div>
-      </dl>
-
-      <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-slate-400">Fee breakdown</p>
-      <dl className="mt-2 space-y-2 text-sm">
-        <div className="flex justify-between">
-          <dt className="text-slate-500">Processing Fee (1.2%)</dt>
-          <dd className="text-[#0A192F]">{txn.fee}</dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-slate-500">Fixed Gateway Fee</dt>
-          <dd className="text-[#0A192F]">{txn.fixedFee}</dd>
-        </div>
-        <div className="flex justify-between border-t border-slate-100 pt-2 font-semibold">
-          <dt className="text-[#0A192F]">Total Net Settlement</dt>
-          <dd className="text-[#0A192F]">{txn.net}</dd>
-        </div>
-      </dl>
-
-      <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-slate-400">Technical metrics</p>
-      <div className="mt-2 grid grid-cols-2 gap-3">
-        <div className="rounded-lg bg-slate-50 p-3">
-          <p className="text-[10px] uppercase text-slate-400">Latency</p>
-          <p className="text-sm font-semibold text-[#0A192F]">{txn.latency}</p>
-        </div>
-        <div className="rounded-lg bg-slate-50 p-3">
-          <p className="text-[10px] uppercase text-slate-400">Risk score</p>
-          <p className="text-sm font-semibold text-[#0A192F]">{txn.risk}</p>
-        </div>
-      </div>
-
-      <div className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-50 p-3 text-xs text-emerald-700">
-        <ShieldCheck size={16} className="shrink-0" />
-        <div>
-          <p className="font-semibold">Encrypted Transaction</p>
-          <p className="text-emerald-600">Verified via AES-256 Protocol Hub</p>
-        </div>
-      </div>
-
-      <button className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-[#0A192F] py-2.5 text-sm font-medium text-white hover:bg-[#0d223f]">
-        <Printer size={15} /> Print Statement
-      </button>
-      <button className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-rose-200 py-2.5 text-sm font-medium text-rose-500 hover:bg-rose-50">
-        <AlertTriangle size={15} /> Dispute Transaction
-      </button>
-    </aside>
-  );
-}
-
 export default function Dashboard() {
-  const [selectedTxn, setSelectedTxn] = useState(null);
+  const navigate = useNavigate();
 
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  // Only kept to show the user's name in the welcome heading
+  const [userName, setUserName] = useState(null);
 
+  // Summary stat cards
+  const [summary, setSummary] = useState(null);
+  const [summaryError, setSummaryError] = useState(null);
+
+  // Payment history table state
+  const [rows, setRows] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [status, setStatus] = useState("All");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [tableLoading, setTableLoading] = useState(true);
+  const [tableError, setTableError] = useState(null);
+
+  // Fetch user name for welcome heading
   useEffect(() => {
     let cancelled = false;
-
-    async function fetchDashboard() {
-      try {
-        setLoading(true);
-        setError("");
-        const res = await api.get("/users/me");
-        if (!cancelled) setDashboardData(res.data);
-      } catch (err) {
-        console.error("Dashboard fetch failed:", err);
-        if (!cancelled) {
-          setError(
-            err.response?.data?.message || "Couldn't load dashboard data. Please try again."
-          );
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    fetchDashboard();
+    api
+      .get("/users/me")
+      .then((res) => {
+        if (!cancelled) setUserName(res.data?.name ?? null);
+      })
+      .catch(() => {
+        // Silently fall back — heading shows generic text
+      });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const stats = dashboardData?.stats;
+  // Fetch summary stats for the 4 cards
+  useEffect(() => {
+    getPaymentSummary()
+      .then(setSummary)
+      .catch(() => setSummaryError("Couldn't load summary stats."));
+  }, []);
 
-  const STATS = [
-    {
-      label: "Total Volume",
-      value: formatCurrency(stats?.totalVolume),
-      sub: "All-time settled volume",
-      trend: "up",
-    },
-    {
-      label: "Successful",
-      value: stats?.successful ?? 0,
-      sub: `${stats?.successRate ?? 0}% success rate`,
-      trend: "success",
-    },
-    {
-      label: "Failed",
-      value: stats?.failed ?? 0,
-      sub: "System declines or bounce-backs",
-      trend: "error",
-    },
-  ];
+  // Load transactions
+  useEffect(() => {
+    setTableLoading(true);
+    setTableError(null);
+    const handle = setTimeout(() => {
+      getPaymentHistory({ status, search, page, limit: PAGE_SIZE })
+        .then((res) => {
+          setRows(res.results);
+          setTotal(res.total);
+        })
+        .catch(() =>
+          setTableError("Couldn't load transactions. Please try again.")
+        )
+        .finally(() => setTableLoading(false));
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [status, search, page]);
+
+  const handleFilterChange = (next) => {
+    setStatus(next);
+    setPage(1);
+  };
+
+  const handleSearchChange = (value) => {
+    setSearch(value);
+    setPage(1);
+  };
+
+  const handleExportCsv = () => {
+    const header = ["Date/Time", "Transaction ID", "Method", "Amount", "Status"];
+    const lines = rows.map((t) => [
+      formatDateTime(t.dateTime || t.createdAt),
+      t.transactionId,
+      t.method,
+      formatAmount(t.amount, t.currency),
+      t.status,
+    ]);
+    const csv = [header, ...lines].map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "payment-history.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleViewDetails = (transaction) => {
+    console.log("View details for", transaction.transactionId);
+  };
+
+  const handleDownloadReceipt = (transaction) => {
+    console.log("Download receipt for", transaction.transactionId);
+  };
+
+  const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const to = Math.min(page * PAGE_SIZE, total);
+  const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="flex h-screen w-full bg-[#F8FAFC] font-sans text-[#0A192F]">
-      {/* ---------------- Sidebar ---------------- */}
+      {/* Sidebar */}
       <Sidebar />
 
-      {/* ---------------- Main ---------------- */}
+      {/* Main */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top nav */}
         <Navbar />
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto p-8">
+          {/* ── Header row ── */}
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-2xl font-bold text-[#0A192F]">
-                {dashboardData?.name ? `Welcome, ${dashboardData.name}` : "Payment History"}
+                {userName ? `Welcome, ${userName}` : "Payment History"}
               </h1>
               <p className="mt-1 text-sm text-slate-400">
                 Monitoring financial activities across all merchant terminals.
               </p>
             </div>
             <div className="flex gap-3">
-              <button className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
+              <button
+                type="button"
+                onClick={handleExportCsv}
+                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              >
                 <FileText size={15} /> Export CSV
               </button>
               <button
@@ -298,114 +204,225 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {error && (
-            <div className="mt-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600 ring-1 ring-rose-200">
-              {error}
-            </div>
+          {/* ── Stat Cards ── */}
+          {summaryError && (
+            <p className="mt-4 text-sm text-red-500">{summaryError}</p>
           )}
-
-          {/* Stats */}
           <div className="mt-6 flex gap-4">
-            {loading
-              ? [1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-24 flex-1 animate-pulse rounded-xl bg-white ring-1 ring-slate-100"
+            <StatCard
+              dotColor="bg-emerald-500"
+              label="Total volume"
+              value={
+                summary
+                  ? `LKR ${(summary.totalVolume / 1_000_000).toFixed(2)}M`
+                  : "—"
+              }
+              caption={
+                summary?.totalVolumeChangePct != null
+                  ? `+${summary.totalVolumeChangePct}% from last month`
+                  : "All-time settled volume"
+              }
+            />
+            <StatCard
+              dotColor="bg-emerald-500"
+              label="Successful"
+              value={summary ? summary.successfulCount.toLocaleString() : "—"}
+              caption={summary ? `${summary.successRatePct}% success rate` : ""}
+            />
+            <StatCard
+              dotColor="bg-amber-500"
+              label="Flagged"
+              value={summary ? summary.flaggedCount.toLocaleString() : "—"}
+              caption="Manual review required"
+            />
+            <StatCard
+              dotColor="bg-red-500"
+              label="Failed"
+              value={summary ? summary.failedCount.toLocaleString() : "—"}
+              caption="System declines or bounce-backs"
+            />
+          </div>
+
+          {/* ── Payment History Table ── */}
+          <div className="mt-6 bg-white rounded-xl border border-slate-200">
+            {/* Search + Filter bar */}
+            <div className="flex flex-col gap-4 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative flex-1 sm:max-w-xs">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  placeholder="Search by transaction ID or method..."
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
                 />
-              ))
-              : STATS.map((s) => <StatCard key={s.label} {...s} />)}
-          </div>
+              </div>
 
-          {/* Filter bar */}
-          <div className="mt-6 flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm ring-1 ring-slate-100">
-            <div className="flex flex-1 items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-400">
-              <Search size={15} />
-              <span>Search Merchant, ID, or Customer</span>
-            </div>
-            <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-500">
-              June 01 - June 31, 2026
-            </button>
-            <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-500">
-              All Statuses
-            </button>
-            <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-500">
-              Payment Method
-            </button>
-            <button className="rounded-lg p-2 text-slate-400 hover:bg-slate-50">
-              <SlidersHorizontal size={16} />
-            </button>
-            <button className="text-sm font-medium text-emerald-600">Clear All</button>
-          </div>
-
-          <div className="mt-6 flex gap-6">
-            {/* Table (still mock — belongs to Dev 6 / Dev 11's endpoint) */}
-            <div className="flex-1 rounded-xl bg-white shadow-sm ring-1 ring-slate-100">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
-                    <th className="px-5 py-3 font-medium">Date/Time</th>
-                    <th className="px-5 py-3 font-medium">Transaction ID</th>
-                    <th className="px-5 py-3 font-medium">Method</th>
-                    <th className="px-5 py-3 font-medium">Amount</th>
-                    <th className="px-5 py-3 font-medium">Status</th>
-                    <th className="px-5 py-3 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {TRANSACTIONS.map((txn) => (
-                    <tr
-                      key={txn.id}
-                      onClick={() => setSelectedTxn(txn)}
-                      className={`cursor-pointer border-b border-slate-50 last:border-0 hover:bg-slate-50 ${selectedTxn?.id === txn.id ? "bg-emerald-50/40" : ""
-                        }`}
-                    >
-                      <td className="px-5 py-4">
-                        <p className="font-medium text-[#0A192F]">{txn.date}</p>
-                        <p className="text-xs text-slate-400">{txn.time}</p>
-                      </td>
-                      <td className="px-5 py-4 text-slate-500">{txn.id}</td>
-                      <td className="px-5 py-4 text-slate-500">{txn.method}</td>
-                      <td className="px-5 py-4">
-                        <p className="font-medium text-[#0A192F]">{txn.amount}</p>
-                        <p className="text-xs text-slate-400">{txn.amountSub}</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <StatusPill status={txn.status} />
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3 text-slate-400">
-                          <Eye size={15} className="hover:text-[#0A192F]" />
-                          <ArrowDown size={15} className="hover:text-[#0A192F]" />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              <div className="flex items-center justify-between px-5 py-4 text-sm text-slate-400">
-                <span>Showing 1 to 10 of 2,401 transactions</span>
-                <div className="flex items-center gap-1">
-                  <button className="rounded p-1 hover:bg-slate-100">
-                    <ChevronLeft size={16} />
+              <div className="flex flex-wrap gap-2">
+                {FILTERS.map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => handleFilterChange(f)}
+                    className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                      status === f
+                        ? "bg-[#0A192F] text-white"
+                        : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {f}
                   </button>
-                  <button className="h-7 w-7 rounded bg-[#0A192F] text-xs font-medium text-white">1</button>
-                  <button className="h-7 w-7 rounded text-xs font-medium hover:bg-slate-100">2</button>
-                  <button className="h-7 w-7 rounded text-xs font-medium hover:bg-slate-100">3</button>
-                  <span className="px-1">...</span>
-                  <button className="h-7 w-7 rounded text-xs font-medium hover:bg-slate-100">240</button>
-                  <button className="rounded p-1 hover:bg-slate-100">
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
+                ))}
               </div>
             </div>
 
-            {/* Detail panel */}
-            <TransactionDetails txn={selectedTxn} onClose={() => setSelectedTxn(null)} />
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="text-xs uppercase tracking-wide text-slate-400">
+                    <th className="px-4 py-3 font-medium">Date / Time</th>
+                    <th className="px-4 py-3 font-medium">Transaction ID</th>
+                    <th className="px-4 py-3 font-medium">Method</th>
+                    <th className="px-4 py-3 font-medium">Amount</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
+                    <th className="px-4 py-3" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {tableLoading ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="px-4 py-10 text-center text-slate-400"
+                      >
+                        Loading transactions...
+                      </td>
+                    </tr>
+                  ) : tableError ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="px-4 py-10 text-center text-red-500"
+                      >
+                        {tableError}
+                      </td>
+                    </tr>
+                  ) : rows.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="px-4 py-10 text-center text-slate-400"
+                      >
+                        No transactions match your search.
+                      </td>
+                    </tr>
+                  ) : (
+                    rows.map((t) => {
+                      const isRefundable = computeIsRefundable(t);
+                      return (
+                        <tr
+                          key={t.id}
+                          className="border-t border-slate-50 text-slate-700 hover:bg-slate-50"
+                        >
+                          <td className="px-4 py-3 text-slate-500">
+                            {formatDateTime(t.dateTime || t.createdAt)}
+                          </td>
+                          <td className="px-4 py-3 font-medium text-slate-900">
+                            {t.transactionId}
+                          </td>
+                          <td className="px-4 py-3">{t.method}</td>
+                          <td className="px-4 py-3 font-medium text-slate-900">
+                            {formatAmount(t.amount, t.currency)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <StatusBadge status={t.status} />
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-3">
+                              {isRefundable ? (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/refund/${t.transactionId}`);
+                                  }}
+                                  className="rounded bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600 shadow-sm transition-colors hover:bg-rose-100"
+                                >
+                                  Return &amp; Refund
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  disabled
+                                  title="Only available for Completed transactions within 7 days."
+                                  className="cursor-not-allowed rounded bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-400 opacity-50"
+                                >
+                                  Return &amp; Refund
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewDetails(t);
+                                }}
+                                title="View Details"
+                                className="text-slate-400 transition-colors hover:text-slate-600"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownloadReceipt(t);
+                                }}
+                                title="Download Receipt"
+                                className="text-slate-400 transition-colors hover:text-slate-600"
+                              >
+                                <Download className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex flex-col gap-3 border-t border-slate-100 p-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                Showing {from} to {to} of {total.toLocaleString()} transactions
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  disabled={page >= lastPage}
+                  onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         </main>
       </div>
     </div>
   );
 }
+

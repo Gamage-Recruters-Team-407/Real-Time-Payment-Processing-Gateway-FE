@@ -13,9 +13,9 @@ import { Search, Eye, Download } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import {
-  getTransactionSummary,
-  getTransactions,
-} from "../services/transactionService";
+  getPaymentSummary,
+  getPaymentHistory,
+} from "../services/paymentHistoryService";
 import { StatusBadge } from "./PaymentSuccess";
 
 const FILTERS = ["All", "Completed", "Pending", "Flagged", "Failed"];
@@ -71,16 +71,15 @@ export default function PaymentHistory() {
   const [tableError, setTableError] = useState(null);
 
   useEffect(() => {
-    getTransactionSummary()
+    getPaymentSummary()
       .then(setSummary)
       .catch(() => setSummaryError("Couldn't load summary stats."));
   }, []);
-
   useEffect(() => {
     setLoading(true);
     setTableError(null);
     const handle = setTimeout(() => {
-      getTransactions({ status, search, page, limit: PAGE_SIZE })
+      getPaymentHistory({ status, search, page, limit: PAGE_SIZE })
         .then((res) => {
           setRows(res.results);
           setTotal(res.total);
@@ -88,7 +87,6 @@ export default function PaymentHistory() {
         .catch(() => setTableError("Couldn't load transactions. Please try again."))
         .finally(() => setLoading(false));
     }, 300);
-
     return () => clearTimeout(handle);
   }, [status, search, page]);
 
