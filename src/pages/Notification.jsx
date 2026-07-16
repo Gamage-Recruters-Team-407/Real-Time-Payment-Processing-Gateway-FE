@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { CheckCheck, Bell } from "lucide-react";
 import NotificationList from "../components/NotificationList";
-import { T, displayFont, bodyFont, monoFont } from "../components/tokens";
+import { T, displayFont, monoFont } from "../components/tokens";
 
 /* ---------------------------------------------------------------------- */
 /* Mock data — replace with a fetch to GET /api/notifications              */
@@ -98,11 +98,8 @@ export default function Notification() {
   }
 
   return (
-    <div
-      className="min-h-screen w-full"
-      style={{ background: T.bg, fontFamily: bodyFont, color: T.ink }}
-    >
-      <div className="mx-auto max-w-2xl px-6 py-8">
+    <div className="flex-1 overflow-y-auto p-8">
+      <div className="mx-auto max-w-4xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -115,7 +112,7 @@ export default function Notification() {
             </div>
             <h1
               className="text-2xl font-semibold"
-              style={{ fontFamily: displayFont, letterSpacing: "-0.01em" }}
+              style={{ fontFamily: displayFont, letterSpacing: "-0.01em", color: T.ink }}
             >
               Notifications
             </h1>
