@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Lock } from "lucide-react";
+import { Eye, EyeOff, Lock, Shield } from "lucide-react";
 import api from "../services/api";
 
 export default function ResetPassword() {
@@ -93,12 +93,14 @@ export default function ResetPassword() {
     <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] font-sans px-4">
       <div className="w-full max-w-[420px] bg-white p-8 rounded-2xl border border-slate-200/60 shadow-sm space-y-6">
         
-        <div className="text-center space-y-1.5">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50 border border-slate-100 text-[#0A192F]">
-            <Lock size={22} />
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center mb-4">
+            <Shield className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-xl font-bold text-[#0A192F]">Set New Password</h1>
-          <p className="text-xs text-slate-400">Please choose a secure new password.</p>
+          <h1 className="text-2xl font-bold text-slate-900">Reset Gamage Pay Password</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Enterprise-grade payment orchestration for secure transactions.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -182,8 +184,9 @@ export default function ResetPassword() {
 
           <button
             type="submit"
-            className="w-full bg-[#0A192F] hover:bg-slate-800 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors mt-2"
+            className="w-full flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-300 text-white font-medium rounded-lg py-2.5 text-sm transition-colors mt-2"
           >
+            <Lock className="w-4 h-4" />
             Update Password
           </button>
         </form>
