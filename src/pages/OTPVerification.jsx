@@ -4,46 +4,94 @@ import { useAuth } from "../hooks/useAuth";
 import { otpService } from "../services/otpService";
 import { Shield, Mail, Lock, CheckCircle, AlertCircle, ArrowRight } from "lucide-react";
 
+// Keep track of recent OTP generation calls to prevent duplicates (e.g. from React.StrictMode or fast renders)
+const autoSentTracker = new Map();
+
+const getSessionKey = (email, userId, purpose) => {
+  return `otp_sent_${purpose}_${userId || ''}_${email || ''}`;
+};
+
+const getRemainingCooldown = (purpose) => {
+  const timerStartStr = sessionStorage.getItem(`otp_timer_start_${purpose}`);
+  if (!timerStartStr) return 0;
+  const elapsed = Math.floor((Date.now() - parseInt(timerStartStr, 10)) / 1000);
+  const remaining = 60 - elapsed;
+  return remaining > 0 ? remaining : 0;
+};
+
 const OTPVerification = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  
+
+  // Parse URL parameters synchronously on mount/render
+  const params = new URLSearchParams(location.search);
+  const urlEmail = params.get('email') || "";
+  const urlUserId = params.get('userId') || "";
+  const urlPurpose = params.get('purpose') || "password_forgot";
+
+  const savedEmail = sessionStorage.getItem(`otp_email_${urlPurpose}`) || "";
+  const savedUserId = sessionStorage.getItem(`otp_userId_${urlPurpose}`) || "";
+
+  const initialEmail = urlEmail || savedEmail;
+  const initialUserId = urlUserId || savedUserId;
+
   // Separate states for email and userId to avoid mixing them up
-  const [email, setEmail] = useState("");
-  const [userId, setUserId] = useState(""); 
+  const [email, setEmail] = useState(initialEmail);
+  const [userId, setUserId] = useState(initialUserId);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [timer, setTimer] = useState(0);
-  const [isOtpSent, setIsOtpSent] = useState(false);
-  const [purpose, setPurpose] = useState("password_forgot"); 
+  const [timer, setTimer] = useState(() => getRemainingCooldown(urlPurpose));
+  const [purpose, setPurpose] = useState(urlPurpose);
+
+  // Initialize state based on whether OTP was already sent in this session
+  const [isOtpSent, setIsOtpSent] = useState(() => {
+    const key = getSessionKey(initialEmail, initialUserId, urlPurpose);
+    return sessionStorage.getItem(key) === "true";
+  });
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const urlEmail = params.get('email');
-    const urlUserId = params.get('userId');
-    const urlPurpose = params.get('purpose');
+    const urlPurpose = params.get('purpose') || 'password_forgot';
+    setPurpose(urlPurpose);
+    
+    // Get userId and email, falling back to auth user or sessionStorage
+    const finalUserId = params.get('userId') || (urlPurpose === 'payment' ? user?._id : '') || sessionStorage.getItem(`otp_userId_${urlPurpose}`) || '';
+    const finalEmail = params.get('email') || (urlPurpose === 'password_forgot' ? user?.email : '') || sessionStorage.getItem(`otp_email_${urlPurpose}`) || '';
 
-    const finalPurpose = urlPurpose || 'password_forgot'; 
-    setPurpose(finalPurpose);
-
-    // Get userId from URL or from logged-in user if purpose is payment
-    const finalUserId = urlUserId || (finalPurpose === 'payment' ? user?._id : '');
-    // Get email from URL or from logged-in user if purpose is password_forgot
-    const finalEmail = urlEmail || (finalPurpose === 'password_forgot' ? user?.email : ''); 
-
-    // FIX: Set userId and email to their correct separate states
-    if (finalUserId) setUserId(finalUserId);
-    if (finalEmail) setEmail(finalEmail);
-
-    // Auto-generate OTP if we have either userId or email
-    if (finalUserId || finalEmail) {
-      setIsOtpSent(true);
-      handleAutoGenerateOTP(finalEmail, finalUserId, finalPurpose);
+    if (finalUserId) {
+      setUserId(finalUserId);
+      sessionStorage.setItem(`otp_userId_${urlPurpose}`, finalUserId);
     }
-  }, [location.search, user]);
+    if (finalEmail) {
+      setEmail(finalEmail);
+      sessionStorage.setItem(`otp_email_${urlPurpose}`, finalEmail);
+    }
+
+    // Auto-generate OTP if we have either userId or email and it was not sent yet in session
+    if (finalUserId || finalEmail) {
+      const sessionKey = getSessionKey(finalEmail, finalUserId, urlPurpose);
+      const alreadySentInSession = sessionStorage.getItem(sessionKey) === "true";
+
+      if (alreadySentInSession) {
+        setIsOtpSent(true);
+      } else if (!isOtpSent) {
+        const trackerKey = `${finalUserId}-${finalEmail}-${urlPurpose}`;
+        const lastSentTime = autoSentTracker.get(trackerKey);
+        const now = Date.now();
+
+        // Only send if it hasn't been sent in the last 5 seconds
+        if (!lastSentTime || (now - lastSentTime > 5000)) {
+          autoSentTracker.set(trackerKey, now);
+          sessionStorage.setItem(sessionKey, "true");
+          setIsOtpSent(true);
+          handleAutoGenerateOTP(finalEmail, finalUserId, urlPurpose);
+        }
+      }
+    }
+  }, [location.search, user, isOtpSent]);
 
   useEffect(() => {
     let interval;
@@ -65,6 +113,7 @@ const OTPVerification = () => {
 
       const result = await otpService.generateOTP(data);
       if (result.success) {
+        sessionStorage.setItem(`otp_timer_start_${purposeParam}`, Date.now().toString());
         setMessage("Verification code sent to your email");
         setTimer(60);
       }
@@ -82,12 +131,18 @@ const OTPVerification = () => {
     setError("");
 
     try {
-      const result = await otpService.generateOTP({ 
-        email: email, 
-        purpose: 'password_forgot' 
+      const result = await otpService.generateOTP({
+        email: email,
+        purpose: 'password_forgot'
       });
-      
+
       if (result.success) {
+        // Save to sessionStorage
+        sessionStorage.setItem(`otp_email_password_forgot`, email);
+        const sessionKey = getSessionKey(email, userId, 'password_forgot');
+        sessionStorage.setItem(sessionKey, "true");
+        sessionStorage.setItem(`otp_timer_start_password_forgot`, Date.now().toString());
+
         setMessage("Verification code sent to your email");
         setIsOtpSent(true);
         setTimer(60);
@@ -101,7 +156,7 @@ const OTPVerification = () => {
 
   const handleOtpChange = (index, value) => {
     if (value.length > 1) value = value[value.length - 1];
-    
+
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
@@ -120,7 +175,7 @@ const OTPVerification = () => {
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
     const otpString = otp.join("");
-    
+
     if (otpString.length !== 6) {
       setError("Please enter all 6 digits");
       return;
@@ -132,7 +187,7 @@ const OTPVerification = () => {
 
     try {
       const verifyData = { otp: otpString };
-      
+
       // FIX: Send userId if available (for payment), otherwise send email (for forgot password)
       if (userId) {
         verifyData.userId = userId;
@@ -141,11 +196,18 @@ const OTPVerification = () => {
       }
 
       const result = await otpService.verifyOTP(verifyData);
-      
+
       if (result.success) {
+        // Clear session storage on success
+        const sessionKey = getSessionKey(email, userId, purpose);
+        sessionStorage.removeItem(sessionKey);
+        sessionStorage.removeItem(`otp_email_${purpose}`);
+        sessionStorage.removeItem(`otp_userId_${purpose}`);
+        sessionStorage.removeItem(`otp_timer_start_${purpose}`);
+
         setMessage("Verification successful!");
         setTimeout(() => {
-          if (purpose === 'password_forgot') { 
+          if (purpose === 'password_forgot') {
             navigate('/forgot-password', { state: { email, verified: true } });
           } else if (purpose === 'payment') {
             navigate('/card-payment', { state: { verified: true } });
@@ -173,6 +235,7 @@ const OTPVerification = () => {
 
       const result = await otpService.resendOTP(resendData);
       if (result.success) {
+        sessionStorage.setItem(`otp_timer_start_${purpose}`, Date.now().toString());
         setMessage("Verification code resent successfully");
         setTimer(60);
         setOtp(["", "", "", "", "", ""]);
@@ -201,7 +264,7 @@ const OTPVerification = () => {
                 <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
                   <Mail className="w-8 h-8 text-slate-400" />
                 </div>
-                
+
                 <div className="w-full space-y-3 mt-8">
                   <div className="h-12 bg-slate-50 rounded-lg flex items-center px-3">
                     <div className="h-2 w-20 bg-slate-200 rounded-full" />
@@ -226,7 +289,7 @@ const OTPVerification = () => {
           <div className="absolute top-20 left-8 w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center shadow-lg">
             <Lock className="w-6 h-6 text-emerald-600" />
           </div>
-          
+
           <div className="absolute bottom-32 right-8 w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center shadow-lg">
             <Shield className="w-7 h-7 text-slate-600" />
           </div>
@@ -315,7 +378,7 @@ const OTPVerification = () => {
                   <p className="text-xs text-slate-500 mb-4">
                     We've sent a 6-digit code to your email
                   </p>
-                  
+
                   <div className="flex gap-2 justify-center">
                     {otp.map((digit, index) => (
                       <input
@@ -374,7 +437,14 @@ const OTPVerification = () => {
 
           <div className="mt-6 text-center">
             <button
-              onClick={() => navigate(purpose === 'payment' ? '/card-payment' : '/login')}
+              onClick={() => {
+                const sessionKey = getSessionKey(email, userId, purpose);
+                sessionStorage.removeItem(sessionKey);
+                sessionStorage.removeItem(`otp_email_${purpose}`);
+                sessionStorage.removeItem(`otp_userId_${purpose}`);
+                sessionStorage.removeItem(`otp_timer_start_${purpose}`);
+                navigate(purpose === 'payment' ? '/card-payment' : '/login');
+              }}
               className="text-sm text-slate-500 hover:text-slate-700 font-medium flex items-center justify-center gap-1"
             >
               <ArrowRight className="w-4 h-4 rotate-180" />
