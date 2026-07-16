@@ -9,7 +9,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ChevronRight, RotateCcw } from "lucide-react";
+import { Search, Eye, Download } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import {
@@ -38,6 +38,23 @@ function formatDateTime(iso) {
     minute: "2-digit",
     hour12: false,
   });
+}
+
+const REFUND_WINDOW_DAYS = 7;
+
+function computeIsRefundable(t) {
+  if (t.refundSummary?.isRefundable !== undefined) {
+    return t.refundSummary.isRefundable;
+  }
+  const transactionDate = new Date(t.createdAt || t.dateTime);
+  const differenceInDays =
+    (Date.now() - transactionDate.getTime()) / (1000 * 3600 * 24);
+  const isWithinWindow = differenceInDays <= REFUND_WINDOW_DAYS;
+  return (
+    t.status === "Completed" &&
+    !t.refundSummary?.hasRefundRequest &&
+    isWithinWindow
+  );
 }
 
 export default function PaymentHistory() {
@@ -102,6 +119,14 @@ export default function PaymentHistory() {
     a.download = "payment-history.csv";
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleViewDetails = (transaction) => {
+    console.log("View details for", transaction.transactionId);
+  };
+
+  const handleDownloadReceipt = (transaction) => {
+    console.log("Download receipt for", transaction.transactionId);
   };
 
   const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
@@ -246,42 +271,79 @@ export default function PaymentHistory() {
                         </td>
                       </tr>
                     ) : (
-                      rows.map((t) => (
-                        <tr
-                          key={t.id}
-                          className="border-t border-slate-50 text-slate-700 hover:bg-slate-50"
-                        >
-                          <td className="px-4 py-3 text-slate-500">
-                            {formatDateTime(t.dateTime)}
-                          </td>
-                          <td className="px-4 py-3 font-medium text-slate-900">
-                            {t.transactionId}
-                          </td>
-                          <td className="px-4 py-3">{t.method}</td>
-                          <td className="px-4 py-3 font-medium text-slate-900">
-                            {formatAmount(t.amount, t.currency)}
-                          </td>
-                          <td className="px-4 py-3">
-                            <StatusBadge status={t.status} />
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex items-center justify-end gap-3 text-slate-400">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/refund/${t.transactionId}`);
-                                }}
-                                title="Request Refund"
-                                className="text-rose-500 hover:text-rose-700 transition-colors"
-                              >
-                                <RotateCcw className="h-4 w-4" />
-                              </button>
-                              <ChevronRight className="h-4 w-4 text-slate-300" />
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                      rows.map((t) => {
+                        const isRefundable = computeIsRefundable(t);
+
+                        return (
+                          <tr
+                            key={t.id}
+                            className="border-t border-slate-50 text-slate-700 hover:bg-slate-50"
+                          >
+                            <td className="px-4 py-3 text-slate-500">
+                              {formatDateTime(t.dateTime || t.createdAt)}
+                            </td>
+                            <td className="px-4 py-3 font-medium text-slate-900">
+                              {t.transactionId}
+                            </td>
+                            <td className="px-4 py-3">{t.method}</td>
+                            <td className="px-4 py-3 font-medium text-slate-900">
+                              {formatAmount(t.amount, t.currency)}
+                            </td>
+                            <td className="px-4 py-3">
+                              <StatusBadge status={t.status} />
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-3">
+                                {isRefundable ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/refund/${t.transactionId}`)
+                                    }}
+                                    className="rounded bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600 shadow-sm transition-colors hover:bg-rose-100"
+                                  >
+                                    Return & Refund
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    disabled
+                                    title="Only available for Completed transactions within 7 days."
+                                    className="cursor-not-allowed rounded bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-400 opacity-50"
+                                  >
+                                    Return & Refund
+                                  </button>
+                                )}
+
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewDetails(t);
+                                  }}
+                                  title="View Details"
+                                  className="text-slate-400 transition-colors hover:text-slate-600"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDownloadReceipt(t);
+                                  }}
+                                  title="Download Receipt"
+                                  className="text-slate-400 transition-colors hover:text-slate-600"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
