@@ -49,14 +49,7 @@ const Navbar = () => {
   };
 
   return (
-    <div className="w-full bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-      {/* Left side - Title only */}
-      <div className="flex items-center gap-2">
-        <span className="text-xl font-bold text-[#0F1117]">
-          Gamage<span className="text-[#10B981]">Pay</span>
-        </span>
-      </div>
-
+    <div className="w-full bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-end">
       {/* Right side - Search and User */}
       <div className="flex items-center gap-4">
         <input
@@ -64,7 +57,12 @@ const Navbar = () => {
           placeholder="Search transactions..."
           className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-56 focus:outline-none focus:ring-1 focus:ring-[#10B981] focus:border-[#10B981]"
         />
-        <span className="text-gray-400 cursor-pointer hover:text-gray-600 transition-colors">⚙️</span>
+        <span 
+          onClick={() => navigate("/settings")} 
+          className="text-gray-400 cursor-pointer hover:text-gray-600 transition-colors"
+        >
+          ⚙️
+        </span>
         <span className="text-gray-400 cursor-pointer hover:text-gray-600 transition-colors relative">
           🔔
           <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
