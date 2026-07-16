@@ -48,10 +48,10 @@ function Payment() {
   };
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] px-4 py-8 text-[#0A192F] sm:px-6 lg:px-8 lg:py-12">
-      <div className="mx-auto max-w-6xl">
+    <main className="w-full bg-[#F8FAFC] px-2 py-4 text-[#0A192F]">
+      <div className="w-full max-w-none">
 
-        <header className="mb-8 flex items-center gap-3">
+        {/* <header className="mb-4 flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0A192F] text-white shadow-sm">
             <svg
               viewBox="0 0 24 24"
@@ -75,7 +75,7 @@ function Payment() {
               Payment Processing
             </p>
           </div>
-        </header>
+        </header> */}
 
         <section className="grid overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)] lg:grid-cols-[1.15fr_0.85fr]">
 
