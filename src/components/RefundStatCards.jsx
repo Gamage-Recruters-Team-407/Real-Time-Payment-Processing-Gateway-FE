@@ -109,7 +109,7 @@ const RefundStats = ({ refunds }) => {
       {/* Total Refunds */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="w-1.5 h-1.5 rounded-full bg-gray-500" />
           Total refunds
         </div>
         <p className="text-2xl font-semibold text-gray-900 mb-1">
@@ -124,7 +124,7 @@ const RefundStats = ({ refunds }) => {
       {/* Approved */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
-          <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+       <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
           Approved
         </div>
         <p className="text-2xl font-semibold text-gray-900 mb-1">
