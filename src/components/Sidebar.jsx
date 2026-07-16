@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Bell, Settings, ReceiptText, ShieldCheck, LayoutDashboard, CreditCard } from 'lucide-react';
+import { Bell, Settings, ReceiptText, ShieldCheck, LayoutDashboard, CreditCard, Undo2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const adminMenuItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { name: 'Fraud Detection', icon: ShieldCheck, path: '/fraud-detection' },
+  { name: 'Refund Management', icon: Undo2, path: '/refund-management' },
   { name: 'Notifications', icon: Bell, path: '/notifications' },
   { name: 'Settings', icon: Settings, path: '/settings' },
 ];
@@ -22,6 +23,9 @@ const getActiveItemFromPath = (pathname) => {
   }
   if (pathname === '/fraud-detection') {
     return 'Fraud Detection';
+  }
+  if (pathname === '/refund-management') {
+    return 'Refund Management';
   }
   if (pathname === '/notifications') {
     return 'Notifications';
