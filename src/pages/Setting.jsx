@@ -58,6 +58,17 @@ export default function Setting() {
       }
     };
     fetchSettings();
+
+    const interval = setInterval(async () => {
+      try {
+        const { data } = await api.get("/settings");
+        setActivities(data.activities || []);
+      } catch (err) {
+        console.error("Failed to sync security logs:", err);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Update specific toggles
@@ -71,6 +82,8 @@ export default function Setting() {
       };
       await api.put("/settings", updatePayload);
       setter(nextValue);
+      const { data } = await api.get("/settings");
+      setActivities(data.activities || []);
     } catch {
       setPreferenceError("Failed to save preference changes.");
     }
