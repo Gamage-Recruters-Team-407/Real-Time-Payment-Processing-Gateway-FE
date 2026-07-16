@@ -28,7 +28,7 @@ import PaymentHistory from "./pages/PaymentHistory";
 import RefundRequest from "./pages/RefundRequest";
 
 // OTP Verification
-import OTPVerification from "./pages/OTPVerification"; 
+import OTPVerification from "./pages/OTPVerification";
 
 // Admin pages
 import AdminDashboard from "./pages/AdminDashboard";
@@ -54,13 +54,13 @@ function App() {
           <Route path="/new-password-setup" element={<NewPasswordSetup />} />
 
           {/* Default Route - Role based redirect */}
-          <Route 
-            path="/" 
+          <Route
+            path="/"
             element={
               <ProtectedRoute>
                 <RoleBasedRoute />
               </ProtectedRoute>
-            } 
+            }
           />
 
           {/* User Dashboard - Only for regular users */}
@@ -189,7 +189,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-        
+
           {/* Refund Management */}
           <Route
             path="/refund-management"
@@ -203,7 +203,16 @@ function App() {
           />
 
           {/* Developer 3 - Payment Processing */}
-          <Route path="/payment" element={<Payment />} />
+          <Route
+            path="/payment"
+            element={
+              <ProtectedRoute requireUser>
+                <DashboardLayout>
+                  <Payment />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

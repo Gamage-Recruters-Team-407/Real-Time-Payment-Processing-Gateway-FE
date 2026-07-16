@@ -14,7 +14,7 @@ const adminMenuItems = [
 
 const userMenuItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { name: 'New Transaction', icon: Plus, path: null },
+  { name: "New Transaction", icon: Plus, path: "/payment" },
   { name: 'Notifications', icon: Bell, path: '/notifications' },
   { name: 'Settings', icon: Settings, path: '/settings' },
 ];
