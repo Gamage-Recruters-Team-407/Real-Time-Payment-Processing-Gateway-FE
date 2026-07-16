@@ -18,6 +18,7 @@ import {
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import api from "../services/api";
+import { getTransactions } from "../services/transactionService";
 
 // ---- Mock transaction data --------------------------------------------
 // NOTE: the transaction table itself belongs to Dev 6 (Payment History) /
@@ -92,15 +93,35 @@ const TRANSACTIONS = [
 ];
 
 const STATUS_STYLES = {
-  COMPLETED: "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200",
-  FLAGGED: "bg-amber-50 text-amber-600 ring-1 ring-amber-200",
-  FAILED: "bg-rose-50 text-rose-600 ring-1 ring-rose-200",
+  Completed: "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200",
+  Pending: "bg-amber-50 text-amber-600 ring-1 ring-amber-200",
+  Flagged: "bg-amber-50 text-amber-600 ring-1 ring-amber-200",
+  Failed: "bg-rose-50 text-rose-600 ring-1 ring-rose-200",
 };
 
 const formatCurrency = (value) =>
   `Rs.${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 // -----------------------------------------------------------------------
+
+const formatDate = (iso) => {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+};
+
+const formatTime = (iso) => {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+};
 
 function StatCard({ label, value, sub, trend }) {
   const subColor =
@@ -141,22 +162,26 @@ function TransactionDetails({ txn, onClose }) {
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
           <ShieldCheck size={20} />
         </div>
-        <p className="mt-3 text-2xl font-semibold text-[#0A192F]">{txn.amount}</p>
+        <p className="mt-3 text-2xl font-semibold text-[#0A192F]">
+          {formatCurrency(txn.amount)}
+        </p>
         <p className="text-xs font-medium text-emerald-600">{txn.status}</p>
       </div>
 
       <dl className="mt-6 space-y-3 text-sm">
         <div className="flex justify-between">
           <dt className="text-slate-400">Merchant</dt>
-          <dd className="font-medium text-[#0A192F]">{txn.merchant}</dd>
+          <dd className="font-medium text-[#0A192F]">{txn.merchant || "—"}</dd>
         </div>
         <div className="flex justify-between">
           <dt className="text-slate-400">Timestamp</dt>
-          <dd className="font-medium text-[#0A192F]">{txn.date} {txn.time}</dd>
+          <dd className="font-medium text-[#0A192F]">
+            {formatDate(txn.dateTime || txn.createdAt)} {formatTime(txn.dateTime || txn.createdAt)}
+          </dd>
         </div>
         <div className="flex justify-between">
           <dt className="text-slate-400">Network</dt>
-          <dd className="font-medium text-[#0A192F]">{txn.network}</dd>
+          <dd className="font-medium text-[#0A192F]">{txn.network || "—"}</dd>
         </div>
       </dl>
 
@@ -214,6 +239,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [transactions, setTransactions] = useState([]);
+  const [txnTotal, setTxnTotal] = useState(0);
+  const [txnLoading, setTxnLoading] = useState(true);
+  const [txnError, setTxnError] = useState("");
+
   useEffect(() => {
     let cancelled = false;
 
@@ -236,6 +266,32 @@ export default function Dashboard() {
     }
 
     fetchDashboard();
+    return () => {
+      cancelled = true;
+    };
+    }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchTransactions() {
+      try {
+        setTxnLoading(true);
+        setTxnError("");
+        const res = await getTransactions({ page: 1, limit: 10 });
+        if (!cancelled) {
+          setTransactions(res.results);
+          setTxnTotal(res.total);
+        }
+      } catch (err) {
+        console.error("Dashboard transactions fetch failed:", err);
+        if (!cancelled) setTxnError("Couldn't load transactions.");
+      } finally {
+        if (!cancelled) setTxnLoading(false);
+      }
+    }
+
+    fetchTransactions();
     return () => {
       cancelled = true;
     };
@@ -349,23 +405,49 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {TRANSACTIONS.map((txn) => (
-                    <tr
-                      key={txn.id}
-                      onClick={() => setSelectedTxn(txn)}
-                      className={`cursor-pointer border-b border-slate-50 last:border-0 hover:bg-slate-50 ${
-                        selectedTxn?.id === txn.id ? "bg-emerald-50/40" : ""
-                      }`}
+                  {txnLoading ? (
+                    <tr>
+                      <td colSpan={6} className="px-5 py-10 text-center text-slate-400">
+                        Loading transactions...
+                      </td>
+                    </tr>
+                  ) : txnError ? (
+                    <tr>
+                      <td colSpan={6} className="px-5 py-10 text-center text-rose-500">
+                        {txnError}
+                      </td>
+                    </tr>
+                  ) : transactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-5 py-10 text-center text-slate-400">
+                        No transactions found.
+                      </td>
+                    </tr>
+                  ) : (
+                    transactions.map((txn) => (
+                      <tr
+                        key={txn.id || txn.transactionId}
+                        onClick={() => setSelectedTxn(txn)}
+                        className={`cursor-pointer border-b border-slate-50 last:border-0 hover:bg-slate-50 ${
+                          selectedTxn?.transactionId === txn.transactionId ? "bg-emerald-50/40" : ""
+                        }`}
                     >
                       <td className="px-5 py-4">
-                        <p className="font-medium text-[#0A192F]">{txn.date}</p>
-                        <p className="text-xs text-slate-400">{txn.time}</p>
+                        <p className="font-medium text-[#0A192F]">
+                          {formatDate(txn.dateTime || txn.createdAt)}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {formatTime(txn.dateTime || txn.createdAt)}
+                        </p>
                       </td>
-                      <td className="px-5 py-4 text-slate-500">{txn.id}</td>
-                      <td className="px-5 py-4 text-slate-500">{txn.method}</td>
+                      <td className="px-5 py-4 text-slate-500">{txn.transactionId}</td>
+                      <td className="px-5 py-4 text-slate-500">
+                        {txn.method || txn.paymentMethod}
+                      </td>
                       <td className="px-5 py-4">
-                        <p className="font-medium text-[#0A192F]">{txn.amount}</p>
-                        <p className="text-xs text-slate-400">{txn.amountSub}</p>
+                        <p className="font-medium text-[#0A192F]">
+                          {formatCurrency(txn.amount)}
+                        </p>
                       </td>
                       <td className="px-5 py-4">
                         <StatusPill status={txn.status} />
@@ -377,7 +459,7 @@ export default function Dashboard() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`/refund/${txn.id}`);
+                              navigate(`/refund/${txn.transactionId}`);
                             }}
                             title="Request Refund"
                             className="text-rose-500 hover:text-rose-700 transition-colors"
@@ -387,12 +469,13 @@ export default function Dashboard() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ))
+                )}
                 </tbody>
               </table>
 
               <div className="flex items-center justify-between px-5 py-4 text-sm text-slate-400">
-                <span>Showing 1 to 10 of 2,401 transactions</span>
+                <span>Showing 1 to {transactions.length} of {txnTotal.toLocaleString()} transactions</span>
                 <div className="flex items-center gap-1">
                   <button className="rounded p-1 hover:bg-slate-100">
                     <ChevronLeft size={16} />
