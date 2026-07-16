@@ -109,12 +109,17 @@ export default function RefundRequest() {
   const isFormValid = name.trim() && txnId.trim().length === 12 && phone.trim().length === 10 && amount.trim() && Number(amount) > 0 && reason.trim() && photo;
 
   return (
-    <div className="min-h-screen bg-[#f1f5f9] flex flex-col font-sans">
-      <Navbar />
-      <div className="flex flex-1">
-        <Sidebar />
-        <div className="flex-1 flex flex-col">
-          <main className="flex-1 px-8 py-6 space-y-6">
+    <div className="flex h-screen w-full bg-[#F8FAFC] font-sans text-[#0A192F]">
+      {/* ---------------- Sidebar ---------------- */}
+      <Sidebar />
+
+      {/* ---------------- Main ---------------- */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Top nav */}
+        <Navbar />
+
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto p-8 space-y-6">
             
             {/* Header / Breadcrumb */}
             <div className="flex items-center gap-4">
@@ -242,10 +247,10 @@ export default function RefundRequest() {
                       {/* Refund Amount */}
                       <div className="space-y-2">
                         <label className="text-sm font-semibold text-slate-700 block">
-                          Refund Amount (USD $)
+                          Refund Amount (Rs)
                         </label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-medium">$</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-medium">Rs</span>
                           <input
                             type="number"
                             step="0.01"
@@ -254,7 +259,7 @@ export default function RefundRequest() {
                             onChange={(e) => setAmount(e.target.value)}
                             placeholder="e.g. 50.00"
                             required
-                            className="w-full rounded-lg border border-slate-200 bg-slate-50 pl-7 pr-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all"
+                            className="w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all"
                          />
                         </div>
                       </div>
@@ -360,7 +365,6 @@ export default function RefundRequest() {
               </div>
             </div>
           </main>
-        </div>
       </div>
     </div>
   );
