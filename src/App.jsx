@@ -34,9 +34,11 @@ import AdminDashboard from "./pages/AdminDashboard";
 // Transaction Management
 import TransactionManagement from "./pages/TransactionManagement";
 
+// User Management
+import UserManagement from "./pages/UserManagement";
+
 // Refund Management
 import RefundManagement from "./pages/RefundManagement";
-
 
 import Payment from "./pages/Payment.jsx";
 
@@ -154,6 +156,16 @@ function App() {
             }
           />
 
+          {/* User Management */}
+          <Route
+            path="/user-management"
+            element={
+              <ProtectedRoute>
+                <UserManagement />
+              </ProtectedRoute>
+            }
+          />
+
           {/* Admin Route */}
           <Route
             path="/admin"
@@ -178,17 +190,10 @@ function App() {
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
 
           {/* Developer 3 - Payment Processing */}
-        <Route path="/payment" element={<Payment />} />
-
-
+          <Route path="/payment" element={<Payment />} />
 
         </Routes>
       </AuthProvider>
-
-      <Routes>
-
-
-      </Routes>
     </BrowserRouter>
   );
 }

@@ -18,6 +18,11 @@ const AddUserModal = ({ isOpen, onClose, onAddUser }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (!formData.fullName || !formData.email || !formData.password || !formData.phone) {
+      return;
+    }
+
     onAddUser(formData);
     setFormData({
       fullName: '',
@@ -25,6 +30,7 @@ const AddUserModal = ({ isOpen, onClose, onAddUser }) => {
       password: '',
       phone: ''
     });
+    onClose();
   };
 
   if (!isOpen) return null;

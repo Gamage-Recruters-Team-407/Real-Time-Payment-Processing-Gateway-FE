@@ -9,6 +9,7 @@ import './UserManagement.css';
 const STORAGE_KEY = 'admin-users';
 
 const UserManagement = () => {
+  const [activeItem, setActiveItem] = useState('users');
   const [currentUser, setCurrentUser] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -51,7 +52,13 @@ const UserManagement = () => {
       lastPaymentDate: new Date().toISOString().split('T')[0],
       avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`
     };
-    setUsers(prevUsers => [...prevUsers, newUser]);
+
+    setUsers(prevUsers => {
+      const updatedUsers = [...prevUsers, newUser];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUsers));
+      return updatedUsers;
+    });
+
     setIsAddModalOpen(false);
   };
 
@@ -108,7 +115,7 @@ const UserManagement = () => {
 
   return (
     <div className="user-management-container">
-      <Sidebar />
+      <Sidebar activeItem={activeItem} onItemClick={setActiveItem} />
       
       <div className="main-content">
         <div className="content-header">

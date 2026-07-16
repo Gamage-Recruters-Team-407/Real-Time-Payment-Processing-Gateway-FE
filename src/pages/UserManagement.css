@@ -8,6 +8,7 @@
 .main-content {
   flex: 1;
   padding: 2rem;
+  margin-left: 260px;
   overflow-y: auto;
 }
 
