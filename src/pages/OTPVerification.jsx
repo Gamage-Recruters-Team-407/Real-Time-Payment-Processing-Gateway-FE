@@ -207,8 +207,10 @@ const OTPVerification = () => {
 
         setMessage("Verification successful!");
         setTimeout(() => {
-          if (purpose === 'password_forgot') {
-            navigate('/forgot-password', { state: { email, verified: true } });
+          // if (purpose === 'password_forgot') { 
+          //   navigate('/forgot-password', { state: { email, verified: true } });
+          if (purpose === 'password_forgot') { 
+          navigate(`/new-password-setup?email=${encodeURIComponent(email)}`, { state: { email, verified: true } });
           } else if (purpose === 'payment') {
             navigate('/card-payment', { state: { verified: true } });
           }

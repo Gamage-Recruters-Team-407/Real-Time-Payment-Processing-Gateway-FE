@@ -15,6 +15,16 @@ export const getCurrentUser = async () => {
   return res.data;
 };
 
+export const requestPasswordReset = async (email) => {
+  const res = await api.post("/auth/forgot-password", { email });
+  return res.data;
+};
+
+export const resetPassword = async ({ email, newPassword }) => {
+  const res = await api.post("/auth/reset-password", { email, newPassword });
+  return res.data;
+};
+
 export const logoutUser = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
