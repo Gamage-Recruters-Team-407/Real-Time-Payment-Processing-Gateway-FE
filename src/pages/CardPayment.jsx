@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     MoreHorizontal,
     CheckCircle,
@@ -8,6 +9,9 @@ import masterCardLogo from '../assets/logos/master-card.svg';
 import CardForm from '../components/CardForm';
 
 export default function CardPayment() {
+    const navigate = useNavigate();
+    const location = useLocation();
+
     // State for personal details
     const [personalDetails, setPersonalDetails] = useState({
         addressLine: '',
@@ -243,7 +247,7 @@ export default function CardPayment() {
         if (!cleanCard) {
             newErrors.cardNumber = 'Card number is required';
         } else if (!validateLuhn(cardDetails.cardNumber)) {
-            newErrors.cardNumber = 'Invalid card number (Luhn check failed)';
+            newErrors.cardNumber = 'Invalid card number';
         }
 
         if (!cardDetails.expiry) {
@@ -264,40 +268,42 @@ export default function CardPayment() {
         return Object.keys(newErrors).length === 0;
     };
 
-    // Handle Pay Action with Backend Integration and robust fallback
-    const handlePayment = async (e) => {
-        if (e) e.preventDefault();
-        if (!validateForm()) return;
-
+    const executePayment = async (paymentData) => {
         setIsProcessing(true);
         setErrors({});
 
-        const cleanCardNumber = cardDetails.cardNumber.replace(/\s+/g, '');
+        const { cardDetails: details, totalAmount: amountValue } = paymentData;
+        const cleanCardNumber = details.cardNumber.replace(/\s+/g, '');
 
         try {
-            // Initiate backend payment processing
-            const response = await fetch('http://localhost:5000/api/payments/card', {
+            // Initiate backend payment processing using the correct route
+            const token = localStorage.getItem("token");
+            const response = await fetch('http://localhost:5000/api/payments', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
                 body: JSON.stringify({
-                    userId: 'DEV-4-TEST-USER',
-                    amount: totalAmount,
-                    cardDetails: {
-                        cardholderName: cardDetails.cardholderName,
-                        cardNumber: cleanCardNumber,
-                        expiry: cardDetails.expiry,
-                        cvc: cardDetails.cvc
-                    }
+                    amount: amountValue,
+                    currency: "LKR",
+                    description: `Card payment by ${details.cardholderName}`
                 })
             });
 
             const data = await response.json();
 
-            if (data.success) {
-                setPaymentResponse(data);
+            if (data.success && data.data) {
+                // Map the backend payment document fields to the shape expected by the success UI
+                setPaymentResponse({
+                    success: true,
+                    transactionId: data.data.paymentId || data.data._id,
+                    referenceNo: data.data.paymentId,
+                    amount: data.data.amount
+                });
                 setPaymentSuccess(true);
+                sessionStorage.removeItem('pending_payment');
+                sessionStorage.removeItem('payment_initiated');
             } else {
                 if (data.errors) {
                     setErrors(data.errors);
@@ -317,16 +323,61 @@ export default function CardPayment() {
                     success: true,
                     transactionId: simulatedTxnId,
                     referenceNo: simulatedRefNo,
-                    amount: totalAmount
+                    amount: amountValue
                 });
                 setPaymentSuccess(true);
                 setIsProcessing(false);
+                sessionStorage.removeItem('pending_payment');
+                sessionStorage.removeItem('payment_initiated');
             }, 2000);
             return;
         }
 
         setIsProcessing(false);
     };
+
+    // Handle Pay Action with Backend Integration and robust fallback
+    const handlePayment = async (e) => {
+        if (e) e.preventDefault();
+        if (!validateForm()) return;
+
+        // Save current form state to sessionStorage
+        const pendingPayment = {
+            personalDetails,
+            cardDetails,
+            agreeTerms,
+            saveCard,
+            selectedMethod,
+            totalAmount
+        };
+        sessionStorage.setItem('pending_payment', JSON.stringify(pendingPayment));
+        sessionStorage.setItem('payment_initiated', 'true');
+
+        // Redirect to OTP verification page
+        navigate('/otp-verification?purpose=payment');
+    };
+
+    // Effect to check if we just returned from successful OTP verification
+    useEffect(() => {
+        if (location.state?.verified) {
+            const pendingStr = sessionStorage.getItem('pending_payment');
+            if (pendingStr) {
+                try {
+                    const pending = JSON.parse(pendingStr);
+                    setPersonalDetails(pending.personalDetails);
+                    setCardDetails(pending.cardDetails);
+                    setAgreeTerms(pending.agreeTerms);
+                    setSaveCard(pending.saveCard);
+                    setSelectedMethod(pending.selectedMethod);
+
+                    // Execute payment submission automatically
+                    executePayment(pending);
+                } catch (e) {
+                    console.error('Failed to parse pending payment data', e);
+                }
+            }
+        }
+    }, [location.state]);
 
     // Dynamic values
     const subtotal = 8200;
@@ -350,7 +401,7 @@ export default function CardPayment() {
                         </div>
                         <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: '#0A192F' }}>Payment Successful!</h2>
                         <p className="text-sm mb-6 max-w-md mx-auto" style={{ color: '#64748B' }}>
-                            Your registration payment has been processed successfully. A confirmation receipt has been sent to your registered email.
+                            Your registration payment has been processed successfully.A confirmation receipt has been sent to your registered email.
                         </p>
                         <div className="rounded-xl p-6 text-left mb-8 border border-emerald-500/10" style={{ backgroundColor: 'rgba(16, 185, 129, 0.03)' }}>
                             <div className="flex justify-between items-center py-2 border-b border-emerald-500/10">

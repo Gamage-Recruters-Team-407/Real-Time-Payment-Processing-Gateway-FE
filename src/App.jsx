@@ -1,3 +1,4 @@
+
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
@@ -21,6 +22,8 @@ import FraudDetection from './pages/FraudDetection';
 
 // Payment
 import CardPayment from "./pages/CardPayment";
+import PaymentHistory from "./pages/PaymentHistory";
+import RefundRequest from "./pages/RefundRequest";
 
 // OTP Verification
 import OTPVerification from "./pages/OTPVerification"; 
@@ -31,9 +34,11 @@ import AdminDashboard from "./pages/AdminDashboard";
 // Transaction Management
 import TransactionManagement from "./pages/TransactionManagement";
 
+// Refund Management
+import RefundManagement from "./pages/RefundManagement";
 
 
-
+import Payment from "./pages/Payment.jsx";
 
 function App() {
   return (
@@ -111,7 +116,33 @@ function App() {
           {/* OTP Verification Route */}
           <Route path="/otp-verification" element={<OTPVerification />} />
 
+          {/* Payment History Route */}
+          <Route
+            path="/payment-history"
+            element={
+              <ProtectedRoute>
+                <PaymentHistory />
+              </ProtectedRoute>
+            }
+          />
 
+          {/* Refund Request Routes */}
+          <Route
+            path="/refund"
+            element={
+              <ProtectedRoute>
+                <RefundRequest />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/refund/:transactionId"
+            element={
+              <ProtectedRoute>
+                <RefundRequest />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Transaction Management */}
           <Route
@@ -132,12 +163,32 @@ function App() {
               </ProtectedRoute>
             }
           />
+        
+        {/* Refund Management */}
+         <Route
+           path="/refund-management"
+           element={
+              <ProtectedRoute>
+                <RefundManagement />
+              </ProtectedRoute>
+             }
+         />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
 
+          {/* Developer 3 - Payment Processing */}
+        <Route path="/payment" element={<Payment />} />
+
+
+
         </Routes>
       </AuthProvider>
+
+      <Routes>
+
+
+      </Routes>
     </BrowserRouter>
   );
 }

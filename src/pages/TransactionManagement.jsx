@@ -17,7 +17,6 @@ import {
 } from "../services/transactionService";
 
 const EMPTY_FILTERS = {
-  merchantName: "",
   status: "",
   minAmount: "",
   maxAmount: "",
@@ -26,12 +25,13 @@ const EMPTY_FILTERS = {
 };
 
 const STATUS_OPTIONS = ["", "Pending", "Processing", "Successful", "Failed", "Cancelled"];
+const SINGLE_SHOP_NAME = "Main Shop";
 
 const DUMMY_TRANSACTIONS = [
   {
     _id: "demo-001",
     transactionId: "TXN-100001",
-    merchantName: "Lanka Fresh Grocers",
+    merchantName: SINGLE_SHOP_NAME,
     customerName: "Nimal Perera",
     customerEmail: "nimal.perera@example.com",
     amount: 4500,
@@ -67,7 +67,7 @@ const DUMMY_TRANSACTIONS = [
   {
     _id: "demo-002",
     transactionId: "TXN-100002",
-    merchantName: "Ceylon Electronics",
+    merchantName: SINGLE_SHOP_NAME,
     customerName: "Ayesha Ali",
     customerEmail: "ayesha.ali@example.com",
     amount: 12850,
@@ -97,7 +97,7 @@ const DUMMY_TRANSACTIONS = [
   {
     _id: "demo-003",
     transactionId: "TXN-100003",
-    merchantName: "Island Travel Desk",
+    merchantName: SINGLE_SHOP_NAME,
     customerName: "Mohamed Shiraz",
     customerEmail: "shiraz@example.com",
     amount: 22000,
@@ -127,7 +127,7 @@ const DUMMY_TRANSACTIONS = [
   {
     _id: "demo-004",
     transactionId: "TXN-100004",
-    merchantName: "Green Mart Pharmacy",
+    merchantName: SINGLE_SHOP_NAME,
     customerName: "Dinesh Fernando",
     customerEmail: "dinesh.fernando@example.com",
     amount: 3650,
@@ -157,7 +157,7 @@ const DUMMY_TRANSACTIONS = [
   {
     _id: "demo-005",
     transactionId: "TXN-100005",
-    merchantName: "TechPoint Solutions",
+    merchantName: SINGLE_SHOP_NAME,
     customerName: "Anushka Silva",
     customerEmail: "anushka.silva@example.com",
     amount: 18700,
@@ -193,7 +193,7 @@ const DUMMY_TRANSACTIONS = [
   {
     _id: "demo-006",
     transactionId: "TXN-100006",
-    merchantName: "Metro Fuel Station",
+    merchantName: SINGLE_SHOP_NAME,
     customerName: "Kasun Rajapaksha",
     customerEmail: "kasun.rajapaksha@example.com",
     amount: 8900,
@@ -296,10 +296,6 @@ const applyLocalFilters = (transactions, criteria) => {
       .toLowerCase();
 
     if (search && !searchableValues.includes(search)) {
-      return false;
-    }
-
-    if (filters.merchantName && !transaction.merchantName.toLowerCase().includes(filters.merchantName.toLowerCase())) {
       return false;
     }
 
@@ -409,6 +405,7 @@ export default function TransactionManagement() {
   });
   const [transactions, setTransactions] = useState([]);
   const [dataMode, setDataMode] = useState("api");
+  const [merchantName, setMerchantName] = useState(SINGLE_SHOP_NAME);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -472,6 +469,7 @@ export default function TransactionManagement() {
         }
 
         setTransactions(apiTransactions);
+        setMerchantName(data.merchantName || SINGLE_SHOP_NAME);
         setPagination({
           currentPage: data.currentPage || currentPage,
           totalPages: data.totalPages || 1,
@@ -617,6 +615,9 @@ export default function TransactionManagement() {
 
         <main className="flex-1 overflow-y-auto p-8">
           <div className="mx-auto max-w-7xl">
+            <div className="mb-4 inline-flex rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200">
+              Active shop: {merchantName}
+            </div>
             <div className="mb-8 flex flex-col gap-4 rounded-3xl border border-white/80 bg-white/80 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-emerald-700">
@@ -626,7 +627,7 @@ export default function TransactionManagement() {
                   Transaction Management
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm text-slate-600">
-                  Search, filter, inspect, and export transaction records directly from MongoDB.
+                  Track, inspect, and export payment transactions for your shop directly from MongoDB.
                 </p>
                 {dataMode === "dummy" ? (
                   <div className="mt-3 inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
@@ -641,7 +642,7 @@ export default function TransactionManagement() {
                   <input
                     value={searchInput}
                     onChange={(event) => setSearchInput(event.target.value)}
-                    placeholder="Search transaction ID, merchant, customer, or payment reference"
+                    placeholder="Search transaction ID, customer, or payment reference"
                     className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
                   />
                 </label>
@@ -687,14 +688,6 @@ export default function TransactionManagement() {
               </form>
 
               <div className="grid gap-3 lg:grid-cols-5">
-                <input
-                  value={draftFilters.merchantName}
-                  onChange={(event) =>
-                    setDraftFilters((current) => ({ ...current, merchantName: event.target.value }))
-                  }
-                  placeholder="Merchant name"
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none placeholder:text-slate-400"
-                />
                 <select
                   value={draftFilters.status}
                   onChange={(event) =>
@@ -762,6 +755,7 @@ export default function TransactionManagement() {
               total={dataMode === "dummy" ? localTransactions.length : pagination.total}
               currentPage={dataMode === "dummy" ? localCurrentPage : pagination.currentPage}
               totalPages={dataMode === "dummy" ? localTotalPages : pagination.totalPages}
+              merchantName={merchantName}
               onPageChange={setCurrentPage}
               onViewDetails={handleViewDetails}
               onViewReceipt={handleViewReceipt}
@@ -775,7 +769,7 @@ export default function TransactionManagement() {
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <DetailRow label="Transaction ID" value={detailsTransaction.transactionId} />
-              <DetailRow label="Merchant name" value={detailsTransaction.merchantName} />
+              <DetailRow label="Shop name" value={detailsTransaction.merchantName || merchantName} />
               <DetailRow label="Customer name" value={detailsTransaction.customerName} />
               <DetailRow label="Customer email" value={detailsTransaction.customerEmail} />
               <DetailRow label="Amount" value={formatAmount(detailsTransaction.amount, detailsTransaction.currency)} />
@@ -783,6 +777,14 @@ export default function TransactionManagement() {
               <DetailRow label="Payment method" value={detailsTransaction.paymentMethod} />
               <DetailRow label="Payment reference" value={detailsTransaction.paymentReference} />
               <DetailRow label="Status" value={detailsTransaction.status} />
+              <DetailRow
+                label="Refund status"
+                value={
+                  detailsTransaction.refundSummary?.hasRefundRequest
+                    ? detailsTransaction.refundSummary.latestRefundStatus || "Requested"
+                    : "No refund request"
+                }
+              />
               <DetailRow label="Description" value={detailsTransaction.description} />
               <DetailRow label="Created date" value={formatDateTime(detailsTransaction.createdAt)} />
               <DetailRow label="Updated date" value={formatDateTime(detailsTransaction.updatedAt)} />
@@ -834,7 +836,7 @@ export default function TransactionManagement() {
 
             <div className="mt-5 space-y-2">
               <DetailRow label="Transaction ID" value={receiptTransaction.transactionId} />
-              <DetailRow label="Merchant name" value={receiptTransaction.merchantName} />
+              <DetailRow label="Shop name" value={receiptTransaction.merchantName || merchantName} />
               <DetailRow label="Customer name" value={receiptTransaction.customerName} />
               <DetailRow label="Amount" value={formatAmount(receiptTransaction.amount, receiptTransaction.currency)} />
               <DetailRow label="Currency" value={receiptTransaction.currency} />
