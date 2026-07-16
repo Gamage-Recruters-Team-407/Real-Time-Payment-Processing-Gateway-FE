@@ -109,18 +109,13 @@ export default function RefundRequest() {
   const isFormValid = name.trim() && txnId.trim().length === 12 && phone.trim().length === 10 && amount.trim() && Number(amount) > 0 && reason.trim() && photo;
 
   return (
-    <div className="flex h-screen w-full bg-[#F8FAFC] font-sans text-[#0A192F]">
-      {/* ---------------- Sidebar ---------------- */}
-      <Sidebar />
+    <div className="min-h-screen bg-[#f1f5f9] flex flex-col font-sans">
+      <Navbar />
+      <div className="flex flex-1">
+        <Sidebar />
+        <div className="flex-1 flex flex-col">
+          <main className="flex-1 px-8 py-6 space-y-6">
 
-      {/* ---------------- Main ---------------- */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Top nav */}
-        <Navbar />
-
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto p-8 space-y-6">
-            
             {/* Header / Breadcrumb */}
             <div className="flex items-center gap-4">
               <button
@@ -145,7 +140,7 @@ export default function RefundRequest() {
 
             <div className="max-w-2xl mx-auto">
               <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
-                
+
                 {success ? (
                   // Success State
                   <div className="flex flex-col items-center text-center py-8">
@@ -158,7 +153,7 @@ export default function RefundRequest() {
                     <p className="text-slate-500 text-sm mt-2 max-w-sm">
                       Your request has been successfully submitted to the refund-management team. We will review it shortly.
                     </p>
-                    
+
                     <div className="mt-8 flex gap-3 w-full max-w-xs">
                       <button
                         onClick={() => navigate("/payment-history")}
@@ -177,7 +172,7 @@ export default function RefundRequest() {
                 ) : (
                   // Form State
                   <form onSubmit={handleSubmit} className="space-y-6">
-                    
+
                     {error && (
                       <div className="flex items-center gap-2.5 rounded-lg bg-rose-50 border border-rose-100 p-4 text-sm text-rose-600">
                         <AlertCircle size={18} className="shrink-0" />
@@ -247,10 +242,10 @@ export default function RefundRequest() {
                       {/* Refund Amount */}
                       <div className="space-y-2">
                         <label className="text-sm font-semibold text-slate-700 block">
-                          Refund Amount (Rs)
+                          Refund Amount (USD $)
                         </label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-medium">Rs</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-medium">$</span>
                           <input
                             type="number"
                             step="0.01"
@@ -259,8 +254,8 @@ export default function RefundRequest() {
                             onChange={(e) => setAmount(e.target.value)}
                             placeholder="e.g. 50.00"
                             required
-                            className="w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all"
-                         />
+                            className="w-full rounded-lg border border-slate-200 bg-slate-50 pl-7 pr-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all"
+                          />
                         </div>
                       </div>
                     </div>
@@ -285,7 +280,7 @@ export default function RefundRequest() {
                       <label className="text-sm font-semibold text-slate-700 block">
                         Photo of the Item <span className="text-rose-500">*</span>
                       </label>
-                      
+
                       <input
                         type="file"
                         accept="image/*"
@@ -353,7 +348,7 @@ export default function RefundRequest() {
                           "Submit Refund Request"
                         )}
                       </button>
-                      
+
                       {!isFormValid && (
                         <p className="text-center text-xs text-slate-400 mt-2">
                           * Submit button will be active once all fields are filled and a photo is uploaded.
@@ -365,6 +360,7 @@ export default function RefundRequest() {
               </div>
             </div>
           </main>
+        </div>
       </div>
     </div>
   );
