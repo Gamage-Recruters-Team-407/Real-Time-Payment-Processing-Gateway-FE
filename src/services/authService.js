@@ -7,11 +7,13 @@ export const registerUser = async (userData) => {
 
 export const loginUser = async (credentials) => {
   const res = await api.post("/auth/login", credentials);
+  console.log("Login service response:", res.data);
   return res.data;
 };
 
 export const getCurrentUser = async () => {
   const res = await api.get("/auth/me");
+  console.log("Get current user service response:", res.data);
   return res.data;
 };
 
