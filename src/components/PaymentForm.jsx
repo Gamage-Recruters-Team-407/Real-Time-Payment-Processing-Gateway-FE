@@ -3,10 +3,38 @@ import { useState } from "react";
 const initialFormData = {
   amount: "",
   currency: "LKR",
-  description: "",
+  paymentMethod: "CARD",
 };
 
-function PaymentForm({ onSubmit, isSubmitting = false, serverError = "" }) {
+const paymentMethods = [
+  {
+    id: "CARD",
+    title: "Card",
+    description: "Visa, Mastercard",
+    icon: "💳",
+    available: true,
+  },
+  {
+    id: "PAYPAL",
+    title: "PayPal",
+    description: "Coming soon",
+    icon: "P",
+    available: false,
+  },
+  {
+    id: "BANK_TRANSFER",
+    title: "Bank Transfer",
+    description: "Coming soon",
+    icon: "🏦",
+    available: false,
+  },
+];
+
+function PaymentForm({
+  onSubmit,
+  isSubmitting = false,
+  serverError = "",
+}) {
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
 
@@ -18,10 +46,6 @@ function PaymentForm({ onSubmit, isSubmitting = false, serverError = "" }) {
       nextErrors.amount = "Amount is required.";
     } else if (!Number.isFinite(amount) || amount <= 0) {
       nextErrors.amount = "Enter a valid amount greater than 0.";
-    }
-
-    if (formData.description.trim().length > 255) {
-      nextErrors.description = "Description cannot exceed 255 characters.";
     }
 
     return nextErrors;
@@ -56,12 +80,13 @@ function PaymentForm({ onSubmit, isSubmitting = false, serverError = "" }) {
     onSubmit({
       amount: Number(Number(formData.amount).toFixed(2)),
       currency: formData.currency,
-      description: formData.description.trim(),
+      paymentMethod: formData.paymentMethod,
     });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+      {/* Payment amount */}
       <div>
         <label
           htmlFor="amount"
@@ -102,7 +127,8 @@ function PaymentForm({ onSubmit, isSubmitting = false, serverError = "" }) {
         )}
       </div>
 
-      <div>
+      {/* Currency */}
+      {/* <div>
         <label
           htmlFor="currency"
           className="mb-2 block text-sm font-semibold text-[#0A192F]"
@@ -122,56 +148,83 @@ function PaymentForm({ onSubmit, isSubmitting = false, serverError = "" }) {
         <p className="mt-2 text-xs text-[#64748B]">
           This project currently supports LKR payments only.
         </p>
-      </div>
+      </div> */}
 
+      {/* Payment methods */}
       <div>
-        <div className="mb-2 flex items-center justify-between gap-4">
-          <label
-            htmlFor="description"
-            className="block text-sm font-semibold text-[#0A192F]"
-          >
-            Payment description
-          </label>
+        <div className="mb-3">
+          <p className="text-sm font-semibold text-[#0A192F]">
+            Payment method
+          </p>
 
-          <span className="text-xs text-[#64748B]">Optional</span>
+          <p className="mt-1 text-xs text-[#64748B]">
+            Card payment is currently available.
+          </p>
         </div>
 
-        <textarea
-          id="description"
-          name="description"
-          rows="4"
-          maxLength="255"
-          value={formData.description}
-          onChange={handleChange}
-          placeholder="Example: Course payment"
-          className={`w-full resize-none rounded-xl border bg-white px-4 py-3 text-sm text-[#0A192F] outline-none transition placeholder:text-slate-300 focus:ring-4 ${
-            errors.description
-              ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-              : "border-slate-200 focus:border-[#10B981] focus:ring-emerald-100"
-          }`}
-        />
+        <div className="grid gap-3 sm:grid-cols-3">
+          {paymentMethods.map((method) => {
+            const isSelected =
+              formData.paymentMethod === method.id;
 
-        <div className="mt-2 flex items-center justify-between gap-4">
-          {errors.description ? (
-            <p className="text-sm font-medium text-red-600">
-              {errors.description}
-            </p>
-          ) : (
-            <span />
-          )}
+            return (
+              <button
+                key={method.id}
+                type="button"
+                disabled={!method.available}
+                onClick={() => {
+                  if (!method.available) return;
 
-          <span className="text-xs text-[#64748B]">
-            {formData.description.length}/255
-          </span>
+                  setFormData((current) => ({
+                    ...current,
+                    paymentMethod: method.id,
+                  }));
+                }}
+                className={`relative rounded-xl border p-4 text-left transition ${
+                  isSelected
+                    ? "border-[#10B981] bg-emerald-50 ring-2 ring-emerald-100"
+                    : method.available
+                    ? "border-slate-200 bg-white hover:border-slate-300"
+                    : "cursor-not-allowed border-slate-200 bg-slate-50 opacity-60"
+                }`}
+              >
+                {isSelected && (
+                  <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-[#10B981] text-xs font-bold text-white">
+                    ✓
+                  </span>
+                )}
+
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold ${
+                    isSelected
+                      ? "bg-[#0A192F] text-white"
+                      : "bg-slate-200 text-[#64748B]"
+                  }`}
+                >
+                  {method.icon}
+                </div>
+
+                <p className="mt-3 text-sm font-bold text-[#0A192F]">
+                  {method.title}
+                </p>
+
+                <p className="mt-1 text-xs text-[#64748B]">
+                  {method.description}
+                </p>
+              </button>
+            );
+          })}
         </div>
       </div>
 
+      {/* Server error */}
       {serverError && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
           {serverError}
         </div>
       )}
 
+      {/* Submit button */}
       <button
         type="submit"
         disabled={isSubmitting}
@@ -184,7 +237,7 @@ function PaymentForm({ onSubmit, isSubmitting = false, serverError = "" }) {
           </>
         ) : (
           <>
-            Create payment
+            Continue with card
             <span aria-hidden="true">→</span>
           </>
         )}
