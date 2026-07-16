@@ -68,24 +68,23 @@ export default function EntityLinkAnalysis({ onLiveFeedClick, onInvestigateClick
           <Background />
           <Controls />
         </ReactFlow>
+      </div>
 
-        {/* Tooltip Card overlay on top of graph */}
-        <div className="tooltip-card" style={{ zIndex: 10 }}>
-          <div className="tooltip-header">
-             <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#6C1E20' }}></div>
-             <span>Flagged Entity (Score &gt; 90)</span>
-          </div>
-          <p className="tooltip-desc">
-            System identified high-velocity lateral movement between peer accounts. Multi-node hop detected.
-          </p>
-          <div className="tooltip-actions">
-            <button className="tooltip-btn btn-investigate" onClick={() => onInvestigateClick(alerts[0]?._id)}>
-              <Search size={14} /> Investigate
-            </button>
-            <button className="tooltip-btn btn-whitelist" onClick={onWhitelistClick}>
-              <span style={{ fontSize: '14px' }}>⚲</span> Whitelist
-            </button>
-          </div>
+      <div className="tooltip-card">
+        <div className="tooltip-header">
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#6C1E20' }}></div>
+            <span>Flagged Entity (Score &gt; 90)</span>
+        </div>
+        <p className="tooltip-desc">
+          System identified high-velocity lateral movement between peer accounts. Multi-node hop detected.
+        </p>
+        <div className="tooltip-actions">
+          <button className="tooltip-btn btn-investigate" onClick={() => onInvestigateClick(alerts[0]?._id)}>
+            <Search size={14} /> Investigate
+          </button>
+          <button className="tooltip-btn btn-whitelist" onClick={onWhitelistClick}>
+            <span style={{ fontSize: '14px' }}>⚲</span> Whitelist
+          </button>
         </div>
       </div>
     </div>

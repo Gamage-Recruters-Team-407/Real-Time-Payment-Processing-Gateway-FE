@@ -31,7 +31,7 @@ export default function Setting() {
   // 4. Login Activity State
   const [activities, setActivities] = useState([]);
 
-  // 5. Status State Trackers (Inline alerts replacing popups)
+  // 5. Status State Trackers
   const [currentPasswordError, setCurrentPasswordError] = useState("");
   const [newPasswordError, setNewPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
@@ -40,7 +40,6 @@ export default function Setting() {
   const [resetEmailSuccess, setResetEmailSuccess] = useState("");
   const [resetEmailError, setResetEmailError] = useState("");
 
-  // Loading state to prevent toggle flipping on reload
   const [loadingSettings, setLoadingSettings] = useState(true);
 
   // Fetch settings on mount
@@ -72,11 +71,10 @@ export default function Setting() {
       };
       await api.put("/settings", updatePayload);
       setter(nextValue);
-    } catch (error) {
+    } catch {
       setPreferenceError("Failed to save preference changes.");
     }
   };
-
 
   // Password validation rules
   const hasMinLength = newPassword.length >= 10;
@@ -120,7 +118,6 @@ export default function Setting() {
     progressWidth = "w-full";
     progressColor = "bg-emerald-500";
   }
-
 
   const handleChangePassword = async (e) => {
     e.preventDefault();

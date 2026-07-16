@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CreditCard, Bell, Settings, ReceiptText, ShieldCheck, LayoutDashboard } from 'lucide-react';
+import { Bell, Settings, ReceiptText, ShieldCheck, LayoutDashboard } from 'lucide-react';
 
 const menuItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { name: 'Settlement', icon: CreditCard, path: '/' },
   { name: 'Fraud Detection', icon: ShieldCheck, path: '/fraud-detection' },
   { name: 'Notifications', icon: Bell, path: '/notifications' },
   { name: 'Settings', icon: Settings, path: '/settings' },
@@ -29,7 +28,7 @@ const getActiveItemFromPath = (pathname) => {
   if (pathname === '/profile') {
     return ''; 
   }
-  return 'Settlement';
+  return 'Dashboard';
 };
 
 const Sidebar = () => {
@@ -59,31 +58,35 @@ const Sidebar = () => {
         </div>
 
         {/* Menu Items */}
-        <nav className="flex flex-col gap-4">
+        <nav className="flex flex-col gap-2">
           {menuItems.map((item) => (
             <button
               type="button"
               key={item.name}
               onClick={() => handleNavigation(item)}
-              className={`flex items-center gap-3 rounded-xl px-4 py-4 text-left transition-colors ${
+              className={`flex items-center gap-3 rounded-xl px-4 py-3.5 text-left transition-colors ${
                 item.name === activeItem
                   ? 'bg-[#10B981] text-white shadow-sm'
                   : 'bg-transparent text-gray-700 hover:bg-gray-50'
               }`}
             >
-              <item.icon size={18} className={item.name === activeItem ? 'text-white' : 'text-[#8A8FA3]'} />
+              <item.icon 
+                size={18} 
+                className={item.name === activeItem ? 'text-white' : 'text-[#8A8FA3]'} 
+              />
               <span className="text-sm font-semibold">{item.name}</span>
             </button>
           ))}
         </nav>
 
+        {/* Transaction Management - Separate button outside menu */}
         <button
           type="button"
           onClick={() => {
             setActiveItem('Transaction Management');
             navigate('/transaction-management');
           }}
-          className={`mt-6 flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-left transition-colors ${
+          className={`mt-4 flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left transition-colors ${
             activeItem === 'Transaction Management'
               ? 'bg-[#10B981] text-white shadow-sm'
               : 'bg-transparent text-gray-700 hover:bg-gray-50'

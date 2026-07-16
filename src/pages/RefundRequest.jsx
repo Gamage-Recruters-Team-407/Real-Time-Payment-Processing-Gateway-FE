@@ -15,6 +15,7 @@ export default function RefundRequest() {
   const [name, setName] = useState("");
   const [txnId, setTxnId] = useState(transactionId || "");
   const [phone, setPhone] = useState("");
+  const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [photo, setPhoto] = useState(null); // Base64 data URL
   const [photoName, setPhotoName] = useState("");
@@ -74,6 +75,11 @@ export default function RefundRequest() {
       return;
     }
 
+    if (isNaN(Number(amount)) || Number(amount) <= 0) {
+      setError("Please enter a valid amount greater than 0.");
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -82,6 +88,7 @@ export default function RefundRequest() {
         name,
         transactionId: txnId,
         phone,
+        amount: Number(amount),
         reason,
         itemPhoto: photo,
       });
@@ -99,7 +106,7 @@ export default function RefundRequest() {
     }
   };
 
-  const isFormValid = name.trim() && txnId.trim().length === 12 && phone.trim().length === 10 && reason.trim() && photo;
+  const isFormValid = name.trim() && txnId.trim().length === 12 && phone.trim().length === 10 && amount.trim() && Number(amount) > 0 && reason.trim() && photo;
 
   return (
     <div className="min-h-screen bg-[#f1f5f9] flex flex-col font-sans">
@@ -211,24 +218,46 @@ export default function RefundRequest() {
                       </div>
                     </div>
 
-                    {/* Phone Number */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 block">
-                        Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, "");
-                          if (val.length <= 10) {
-                            setPhone(val);
-                          }
-                        }}
-                        placeholder="e.g. 0771234567 (10 digits)"
-                        required
-                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all"
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Phone Number */}
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700 block">
+                          Phone Number
+                        </label>
+                        <input
+                          type="tel"
+                          value={phone}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, "");
+                            if (val.length <= 10) {
+                              setPhone(val);
+                            }
+                          }}
+                          placeholder="e.g. 0771234567 (10 digits)"
+                          required
+                          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all"
+                        />
+                      </div>
+
+                      {/* Refund Amount */}
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700 block">
+                          Refund Amount (USD $)
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-medium">$</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            placeholder="e.g. 50.00"
+                            required
+                            className="w-full rounded-lg border border-slate-200 bg-slate-50 pl-7 pr-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all"
+                         />
+                        </div>
+                      </div>
                     </div>
 
                     {/* Reason for Refund */}
