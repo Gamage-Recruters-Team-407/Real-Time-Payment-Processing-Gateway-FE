@@ -4,7 +4,6 @@ import UserTable from '../components/UserTable';
 import AddUserModal from '../components/AddUserModal';
 import EditUserModal from '../components/EditUserModal';
 import DeleteUserModal from '../components/DeleteUserModal';
-import './UserManagement.css';
 
 const STORAGE_KEY = 'admin-users';
 
@@ -114,31 +113,34 @@ const UserManagement = () => {
   };
 
   return (
-    <div className="user-management-container">
+    <div className="flex min-h-screen bg-[#f5f7fa] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif]">
       <Sidebar activeItem={activeItem} onItemClick={setActiveItem} />
       
-      <div className="main-content">
-        <div className="content-header">
-          <h1>Admin Access Control</h1>
-          <div className="header-actions">
-            {/* <input type="text" placeholder="Search..." className="header-search" /> */}
-            <div className="user-profile">
-              <span className="profile-name">
+      <div className="flex-1 p-8 ml-[260px] overflow-y-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-[1.8rem] font-semibold text-[#1a1a2e] m-0">Admin Access Control</h1>
+          <div className="flex items-center gap-4">
+            {/* <input type="text" placeholder="Search..." className="p-2.5 border border-[#e0e0e0] rounded-lg text-sm w-[250px] outline-none focus:border-emerald-500" /> */}
+            <div className="flex items-center gap-6">
+              <span className="text-sm font-medium text-[#374151]">
                 {currentUser?.name || 'Admin'}
               </span>
-              <div className="profile-avatar">
+              <div className="w-10 h-10 rounded-[60%] flex items-center justify-center bg-emerald-500 text-white text-xl font-semibold border-2 border-emerald-500">
                 {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'A'}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="stats-card">
-          <div className="stat-item">
-            <span className="stat-label">Total Users</span>
-            <span className="stat-value">{users.length}</span>
+        <div className="bg-white rounded-xl p-6 mb-8 flex justify-between items-center shadow-sm">
+          <div className="flex flex-col gap-2">
+            <span className="text-sm text-gray-500 font-medium">Total Users</span>
+            <span className="text-2xl font-bold text-emerald-500">{users.length}</span>
           </div>
-          <button className="add-user-btn" onClick={() => setIsAddModalOpen(true)}>
+          <button 
+            className="bg-emerald-500 text-white border-none px-6 py-3 rounded-lg text-sm font-semibold cursor-pointer hover:bg-emerald-600 hover:-translate-y-0.5 transition-all"
+            onClick={() => setIsAddModalOpen(true)}
+          >
             + Add User
           </button>
         </div>
@@ -152,8 +154,11 @@ const UserManagement = () => {
           onPageChange={setCurrentPage}
         />
 
-        <div className="page-footer">
-          <button className="export-btn" onClick={handleExportReport}>
+        <div className="flex justify-end mt-8">
+          <button 
+            className="bg-emerald-500 text-white border-none px-6 py-3 rounded-lg text-sm font-semibold cursor-pointer hover:bg-emerald-600 hover:-translate-y-0.5 transition-all"
+            onClick={handleExportReport}
+          >
             Export Report
           </button>
         </div>
