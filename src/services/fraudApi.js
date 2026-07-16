@@ -41,3 +41,8 @@ export const addToWhitelist = async (data) => {
   const response = await api.post('/fraud/whitelist', data);
   return response.data;
 };
+
+export const runLivePrediction = async (id) => {
+  const response = await api.get(`/fraud/predict/${id}`);
+  return response.data;
+};

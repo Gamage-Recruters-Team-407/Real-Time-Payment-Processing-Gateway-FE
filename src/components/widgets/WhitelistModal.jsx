@@ -44,8 +44,9 @@ export default function WhitelistModal({ isOpen, onClose, targetId }) {
     }
   };
 
-  const riskScore = data?.transactionDetails?.riskScore || data?.riskScore || 0;
-  const entityId = data?.transactionDetails?.userId || data?.accountId || data?.userId || targetId || 'Loading...';
+  const riskScore = data?.riskInformation?.riskScore || data?.riskScore || 0;
+  const transactionId = data?.transactionDetails?.id || targetId || 'Loading...';
+  const accountId = data?.transactionDetails?.userId || data?.accountId || data?.userId || 'Unknown';
 
   return (
     <>
@@ -68,11 +69,11 @@ export default function WhitelistModal({ isOpen, onClose, targetId }) {
             <div className="summary-grid">
               <div>
                 <div className="summary-label">ID</div>
-                <div className="summary-value">{entityId}</div>
+                <div className="summary-value">{transactionId}</div>
               </div>
               <div>
-                <div className="summary-label">TYPE</div>
-                <div className="summary-value font-normal">Account</div>
+                <div className="summary-label">ACCOUNT ID</div>
+                <div className="summary-value font-normal">{accountId}</div>
               </div>
             </div>
             

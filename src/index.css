@@ -19,6 +19,8 @@
   --color-warning-light: rgba(245, 158, 11, 0.1);
   --color-success: #10B981;
   --color-success-light: rgba(16, 185, 129, 0.1);
+  --color-yellow: #EAB308;
+  --color-yellow-light: rgba(234, 179, 8, 0.1);
 
   --color-border: #E5E7EB;
   
@@ -112,6 +114,11 @@ ul {
 .badge-success {
   background-color: var(--color-success-light);
   color: var(--color-success);
+}
+
+.badge-yellow {
+  background-color: var(--color-yellow-light);
+  color: var(--color-yellow);
 }
 
 .badge-warning {

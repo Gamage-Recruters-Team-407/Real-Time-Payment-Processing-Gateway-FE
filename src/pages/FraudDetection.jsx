@@ -10,7 +10,6 @@ import RealTimeEventStream from '../components/widgets/RealTimeEventStream';
 import LiveFeedDrawer from '../components/widgets/LiveFeedDrawer';
 import InvestigationDrawer from '../components/widgets/InvestigationDrawer';
 import WhitelistModal from '../components/widgets/WhitelistModal';
-import EscalateModal from '../components/widgets/EscalateModal';
 import ReviewModal from '../components/widgets/ReviewModal';
 import FraudListModal from '../components/widgets/FraudListModal';
 import { XCircle, ActivitySquare, AlertTriangle, FolderGit2, ShieldAlert } from 'lucide-react';
@@ -21,7 +20,6 @@ export default function FraudDetection() {
   const [isLiveFeedOpen, setIsLiveFeedOpen] = useState(false);
   const [investigationTarget, setInvestigationTarget] = useState(null);
   const [whitelistTarget, setWhitelistTarget] = useState(null);
-  const [escalateTarget, setEscalateTarget] = useState(null);
   const [reviewTarget, setReviewTarget] = useState(null);
   const [isFraudListOpen, setIsFraudListOpen] = useState(false);
 
@@ -35,8 +33,9 @@ export default function FraudDetection() {
     try {
       const res = await getTransactions({ limit: 50 });
       if (res && res.data) {
-        const actionable = res.data.filter(tx => ['HIGH_RISK', 'BLOCKED', 'ESCALATED', 'UNDER_REVIEW'].includes(tx.status));
-        setTransactions(actionable.slice(0, 10)); // keep top 10
+        // Remove the restrictive filter so the Real-Time Event Stream shows all 
+        // transactions (LOW_RISK, MEDIUM_RISK, HIGH_RISK, etc.) as the component logic intends.
+        setTransactions(res.data.slice(0, 10)); // keep top 10
       }
     } catch (err) {
       console.error("Failed to load transactions", err);
@@ -110,9 +109,9 @@ export default function FraudDetection() {
         />
         <StatCard 
           title="Investigation Center" 
-          value="" 
-          trend="cases" 
-          trendValue={{ open: metrics.highRiskEntities?.openCases || 0, escalated: metrics.highRiskEntities?.escalated || 0 }} 
+          value={metrics.highRiskEntities?.openCases || "0"} 
+          trend="neutral" 
+          trendValue="Open Cases" 
           icon={<FolderGit2 size={24} />} 
         />
       </div>
@@ -144,7 +143,6 @@ export default function FraudDetection() {
         isOpen={!!investigationTarget} 
         targetId={investigationTarget}
         onClose={() => setInvestigationTarget(null)} 
-        onEscalateClick={() => setEscalateTarget(investigationTarget)}
         onActionComplete={loadData}
       />
       <WhitelistModal 
@@ -152,12 +150,7 @@ export default function FraudDetection() {
         targetId={whitelistTarget}
         onClose={() => setWhitelistTarget(null)} 
       />
-      <EscalateModal 
-        isOpen={!!escalateTarget} 
-        targetId={escalateTarget}
-        onClose={() => setEscalateTarget(null)}
-        onEscalateComplete={loadData}
-      />
+
       <FraudListModal 
         isOpen={isFraudListOpen} 
         onClose={() => setIsFraudListOpen(false)} 

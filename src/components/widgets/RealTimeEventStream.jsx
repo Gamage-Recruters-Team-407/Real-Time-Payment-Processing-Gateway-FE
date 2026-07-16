@@ -40,7 +40,6 @@ export default function RealTimeEventStream({ transactions = [], onReviewClick, 
              <div className="engine-dot" style={{ opacity: pulse ? 1 : 0.4, transition: 'opacity 0.2s ease-in-out' }}></div>
              LIVE MONITORING
            </div>
-           <Filter size={20} className="text-main cursor-pointer" />
         </div>
       </div>
 
@@ -58,18 +57,20 @@ export default function RealTimeEventStream({ transactions = [], onReviewClick, 
           </thead>
           <tbody>
             {displayTransactions.map((tx, i) => {
-              const isAlert = tx.status === 'HIGH_RISK' || tx.status === 'BLOCKED' || tx.status === 'ESCALATED' || tx.status === 'UNDER_REVIEW';
-              const statusType = tx.status === 'BLOCKED' ? 'blocked' : ((tx.status === 'HIGH_RISK' || tx.status === 'ESCALATED') ? 'danger' : ((tx.status === 'REVIEW' || tx.status === 'UNDER_REVIEW') ? 'warning' : 'success'));
+              const isAlert = tx.status === 'HIGH_RISK' || tx.status === 'BLOCKED' || tx.status === 'UNDER_REVIEW';
+              const statusType = tx.status === 'BLOCKED' ? 'blocked' : (tx.status === 'HIGH_RISK' ? 'danger' : ((tx.status === 'MEDIUM_RISK' || tx.status === 'REVIEW' || tx.status === 'UNDER_REVIEW') ? 'warning' : 'yellow'));
               let action = 'MORE';
-              if (tx.status === 'BLOCKED') {
-                action = 'RELEASE';
-              } else if (tx.status === 'HIGH_RISK' || tx.status === 'REVIEW' || tx.status === 'ESCALATED' || tx.status === 'UNDER_REVIEW') {
-                action = (tx.riskScore > 50 || tx.status === 'ESCALATED' || tx.status === 'UNDER_REVIEW') ? 'INVESTIGATE' : 'REVIEW NOW';
+              if (tx.riskScore > 80) {
+                action = 'INVESTIGATE';
+              } else if (tx.riskScore >= 50) {
+                action = 'INVESTIGATE';
+              } else {
+                action = 'REVIEW';
               }
               
               // Extract HH:mm:ss.SSS from ISO string if possible, else fallback
               const timeString = tx.createdAt ? new Date(tx.createdAt).toISOString().slice(11, 23) : '00:00:00.000';
-              const rowClass = tx.status === 'ESCALATED' ? 'row-escalated' : (isAlert ? 'row-danger' : '');
+              const rowClass = isAlert ? 'row-danger' : '';
 
               return (
                 <tr key={tx._id || i} className={rowClass}>
@@ -91,10 +92,10 @@ export default function RealTimeEventStream({ transactions = [], onReviewClick, 
                       <div className="risk-bar">
                         <div className="risk-fill" style={{ 
                           width: `${tx.riskScore}%`,
-                          backgroundColor: tx.riskScore >= 90 ? '#7F1D1D' : tx.riskScore > 80 ? '#9F1239' : tx.riskScore > 50 ? '#F59E0B' : '#10B981'
+                          backgroundColor: tx.riskScore > 80 ? '#DC2626' : tx.riskScore >= 50 ? '#F97316' : '#EAB308'
                         }}></div>
                       </div>
-                      <span className="risk-score-text" style={{ color: tx.riskScore >= 90 ? '#7F1D1D' : tx.riskScore > 80 ? '#9F1239' : tx.riskScore > 50 ? '#F59E0B' : '#10B981' }}>
+                      <span className="risk-score-text" style={{ color: tx.riskScore > 80 ? '#DC2626' : tx.riskScore >= 50 ? '#F97316' : '#EAB308' }}>
                         {tx.riskScore === 100 ? 'MAX' : `${String(Math.round(tx.riskScore)).padStart(2, '0')}%`}
                       </span>
                     </div>
@@ -103,7 +104,7 @@ export default function RealTimeEventStream({ transactions = [], onReviewClick, 
                     <span className={
                       `badge ` + 
                       (statusType === 'danger' ? 'badge-danger ' : '') + 
-                      (statusType === 'success' ? 'badge-success ' : '') + 
+                      (statusType === 'yellow' ? 'badge-yellow ' : '') + 
                       (statusType === 'warning' ? 'badge-warning ' : '')
                     } style={statusType === 'blocked' ? { backgroundColor: 'transparent', color: '#E11D48', padding: 0 } : {}}>
                       {statusType === 'blocked' && <span style={{ marginRight: '4px' }}>⊘</span>}
@@ -117,9 +118,13 @@ export default function RealTimeEventStream({ transactions = [], onReviewClick, 
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <button 
-                            className={`btn-action ${action.toLowerCase().replace(' ', '-')}`}
+                            className={`btn-action`}
+                            style={{
+                              color: tx.riskScore > 80 ? '#DC2626' : tx.riskScore >= 50 ? '#F97316' : '#EAB308',
+                              borderColor: tx.riskScore > 80 ? '#DC2626' : tx.riskScore >= 50 ? '#F97316' : '#EAB308'
+                            }}
                             onClick={() => {
-                              if (action === 'REVIEW NOW' && onReviewClick) onReviewClick(tx._id);
+                              if ((action === 'REVIEW NOW' || action === 'REVIEW') && onReviewClick) onReviewClick(tx._id);
                               else if (action === 'INVESTIGATE' && onInvestigateClick) onInvestigateClick(tx._id);
                               else if (action === 'FREEZE' && onFreezeClick) onFreezeClick(tx._id);
                               else if (action === 'RELEASE' && onReleaseClick) onReleaseClick(tx._id);
@@ -160,7 +165,7 @@ export default function RealTimeEventStream({ transactions = [], onReviewClick, 
         <div className="engine-status" style={{ position: 'fixed', bottom: '24px', right: '32px', zIndex: 30, display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#111827', padding: '10px 20px', borderRadius: '9999px', color: '#F9FAFB', fontWeight: 600, fontSize: '0.75rem', letterSpacing: '0.025em', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'default', animation: 'floatBubble 3s ease-in-out infinite' }}>
            <span style={{ color: '#9CA3AF', fontWeight: 500 }}>ENGINE STATUS</span> 
            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10B981', opacity: pulse ? 1 : 0.4, transition: 'opacity 0.15s ease-in', boxShadow: pulse ? '0 0 8px #10B981' : 'none' }}></div>
-           SENTINEL-X AI ACTIVE
+           ACTIVE
         </div>
       </div>
     </div>

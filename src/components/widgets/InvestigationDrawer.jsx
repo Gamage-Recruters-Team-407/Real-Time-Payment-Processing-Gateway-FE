@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
-import { X, Search, Paperclip, FileText, Globe, User } from 'lucide-react';
-import { getAlertById, handleTransactionAction } from '../../services/fraudApi';
+import { X, Search, Paperclip, FileText, Globe, User, AlertTriangle } from 'lucide-react';
+import { getAlertById, handleTransactionAction, addToWhitelist } from '../../services/fraudApi';
 import { startInvestigation, addInvestigationNote } from '../../services/investigationApi';
+import TransactionHistoryModal from './TransactionHistoryModal';
+import MerchantProfileModal from './MerchantProfileModal';
 
-export default function InvestigationDrawer({ isOpen, onClose, targetId, onEscalateClick, onActionComplete }) {
+export default function InvestigationDrawer({ isOpen, onClose, targetId, onActionComplete }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
   const [noteText, setNoteText] = useState('');
   const [noteLoading, setNoteLoading] = useState(false);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [merchantModalOpen, setMerchantModalOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen && targetId) {
@@ -75,6 +79,27 @@ export default function InvestigationDrawer({ isOpen, onClose, targetId, onEscal
     }
   };
 
+  const handleWhitelist = async () => {
+    if (!data) return;
+    try {
+      setActionLoading('WHITELIST');
+      const entityId = data?.transactionDetails?.userId || data?.entityLinks?.accountId || targetId;
+      await addToWhitelist({
+        entityType: 'USER',
+        entityId: entityId,
+        reason: noteText || 'Verified legitimate. Whitelisted from investigation case.',
+        performedBy: 'Analyst #1'
+      });
+      if (onActionComplete) onActionComplete();
+      onClose();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to whitelist entity.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -95,24 +120,25 @@ export default function InvestigationDrawer({ isOpen, onClose, targetId, onEscal
 
         <div className="drawer-content" style={{ padding: '20px', gap: '20px', backgroundColor: '#FFFFFF' }}>
           
-          {loading && <p>Loading case details...</p>}
-          {!loading && data && (
-            <>
-          {/* Escalation Warning Banner */}
-          {data.riskInformation?.status === 'ESCALATED' && (
-            <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5', color: '#9F1239', padding: '12px 16px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, fontSize: '0.85rem' }}>
-              <span style={{ fontSize: '1.2rem' }}>⚠️</span> This transaction has been escalated and requires senior analyst review.
+          {loading && <p style={{ padding: '20px', textAlign: 'center' }}>Loading case details...</p>}
+          
+          {!loading && !data && (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#6B7280' }}>
+               <AlertTriangle size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
+               <h3 style={{ marginBottom: '8px' }}>Case Not Found</h3>
+               <p>This case may have been deleted or the database was refreshed. Please reload the dashboard or select a valid transaction.</p>
             </div>
           )}
 
-          {/* Top Form Grid */}
+          {!loading && data && (
+            <>          {/* Top Form Grid */}
           <div className="investigation-form-grid">
             <div className="form-group">
               <label>CASE STATUS</label>
               <select defaultValue={data.investigationData?.status || 'CREATE'} disabled>
                 <option value="CREATE">Pending Creation</option>
                 <option value="UNDER_REVIEW">Under Review</option>
-                <option value="ESCALATED">Escalated</option>
+
                 <option value="CLOSED">Closed</option>
               </select>
             </div>
@@ -212,27 +238,13 @@ export default function InvestigationDrawer({ isOpen, onClose, targetId, onEscal
             <div className="evidence-buttons">
               <button 
                 className="btn-evidence"
-                onClick={() => {
-                  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `evidence_${data.transactionDetails?.id || targetId}.json`;
-                  a.click();
-                  URL.revokeObjectURL(url);
-                }}
+                onClick={() => setHistoryModalOpen(true)}
               >
-                <FileText size={14} /> Transaction Log
+                <FileText size={14} /> Transaction History
               </button>
               <button 
                 className="btn-evidence"
-                onClick={() => window.open(`https://whatismyipaddress.com/ip/${data.transactionDetails?.ip || ''}`, '_blank')}
-              >
-                <Globe size={14} /> IP Log
-              </button>
-              <button 
-                className="btn-evidence"
-                onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(data.transactionDetails?.merchant || '')}`, '_blank')}
+                onClick={() => setMerchantModalOpen(true)}
               >
                 <User size={14} /> Merchant Profile
               </button>
@@ -283,13 +295,14 @@ export default function InvestigationDrawer({ isOpen, onClose, targetId, onEscal
           >
             {actionLoading === 'BLOCK' ? 'PROCESSING...' : 'MARK FRAUD'}
           </button>
+
           <button 
             className="drawer-footer-btn" 
-            style={{ backgroundColor: data?.riskInformation?.status === 'ESCALATED' ? '#F3F4F6' : '#F59E0B', color: data?.riskInformation?.status === 'ESCALATED' ? '#9CA3AF' : 'white', border: 'none', cursor: data?.riskInformation?.status === 'ESCALATED' ? 'not-allowed' : 'pointer' }} 
-            onClick={data?.riskInformation?.status === 'ESCALATED' ? undefined : onEscalateClick}
-            disabled={data?.riskInformation?.status === 'ESCALATED'}
+            style={{ backgroundColor: '#10B981', color: 'white', border: 'none', opacity: actionLoading ? 0.6 : 1 }}
+            onClick={handleWhitelist}
+            disabled={!!actionLoading}
           >
-            {data?.riskInformation?.status === 'ESCALATED' ? 'ALREADY ESCALATED' : 'ESCALATE'}
+            {actionLoading === 'WHITELIST' ? 'PROCESSING...' : 'WHITELIST'}
           </button>
           <button 
             className="drawer-footer-btn" 
@@ -300,6 +313,17 @@ export default function InvestigationDrawer({ isOpen, onClose, targetId, onEscal
           </button>
         </div>
       </div>
+
+      <TransactionHistoryModal 
+        isOpen={historyModalOpen} 
+        onClose={() => setHistoryModalOpen(false)} 
+        userId={data?.transactionDetails?.userId || data?.entityLinks?.accountId} 
+      />
+      <MerchantProfileModal 
+        isOpen={merchantModalOpen} 
+        onClose={() => setMerchantModalOpen(false)} 
+        merchantName={data?.transactionDetails?.merchant} 
+      />
     </>
   );
 }

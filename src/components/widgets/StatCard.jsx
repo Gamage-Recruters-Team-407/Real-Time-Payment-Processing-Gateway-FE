@@ -16,7 +16,6 @@ export default function StatCard({ title, value, trend, trendValue, icon, isAler
         {trend === 'cases' && (
           <div style={{ display: 'flex', gap: '16px' }}>
              <span className="font-bold text-main">{trendValue.open} <span className="text-muted font-normal text-xs uppercase">OPEN CASES</span></span>
-             <span className="font-bold text-danger">{trendValue.escalated} <span className="text-muted font-normal text-xs uppercase">ESCALATED</span></span>
           </div>
         )}
       </div>
