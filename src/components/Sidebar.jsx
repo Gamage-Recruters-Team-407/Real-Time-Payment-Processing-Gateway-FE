@@ -20,6 +20,9 @@ const userMenuItems = [
 ];
 
 const getActiveItemFromPath = (pathname) => {
+  if (pathname === '/payment') {
+    return 'New Transaction';
+  }
   if (pathname === '/transaction-management') {
     return 'Transaction Management';
   }
