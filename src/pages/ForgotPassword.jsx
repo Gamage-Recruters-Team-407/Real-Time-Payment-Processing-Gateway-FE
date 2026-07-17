@@ -19,7 +19,7 @@ const ForgotPassword = () => {
       await requestPasswordReset(email);
 
  
-      navigate(`/otp-verification?email=${encodeURIComponent(email)}&mode=reset`);
+      navigate(`/forgot-password/otp?email=${encodeURIComponent(email)}&purpose=password_forgot`);
     } catch (err) {
       setError(
         err.response?.data?.message || "Could not send reset code. Please try again."

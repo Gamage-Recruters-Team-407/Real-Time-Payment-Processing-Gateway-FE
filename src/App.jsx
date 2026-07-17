@@ -161,7 +161,19 @@ function App() {
           />
 
           {/* OTP Verification Route */}
-          <Route path="/otp-verification" element={<OTPVerification />} />
+          <Route
+            path="/otp-verification" 
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <OTPVerification/>
+                </DashboardLayout>
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* OTP Verification for Forgot Password (Public Route) */}
+          <Route path="/forgot-password/otp" element={<OTPVerification />} />
 
           {/* Payment History Route */}
           <Route
