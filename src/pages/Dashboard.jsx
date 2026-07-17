@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Plus, FileText, Eye, Download, Search } from "lucide-react";
+import { Plus, FileText, Eye, Download, Search, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
@@ -81,6 +81,11 @@ export default function Dashboard() {
   const [page, setPage] = useState(1);
   const [tableLoading, setTableLoading] = useState(true);
   const [tableError, setTableError] = useState(null);
+  const [month, setMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [refreshKey, setRefreshKey] = useState(0);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
 
   // Fetch user name for welcome heading
@@ -111,7 +116,7 @@ export default function Dashboard() {
     setTableLoading(true);
     setTableError(null);
     const handle = setTimeout(() => {
-      getPaymentHistory({ status, search, page, limit: PAGE_SIZE })
+      getPaymentHistory({ status, search, page, limit: PAGE_SIZE, month })
         .then((res) => {
           setRows(res.results);
           setTotal(res.total);
@@ -122,7 +127,7 @@ export default function Dashboard() {
         .finally(() => setTableLoading(false));
     }, 300);
     return () => clearTimeout(handle);
-  }, [status, search, page]);
+  }, [status, search, page, month, refreshKey]);
 
   const handleFilterChange = (next) => {
     setStatus(next);
@@ -134,23 +139,269 @@ export default function Dashboard() {
     setPage(1);
   };
 
-  const handleExportCsv = () => {
-    const header = ["Date/Time", "Transaction ID", "Method", "Amount", "Status"];
-    const lines = rows.map((t) => [
-      formatDateTime(t.dateTime || t.createdAt),
-      t.transactionId,
-      t.method,
-      formatAmount(t.amount, t.currency),
-      t.status,
-    ]);
-    const csv = [header, ...lines].map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "payment-history.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleExportPdf = async () => {
+    try {
+      const res = await getPaymentHistory({ status, search, page: 1, limit: 100000, month });
+      const transactions = res.results || [];
+      
+      const totalVolume = transactions
+        .filter((t) => t.status === "Successful" || t.status === "Completed")
+        .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+      const successfulCount = transactions.filter((t) => t.status === "Successful" || t.status === "Completed").length;
+      const pendingCount = transactions.filter((t) => t.status === "Pending" || t.status === "Processing").length;
+      const failedCount = transactions.filter((t) => t.status === "Failed").length;
+
+      const nowStr = new Date().toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+
+      const monthDisplay = month ? new Date(month + "-02").toLocaleString("default", { month: "long", year: "numeric" }) : "All Months";
+      const statusDisplay = status;
+
+      const printWindow = window.open("", "_blank");
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>GamagePay - Transaction Statement</title>
+            <style>
+              body {
+                font-family: 'Segoe UI', -apple-system, sans-serif;
+                color: #1e293b;
+                padding: 40px;
+                background-color: #ffffff;
+                margin: 0;
+              }
+              .header-container {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                border-bottom: 2px solid #f1f5f9;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+              }
+              .brand-title {
+                font-size: 28px;
+                font-weight: 800;
+                color: #0F1117;
+                margin: 0;
+                letter-spacing: -0.025em;
+              }
+              .brand-title span {
+                color: #10b981;
+              }
+              .statement-title {
+                font-size: 14px;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                color: #64748b;
+                margin: 4px 0 0 0;
+                font-weight: 700;
+              }
+              .meta-info {
+                text-align: right;
+                font-size: 12px;
+                color: #64748b;
+                line-height: 1.6;
+              }
+              .filter-badge-container {
+                display: flex;
+                gap: 12px;
+                margin-bottom: 24px;
+              }
+              .filter-badge {
+                background-color: #f8fafc;
+                border: 1px solid #e2e8f0;
+                padding: 6px 12px;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: 500;
+              }
+              .filter-badge strong {
+                color: #0F1117;
+              }
+              .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 16px;
+                margin-bottom: 30px;
+              }
+              .stat-box {
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 14px;
+                background-color: #f8fafc;
+              }
+              .stat-label {
+                font-size: 11px;
+                text-transform: uppercase;
+                color: #64748b;
+                font-weight: 600;
+                letter-spacing: 0.05em;
+              }
+              .stat-value {
+                font-size: 18px;
+                font-weight: 700;
+                color: #0F1117;
+                margin-top: 4px;
+              }
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                text-align: left;
+                font-size: 12px;
+                margin-top: 10px;
+              }
+              th {
+                background-color: #f8fafc;
+                color: #475569;
+                font-weight: 600;
+                text-transform: uppercase;
+                font-size: 10px;
+                letter-spacing: 0.05em;
+                padding: 12px 16px;
+                border-bottom: 1px solid #e2e8f0;
+              }
+              td {
+                padding: 12px 16px;
+                border-bottom: 1px solid #f1f5f9;
+                color: #334155;
+              }
+              tr:nth-child(even) td {
+                background-color: #fbfcfd;
+              }
+              .status-pill {
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 99px;
+                font-size: 10px;
+                font-weight: 600;
+                text-transform: uppercase;
+              }
+              .status-completed {
+                background-color: #ecfdf5;
+                color: #059669;
+              }
+              .status-pending {
+                background-color: #fffbeb;
+                color: #d97706;
+              }
+              .status-failed {
+                background-color: #fef2f2;
+                color: #dc2626;
+              }
+              .amount-failed {
+                color: #dc2626;
+                font-weight: 600;
+              }
+              .amount-normal {
+                font-weight: 600;
+              }
+              .footer {
+                margin-top: 40px;
+                text-align: center;
+                font-size: 11px;
+                color: #94a3b8;
+                border-top: 1px solid #e2e8f0;
+                padding-top: 16px;
+              }
+              @media print {
+                body { padding: 0; }
+                .no-print { display: none; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header-container">
+              <div>
+                <h1 class="brand-title">Gamage<span>Pay</span></h1>
+                <p class="statement-title">Transaction Statement</p>
+              </div>
+              <div class="meta-info">
+                <div>Statement Date: <strong>${nowStr}</strong></div>
+                <div>Account Owner: <strong>${userName || 'Valued Merchant'}</strong></div>
+              </div>
+            </div>
+
+            <div class="filter-badge-container">
+              <div class="filter-badge">Month Range: <strong>${monthDisplay}</strong></div>
+              <div class="filter-badge">Status Filter: <strong>${statusDisplay}</strong></div>
+              ${search ? `<div class="filter-badge">Search Term: <strong>"${search}"</strong></div>` : ''}
+            </div>
+
+            <div class="stats-grid">
+              <div class="stat-box">
+                <div class="stat-label">Total Volume</div>
+                <div class="stat-value">LKR ${totalVolume.toLocaleString("en-LK", { minimumFractionDigits: 2 })}</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">Successful</div>
+                <div class="stat-value">${successfulCount}</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">Pending</div>
+                <div class="stat-value">${pendingCount}</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">Failed</div>
+                <div class="stat-value">${failedCount}</div>
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Date / Time</th>
+                  <th>Transaction ID</th>
+                  <th>Method</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${transactions.length === 0 ? `
+                  <tr>
+                    <td colspan="5" style="text-align: center; padding: 30px; color: #94a3b8;">
+                      No transactions found for the selected filters.
+                    </td>
+                  </tr>
+                ` : transactions.map(t => {
+                  const statusClass = t.status === "Successful" || t.status === "Completed" ? "status-completed" : t.status === "Failed" ? "status-failed" : "status-pending";
+                  const amtClass = t.status === "Failed" ? "amount-failed" : "amount-normal";
+                  return `
+                    <tr>
+                      <td>${formatDateTime(t.dateTime || t.createdAt)}</td>
+                      <td style="font-family: monospace; font-size: 11px;">${t.transactionId}</td>
+                      <td>${t.method}</td>
+                      <td class="${amtClass}">LKR ${Number(t.amount || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      <td><span class="status-pill ${statusClass}">${t.status}</span></td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+
+            <div class="footer">
+              This is a system-generated statement from GamagePay and does not require a signature.
+            </div>
+
+            <script>
+              window.onload = function() {
+                window.print();
+              };
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } catch (err) {
+      console.error("Failed to export PDF:", err);
+      alert("Failed to export PDF statement. Please try again.");
+    }
   };
 
   const handleViewDetails = (transaction) => {
@@ -190,10 +441,10 @@ export default function Dashboard() {
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={handleExportCsv}
+                onClick={handleExportPdf}
                 className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
               >
-                <FileText size={15} /> Export CSV
+                <FileText size={15} /> Export PDF
               </button>
               {/* <button
                 type="button"
@@ -248,7 +499,7 @@ export default function Dashboard() {
           </div>
 
           {/* Search + filters — OUTSIDE the table card */}
-          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4 border border-slate-200 bg-white rounded-xl p-4 shadow-sm">
             <div className="relative flex-1 sm:max-w-xs">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
@@ -256,7 +507,7 @@ export default function Dashboard() {
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder="Search by transaction ID or method..."
-                className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
               />
               </div>
 
@@ -276,6 +527,29 @@ export default function Dashboard() {
                   </button>
                 ))}
               </div>
+
+              <input
+                type="month"
+                value={month}
+                onChange={(e) => { setMonth(e.target.value); setPage(1); }}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+              />
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setStatus("All");
+                  setPage(1);
+                  const now = new Date();
+                  setMonth(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
+                  setRefreshKey((k) => k + 1);
+                }}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Refresh
+              </button>
             </div>
 
             {/* ── Payment History Table ── */}
@@ -378,18 +652,6 @@ export default function Dashboard() {
                                 className="text-slate-400 transition-colors hover:text-slate-600"
                               >
                                 <Eye className="h-4 w-4" />
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDownloadReceipt(t);
-                                }}
-                                title="Download Receipt"
-                                className="text-slate-400 transition-colors hover:text-slate-600"
-                              >
-                                <Download className="h-4 w-4" />
                               </button>
                             </div>
                           </td>

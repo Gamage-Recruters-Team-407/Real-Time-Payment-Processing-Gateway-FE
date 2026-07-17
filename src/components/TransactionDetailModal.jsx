@@ -269,30 +269,6 @@ export default function TransactionDetailModal({ transaction, onClose }) {
                 <span className="text-slate-900">Rs.{formatCurrency(netSettlement)}</span>
               </div>
             </div>
-
-            <hr className="divider border-t border-slate-200 my-3" />
-
-            {/* Technical Metrics */}
-            <div>
-              <p className="section-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
-                Technical Metrics
-              </p>
-              <div className="metrics flex gap-3 mt-2">
-                <div className="metric-box flex-1 bg-slate-50 rounded-lg p-3 text-center">
-                  <p className="metric-label text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-                    Latency
-                  </p>
-                  <p className="metric-value text-xl font-bold text-slate-900 mt-1">{latency}ms</p>
-                </div>
-                <div className="metric-box flex-1 bg-slate-50 rounded-lg p-3 text-center">
-                  <p className="metric-label text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-                    Risk Score
-                  </p>
-                  <p className="metric-value text-xl font-bold text-slate-900 mt-1">{riskScore}</p>
-                </div>
-              </div>
-            </div>
-
             {/* Security Badge */}
             <div className="security-badge mt-4 bg-emerald-50 rounded-lg p-3 flex items-center gap-3">
               <ShieldCheck className="h-8 w-8 text-emerald-500 flex-shrink-0" />
