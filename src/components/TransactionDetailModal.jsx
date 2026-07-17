@@ -283,19 +283,11 @@ export default function TransactionDetailModal({ transaction, onClose }) {
         </div>
 
         {/* Action Buttons */}
-        <div className="px-6 pb-5 pt-2 space-y-2.5 border-t border-slate-100">
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#0F1117] py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
-          >
-            <Printer className="h-4 w-4" />
-            Print Statement
-          </button>
+        <div className="px-6 pb-5 pt-4 border-t border-slate-100">
           <button
             type="button"
             onClick={handleDownload}
-            className="w-full flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+            className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#0F1117] py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors shadow-sm"
           >
             <Download className="h-4 w-4" />
             Download Receipt
