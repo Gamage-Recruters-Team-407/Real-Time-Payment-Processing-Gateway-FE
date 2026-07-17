@@ -1,44 +1,26 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PaymentForm from "../components/PaymentForm.jsx";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 function Payment() {
+  const navigate = useNavigate();
   const [payment, setPayment] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState("");
   const [formKey, setFormKey] = useState(0);
 
-  const handleCreatePayment = async (paymentData) => {
-    setIsSubmitting(true);
-    setServerError("");
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/payments`, {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify(paymentData),
-      });
-
-      const result = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(result.message || "Unable to create payment.");
+  const handleCreatePayment = (paymentData) => {
+    navigate("/card-payment", {
+      state: {
+        amount: paymentData.amount,
+        currency: paymentData.currency,
+        paymentMethod: paymentData.paymentMethod,
+        description: "Card payment via Gamage-Pay"
       }
-
-      setPayment(result.data);
-    } catch (error) {
-      setServerError(
-        error.message || "Unable to connect to the payment server."
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
   };
 
   const handleCreateAnother = () => {
