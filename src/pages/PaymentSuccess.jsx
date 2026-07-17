@@ -24,6 +24,7 @@ import {
   getLatestTransaction,
   downloadReceipt,
 } from "../services/transactionService";
+import api from "../services/api";
 
 function formatAmount(amount, currency) {
   const formatted = Number(amount).toLocaleString("en-LK", {
@@ -64,9 +65,30 @@ export default function PaymentSuccess() {
     setLoading(true);
     setLoadError(null);
 
-    getLatestTransaction()
-      .then((data) => {
-        if (!cancelled) setTransaction(data);
+    const params = new URLSearchParams(location.search);
+    const paymentId = params.get('paymentId');
+
+    if (!paymentId) {
+      setLoadError("No payment ID provided.");
+      setLoading(false);
+      return;
+    }
+
+    api.get(`/payments/${paymentId}`)
+      .then((response) => {
+        const data = response.data?.data;
+        if (!data) throw new Error("No data returned");
+        
+        const formatted = {
+          transactionId: data.transactionId || data.paymentId,
+          amount: data.amount,
+          currency: data.currency,
+          dateTime: data.createdAt,
+          method: data.paymentMethod + (data.cardLastFourDigits ? ` •••• ${data.cardLastFourDigits}` : ""),
+          status: data.status.charAt(0) + data.status.slice(1).toLowerCase(),
+        };
+
+        if (!cancelled) setTransaction(formatted);
       })
       .catch((err) => {
         if (!cancelled) {
@@ -84,7 +106,7 @@ export default function PaymentSuccess() {
     return () => {
       cancelled = true;
     };
-  }, [transaction]);
+  }, [transaction, location.search]);
 
   const handleDownloadReceipt = async () => {
     setDownloading(true);
