@@ -1,5 +1,4 @@
 import React from "react";
-import { useAuth } from "../context/AuthContext";
 
 export default function SettingsForm({
   loginAlerts,
@@ -10,8 +9,6 @@ export default function SettingsForm({
   handleTogglePreference,
   preferenceError,
 }) {
-  const { logout } = useAuth();
-
   return (
     <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-sm">
       <h2 className="text-base font-semibold text-[#0A192F] mb-6">Security Preferences</h2>
@@ -76,17 +73,6 @@ export default function SettingsForm({
                   rememberDevice ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
-            </button>
-          </div>
-
-          {/* Logout Button */}
-          <div className="pt-5 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={logout}
-              className="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors mt-2 cursor-pointer text-center"
-            >
-              Logout
             </button>
           </div>
         </div>

@@ -42,7 +42,7 @@ export default function LiveFeedDrawer({ isOpen, onClose, onInvestigateClick, on
             const type = riskScore > 80 ? 'danger' : riskScore > 40 ? 'warning' : 'success';
             
             return (
-            <div key={alert._id || alert.transactionId} className={`alert-card border-${type}`}>
+            <div key={alert.id || alert.transactionId} className={`alert-card border-${type}`}>
               <div className="alert-top">
                 <span className="alert-time">{alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString() : 'Just now'}</span>
                 <span className={`alert-badge badge-${type}`}>{Math.round(riskScore)}% RISK</span>
@@ -55,14 +55,14 @@ export default function LiveFeedDrawer({ isOpen, onClose, onInvestigateClick, on
               <div className="alert-actions">
                 {type === 'danger' && (
                   <>
-                    <button className="alert-btn btn-dark-red" onClick={() => onInvestigateClick(alert._id)}>INVESTIGATE</button>
+                    <button className="alert-btn btn-dark-red" onClick={() => onInvestigateClick(alert.id)}>INVESTIGATE</button>
                     <button className="alert-btn btn-outline-red">BLOCK</button>
                   </>
                 )}
                 {type === 'warning' && (
                   <>
-                    <button className="alert-btn btn-dark" onClick={() => onInvestigateClick(alert._id)}>INVESTIGATE</button>
-                    <button className="alert-btn btn-outline-yellow" onClick={onReviewClick}>REVIEW</button>
+                    <button className="alert-btn btn-dark" onClick={() => onInvestigateClick(alert.id)}>INVESTIGATE</button>
+                    <button className="alert-btn btn-outline-yellow" onClick={() => onReviewClick(alert.id)}>REVIEW</button>
                   </>
                 )}
                 {type === 'success' && (

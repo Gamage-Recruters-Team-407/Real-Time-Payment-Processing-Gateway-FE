@@ -11,7 +11,6 @@ import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import TransactionTable from "../components/TransactionTable";
 import {
-  exportTransactions,
   getTransactionById,
   getTransactions,
 } from "../services/transactionService";
@@ -20,314 +19,11 @@ const EMPTY_FILTERS = {
   status: "",
   minAmount: "",
   maxAmount: "",
-  startDate: "",
-  endDate: "",
+  date: "",
 };
 
 const STATUS_OPTIONS = ["", "Pending", "Processing", "Successful", "Failed", "Cancelled"];
 const SINGLE_SHOP_NAME = "Main Shop";
-
-const DUMMY_TRANSACTIONS = [
-  {
-    _id: "demo-001",
-    transactionId: "TXN-100001",
-    merchantName: SINGLE_SHOP_NAME,
-    customerName: "Nimal Perera",
-    customerEmail: "nimal.perera@example.com",
-    amount: 4500,
-    currency: "LKR",
-    paymentMethod: "Visa",
-    status: "Successful",
-    paymentReference: "PAY-2026-1001",
-    description: "Monthly grocery purchase",
-    metadata: { terminalId: "POS-01", channel: "Card Present" },
-    lifecycleHistory: [
-      {
-        status: "Pending",
-        previousStatus: null,
-        changedAt: "2026-07-10T08:21:00.000Z",
-        reason: "Payment request received",
-      },
-      {
-        status: "Processing",
-        previousStatus: "Pending",
-        changedAt: "2026-07-10T08:22:10.000Z",
-        reason: "Gateway authorized the transaction",
-      },
-      {
-        status: "Successful",
-        previousStatus: "Processing",
-        changedAt: "2026-07-10T08:24:30.000Z",
-        reason: "Funds captured successfully",
-      },
-    ],
-    createdAt: "2026-07-10T08:21:00.000Z",
-    updatedAt: "2026-07-10T08:24:30.000Z",
-  },
-  {
-    _id: "demo-002",
-    transactionId: "TXN-100002",
-    merchantName: SINGLE_SHOP_NAME,
-    customerName: "Ayesha Ali",
-    customerEmail: "ayesha.ali@example.com",
-    amount: 12850,
-    currency: "LKR",
-    paymentMethod: "MasterCard",
-    status: "Processing",
-    paymentReference: "PAY-2026-1002",
-    description: "Online device purchase",
-    metadata: { terminalId: "WEB-12", channel: "E-Commerce" },
-    lifecycleHistory: [
-      {
-        status: "Pending",
-        previousStatus: null,
-        changedAt: "2026-07-10T10:10:00.000Z",
-        reason: "Payment request received",
-      },
-      {
-        status: "Processing",
-        previousStatus: "Pending",
-        changedAt: "2026-07-10T10:11:25.000Z",
-        reason: "Awaiting bank confirmation",
-      },
-    ],
-    createdAt: "2026-07-10T10:10:00.000Z",
-    updatedAt: "2026-07-10T10:11:25.000Z",
-  },
-  {
-    _id: "demo-003",
-    transactionId: "TXN-100003",
-    merchantName: SINGLE_SHOP_NAME,
-    customerName: "Mohamed Shiraz",
-    customerEmail: "shiraz@example.com",
-    amount: 22000,
-    currency: "LKR",
-    paymentMethod: "Bank Transfer",
-    status: "Failed",
-    paymentReference: "PAY-2026-1003",
-    description: "Hotel booking payment",
-    metadata: { terminalId: "MOB-08", channel: "Mobile App" },
-    lifecycleHistory: [
-      {
-        status: "Pending",
-        previousStatus: null,
-        changedAt: "2026-07-09T14:00:00.000Z",
-        reason: "Payment request received",
-      },
-      {
-        status: "Failed",
-        previousStatus: "Pending",
-        changedAt: "2026-07-09T14:00:40.000Z",
-        reason: "Insufficient balance",
-      },
-    ],
-    createdAt: "2026-07-09T14:00:00.000Z",
-    updatedAt: "2026-07-09T14:00:40.000Z",
-  },
-  {
-    _id: "demo-004",
-    transactionId: "TXN-100004",
-    merchantName: SINGLE_SHOP_NAME,
-    customerName: "Dinesh Fernando",
-    customerEmail: "dinesh.fernando@example.com",
-    amount: 3650,
-    currency: "LKR",
-    paymentMethod: "Visa",
-    status: "Cancelled",
-    paymentReference: "PAY-2026-1004",
-    description: "Medicine order cancellation",
-    metadata: { terminalId: "POS-04", channel: "Card Present" },
-    lifecycleHistory: [
-      {
-        status: "Pending",
-        previousStatus: null,
-        changedAt: "2026-07-08T09:30:00.000Z",
-        reason: "Payment request received",
-      },
-      {
-        status: "Cancelled",
-        previousStatus: "Pending",
-        changedAt: "2026-07-08T09:34:18.000Z",
-        reason: "Customer cancelled before settlement",
-      },
-    ],
-    createdAt: "2026-07-08T09:30:00.000Z",
-    updatedAt: "2026-07-08T09:34:18.000Z",
-  },
-  {
-    _id: "demo-005",
-    transactionId: "TXN-100005",
-    merchantName: SINGLE_SHOP_NAME,
-    customerName: "Anushka Silva",
-    customerEmail: "anushka.silva@example.com",
-    amount: 18700,
-    currency: "LKR",
-    paymentMethod: "Apple Pay",
-    status: "Successful",
-    paymentReference: "PAY-2026-1005",
-    description: "Software license renewal",
-    metadata: { terminalId: "WEB-31", channel: "E-Commerce" },
-    lifecycleHistory: [
-      {
-        status: "Pending",
-        previousStatus: null,
-        changedAt: "2026-07-07T16:45:00.000Z",
-        reason: "Payment request received",
-      },
-      {
-        status: "Processing",
-        previousStatus: "Pending",
-        changedAt: "2026-07-07T16:45:40.000Z",
-        reason: "Gateway authorization in progress",
-      },
-      {
-        status: "Successful",
-        previousStatus: "Processing",
-        changedAt: "2026-07-07T16:46:08.000Z",
-        reason: "Funds captured successfully",
-      },
-    ],
-    createdAt: "2026-07-07T16:45:00.000Z",
-    updatedAt: "2026-07-07T16:46:08.000Z",
-  },
-  {
-    _id: "demo-006",
-    transactionId: "TXN-100006",
-    merchantName: SINGLE_SHOP_NAME,
-    customerName: "Kasun Rajapaksha",
-    customerEmail: "kasun.rajapaksha@example.com",
-    amount: 8900,
-    currency: "LKR",
-    paymentMethod: "QR Pay",
-    status: "Pending",
-    paymentReference: "PAY-2026-1006",
-    description: "Fuel top-up transaction",
-    metadata: { terminalId: "MOB-19", channel: "Mobile App" },
-    lifecycleHistory: [
-      {
-        status: "Pending",
-        previousStatus: null,
-        changedAt: "2026-07-11T07:10:00.000Z",
-        reason: "Payment request received",
-      },
-    ],
-    createdAt: "2026-07-11T07:10:00.000Z",
-    updatedAt: "2026-07-11T07:10:00.000Z",
-  },
-];
-
-const escapeCsvValue = (value) => {
-  if (value === null || value === undefined) {
-    return '""';
-  }
-
-  const stringValue = typeof value === "object" ? JSON.stringify(value) : String(value);
-  return `"${stringValue.replace(/"/g, '""')}"`;
-};
-
-const buildCsv = (transactions) => {
-  const headers = [
-    "transactionId",
-    "merchantName",
-    "customerName",
-    "customerEmail",
-    "amount",
-    "currency",
-    "paymentMethod",
-    "status",
-    "paymentReference",
-    "description",
-    "metadata",
-    "createdAt",
-    "updatedAt",
-  ];
-
-  const rows = transactions.map((transaction) =>
-    [
-      transaction.transactionId,
-      transaction.merchantName,
-      transaction.customerName,
-      transaction.customerEmail,
-      transaction.amount,
-      transaction.currency,
-      transaction.paymentMethod,
-      transaction.status,
-      transaction.paymentReference,
-      transaction.description,
-      transaction.metadata,
-      transaction.createdAt,
-      transaction.updatedAt,
-    ]
-      .map(escapeCsvValue)
-      .join(",")
-  );
-
-  return [headers.join(","), ...rows].join("\n");
-};
-
-const downloadTextFile = (content, filename, mimeType) => {
-  const blob = new Blob([content], { type: mimeType });
-  const url = window.URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
-  window.URL.revokeObjectURL(url);
-};
-
-const applyLocalFilters = (transactions, criteria) => {
-  const search = criteria.search.trim().toLowerCase();
-  const filters = criteria.filters;
-  const minAmount = filters.minAmount === "" ? null : Number(filters.minAmount);
-  const maxAmount = filters.maxAmount === "" ? null : Number(filters.maxAmount);
-  const startDate = filters.startDate ? new Date(filters.startDate) : null;
-  const endDate = filters.endDate ? new Date(filters.endDate) : null;
-
-  return transactions.filter((transaction) => {
-    const searchableValues = [
-      transaction.transactionId,
-      transaction.merchantName,
-      transaction.customerName,
-      transaction.paymentReference,
-    ]
-      .join(" ")
-      .toLowerCase();
-
-    if (search && !searchableValues.includes(search)) {
-      return false;
-    }
-
-    if (filters.status && transaction.status !== filters.status) {
-      return false;
-    }
-
-    const amount = Number(transaction.amount);
-    if (minAmount !== null && amount < minAmount) {
-      return false;
-    }
-
-    if (maxAmount !== null && amount > maxAmount) {
-      return false;
-    }
-
-    const transactionDate = new Date(transaction.createdAt);
-    if (startDate && transactionDate < startDate) {
-      return false;
-    }
-
-    if (endDate) {
-      const endOfDay = new Date(endDate);
-      endOfDay.setHours(23, 59, 59, 999);
-      if (transactionDate > endOfDay) {
-        return false;
-      }
-    }
-
-    return true;
-  });
-};
 
 const formatDateTime = (value) => {
   if (!value) {
@@ -356,6 +52,252 @@ const formatAmount = (amount, currency) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+};
+
+const escapeHtml = (value) =>
+  String(value ?? "-")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+
+const buildAppliedFilters = (filters) => {
+  const selectedDate = filters.date?.trim();
+
+  return {
+    status: filters.status,
+    minAmount: filters.minAmount,
+    maxAmount: filters.maxAmount,
+    startDate: selectedDate,
+    endDate: selectedDate,
+  };
+};
+
+const openTransactionPdfReport = ({ merchantName, filters, transactions }) => {
+  const reportWindow = window.open("", "_blank", "width=1280,height=900");
+
+  if (!reportWindow) {
+    throw new Error("Popup blocked. Please allow popups to generate the PDF report.");
+  }
+
+  const generatedAt = new Date().toLocaleString();
+  const filterSummary = [
+    filters.status ? `Status: ${filters.status}` : "Status: All",
+    filters.minAmount ? `Min amount: ${filters.minAmount}` : null,
+    filters.maxAmount ? `Max amount: ${filters.maxAmount}` : null,
+    filters.date ? `Date: ${filters.date}` : null,
+  ]
+    .filter(Boolean)
+    .join(" | ");
+
+  const rowsMarkup =
+    transactions.length > 0
+      ? transactions
+          .map(
+            (transaction, index) => `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${escapeHtml(transaction.transactionId)}</td>
+                <td>${escapeHtml(formatDateTime(transaction.createdAt))}</td>
+                <td>${escapeHtml(transaction.customerName || "-")}</td>
+                <td>${escapeHtml(transaction.customerEmail || "-")}</td>
+                <td>${escapeHtml(formatAmount(transaction.amount, transaction.currency))}</td>
+                <td>${escapeHtml(transaction.paymentMethod || "-")}</td>
+                <td>${escapeHtml(transaction.status || "-")}</td>
+                <td>${escapeHtml(transaction.paymentReference || "-")}</td>
+              </tr>
+            `
+          )
+          .join("")
+      : `
+          <tr>
+            <td colspan="9" class="empty">No transactions found for the selected filters.</td>
+          </tr>
+        `;
+
+  const reportMarkup = `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Transaction Report</title>
+        <style>
+          :root {
+            color-scheme: light;
+            --ink: #0f172a;
+            --muted: #475569;
+            --line: #dbe3ef;
+            --soft: #f8fafc;
+            --accent: #059669;
+            --accent-soft: #ecfdf5;
+          }
+          * { box-sizing: border-box; }
+          body {
+            margin: 0;
+            padding: 32px;
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            color: var(--ink);
+            background: white;
+          }
+          .sheet {
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            overflow: hidden;
+          }
+          .header {
+            padding: 28px 32px 20px;
+            background: linear-gradient(135deg, #f0fdf4, #eff6ff);
+            border-bottom: 1px solid var(--line);
+          }
+          .eyebrow {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+          }
+          h1 {
+            margin: 14px 0 8px;
+            font-size: 28px;
+          }
+          .meta, .summary {
+            color: var(--muted);
+            font-size: 14px;
+          }
+          .summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            padding: 20px 32px 0;
+          }
+          .card {
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 16px;
+            background: var(--soft);
+          }
+          .card strong {
+            display: block;
+            font-size: 22px;
+            color: var(--ink);
+            margin-top: 6px;
+          }
+          .filters {
+            padding: 20px 32px 8px;
+            font-size: 13px;
+            color: var(--muted);
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+          }
+          thead {
+            background: #f8fafc;
+          }
+          th, td {
+            padding: 12px 14px;
+            border-top: 1px solid var(--line);
+            text-align: left;
+            vertical-align: top;
+            font-size: 13px;
+          }
+          th {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+          }
+          tbody tr:nth-child(even) {
+            background: #fcfdff;
+          }
+          .table-wrap {
+            padding: 0 32px 28px;
+          }
+          .empty {
+            text-align: center;
+            color: var(--muted);
+            padding: 28px;
+          }
+          @media print {
+            body {
+              padding: 0;
+            }
+            .sheet {
+              border: 0;
+              border-radius: 0;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <section class="sheet">
+          <div class="header">
+            <span class="eyebrow">Transaction PDF Report</span>
+            <h1>${escapeHtml(merchantName)} Transactions</h1>
+            <div class="meta">Generated on ${escapeHtml(generatedAt)}</div>
+          </div>
+
+          <div class="summary">
+            <div class="card">
+              <span>Total records</span>
+              <strong>${transactions.length}</strong>
+            </div>
+            <div class="card">
+              <span>Successful payments</span>
+              <strong>${transactions.filter((item) => item.status === "Successful").length}</strong>
+            </div>
+            <div class="card">
+              <span>Failed payments</span>
+              <strong>${transactions.filter((item) => item.status === "Failed").length}</strong>
+            </div>
+          </div>
+
+          <div class="filters">
+            <strong>Applied filters:</strong> ${escapeHtml(filterSummary || "None")}
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Transaction ID</th>
+                  <th>Date</th>
+                  <th>Customer</th>
+                  <th>Email</th>
+                  <th>Amount</th>
+                  <th>Method</th>
+                  <th>Status</th>
+                  <th>Reference</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsMarkup}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </body>
+    </html>
+  `;
+
+  reportWindow.document.open();
+  reportWindow.document.write(reportMarkup);
+  reportWindow.document.close();
+  reportWindow.focus();
+
+  reportWindow.onload = () => {
+    reportWindow.setTimeout(() => {
+      reportWindow.focus();
+      reportWindow.print();
+    }, 300);
+  };
 };
 
 const getErrorMessage = (error) => {
@@ -404,7 +346,6 @@ export default function TransactionManagement() {
     filters: EMPTY_FILTERS,
   });
   const [transactions, setTransactions] = useState([]);
-  const [dataMode, setDataMode] = useState("api");
   const [merchantName, setMerchantName] = useState(SINGLE_SHOP_NAME);
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -419,34 +360,18 @@ export default function TransactionManagement() {
   const [receiptTransaction, setReceiptTransaction] = useState(null);
   const [refreshToken, setRefreshToken] = useState(0);
   const pageSize = pagination.pageSize;
-  const localTransactions = useMemo(
-    () => applyLocalFilters(DUMMY_TRANSACTIONS, appliedCriteria),
-    [appliedCriteria]
-  );
-  const localTotalPages = Math.max(Math.ceil(localTransactions.length / pageSize), 1);
-  const localCurrentPage = Math.min(currentPage, localTotalPages);
-  const localVisibleTransactions = useMemo(() => {
-    const start = (localCurrentPage - 1) * pageSize;
-    return localTransactions.slice(start, start + pageSize);
-  }, [localCurrentPage, localTransactions, pageSize]);
 
   const activeParams = useMemo(
     () => ({
       page: currentPage,
       limit: pageSize,
       search: appliedCriteria.search,
-      ...appliedCriteria.filters,
+      ...buildAppliedFilters(appliedCriteria.filters),
     }),
     [appliedCriteria.filters, appliedCriteria.search, currentPage, pageSize]
   );
 
   useEffect(() => {
-    if (dataMode === "dummy") {
-      setLoading(false);
-      setError("");
-      return undefined;
-    }
-
     let cancelled = false;
 
     const loadTransactions = async (showLoading = true) => {
@@ -462,12 +387,6 @@ export default function TransactionManagement() {
         }
 
         const apiTransactions = data.transactions || [];
-        if (apiTransactions.length === 0) {
-          setDataMode("dummy");
-          setError("");
-          return;
-        }
-
         setTransactions(apiTransactions);
         setMerchantName(data.merchantName || SINGLE_SHOP_NAME);
         setPagination({
@@ -479,8 +398,8 @@ export default function TransactionManagement() {
         setError("");
       } catch (requestError) {
         if (!cancelled) {
-          setDataMode("dummy");
-          setError("");
+          setTransactions([]);
+          setError(getErrorMessage(requestError));
         }
       } finally {
         if (!cancelled && showLoading) {
@@ -496,7 +415,7 @@ export default function TransactionManagement() {
       cancelled = true;
       clearInterval(intervalId);
     };
-  }, [activeParams, currentPage, dataMode, pageSize, refreshToken]);
+  }, [activeParams, currentPage, pageSize, refreshToken]);
 
   const handleSearch = (event) => {
     event.preventDefault();
@@ -526,27 +445,23 @@ export default function TransactionManagement() {
   };
 
   const handleRefresh = () => {
-    if (dataMode === "dummy") {
-      setCurrentPage(1);
-      setError("");
-      return;
-    }
-
+    setError("");
     setRefreshToken((value) => value + 1);
   };
 
   const handleExport = async () => {
     try {
-      if (dataMode === "dummy") {
-        downloadTextFile(buildCsv(localTransactions), "transactions.csv", "text/csv;charset=utf-8;");
-        return;
-      }
-
-      const response = await exportTransactions({
+      const reportData = await getTransactions({
+        page: 1,
+        limit: Math.max(pagination.total || 0, pageSize, 10),
         search: appliedCriteria.search,
-        ...appliedCriteria.filters,
+        ...buildAppliedFilters(appliedCriteria.filters),
       });
-      downloadTextFile(response.data, "transactions.csv", "text/csv;charset=utf-8;");
+      openTransactionPdfReport({
+        merchantName,
+        filters: appliedCriteria.filters,
+        transactions: reportData.transactions || [],
+      });
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     }
@@ -554,11 +469,6 @@ export default function TransactionManagement() {
 
   const handleViewDetails = async (transaction) => {
     try {
-      if (dataMode === "dummy") {
-        setDetailsTransaction(transaction);
-        return;
-      }
-
       const data = await getTransactionById(transaction._id);
       setDetailsTransaction(data);
     } catch (requestError) {
@@ -568,11 +478,6 @@ export default function TransactionManagement() {
 
   const handleViewReceipt = async (transaction) => {
     try {
-      if (dataMode === "dummy") {
-        setReceiptTransaction(transaction);
-        return;
-      }
-
       const data = await getTransactionById(transaction._id);
       setReceiptTransaction(data);
     } catch (requestError) {
@@ -629,14 +534,9 @@ export default function TransactionManagement() {
                 <p className="mt-2 max-w-2xl text-sm text-slate-600">
                   Track, inspect, and export payment transactions for your shop directly from MongoDB.
                 </p>
-                {dataMode === "dummy" ? (
-                  <div className="mt-3 inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
-                    Demo data loaded locally
-                  </div>
-                ) : null}
               </div>
 
-              <form onSubmit={handleSearch} className="grid gap-3 lg:grid-cols-[1fr_auto_auto_auto_auto_auto]">
+              <form onSubmit={handleSearch} className="grid gap-3 lg:grid-cols-[1fr_auto_auto_auto_auto]">
                 <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                   <Search size={18} className="text-slate-400" />
                   <input
@@ -653,14 +553,6 @@ export default function TransactionManagement() {
                 >
                   <Search size={16} />
                   Search
-                </button>
-                <button
-                  type="button"
-                  onClick={handleApplyFilters}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
-                >
-                  <Filter size={16} />
-                  Apply Filters
                 </button>
                 <button
                   type="button"
@@ -683,11 +575,11 @@ export default function TransactionManagement() {
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700"
                 >
                   <Download size={16} />
-                  Export CSV
+                  Export PDF
                 </button>
               </form>
 
-              <div className="grid gap-3 lg:grid-cols-5">
+              <div className="grid gap-3 lg:grid-cols-[1.1fr_1fr_1fr_1fr_auto]">
                 <select
                   value={draftFilters.status}
                   onChange={(event) =>
@@ -725,20 +617,20 @@ export default function TransactionManagement() {
                 />
                 <input
                   type="date"
-                  value={draftFilters.startDate}
+                  value={draftFilters.date}
                   onChange={(event) =>
-                    setDraftFilters((current) => ({ ...current, startDate: event.target.value }))
+                    setDraftFilters((current) => ({ ...current, date: event.target.value }))
                   }
                   className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
                 />
-                <input
-                  type="date"
-                  value={draftFilters.endDate}
-                  onChange={(event) =>
-                    setDraftFilters((current) => ({ ...current, endDate: event.target.value }))
-                  }
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
-                />
+                <button
+                  type="button"
+                  onClick={handleApplyFilters}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
+                >
+                  <Filter size={16} />
+                  Apply Filter
+                </button>
               </div>
             </div>
 
@@ -749,12 +641,12 @@ export default function TransactionManagement() {
             ) : null}
 
             <TransactionTable
-              transactions={dataMode === "dummy" ? localVisibleTransactions : transactions}
+              transactions={transactions}
               loading={loading}
               error=""
-              total={dataMode === "dummy" ? localTransactions.length : pagination.total}
-              currentPage={dataMode === "dummy" ? localCurrentPage : pagination.currentPage}
-              totalPages={dataMode === "dummy" ? localTotalPages : pagination.totalPages}
+              total={pagination.total}
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
               merchantName={merchantName}
               onPageChange={setCurrentPage}
               onViewDetails={handleViewDetails}

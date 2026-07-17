@@ -1,23 +1,28 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Bell, Settings, ReceiptText, ShieldCheck, LayoutDashboard, CreditCard, Undo2 } from 'lucide-react';
+import { Bell, Settings, ReceiptText, ShieldCheck, LayoutDashboard, CreditCard, Undo2, LogOut, Plus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const adminMenuItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { name: 'Fraud Detection', icon: ShieldCheck, path: '/fraud-detection' },
+  { name: 'Transaction Management', icon: ReceiptText, path: '/transaction-management' },
   { name: 'Refund Management', icon: Undo2, path: '/refund-management' },
+  { name: 'Fraud Detection', icon: ShieldCheck, path: '/fraud-detection' },
   { name: 'Notifications', icon: Bell, path: '/notifications' },
   { name: 'Settings', icon: Settings, path: '/settings' },
 ];
 
 const userMenuItems = [
-  { name: 'Settlement', icon: CreditCard, path: '/dashboard' },
+  { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  { name: "New Transaction", icon: Plus, path: "/payment" },
   { name: 'Notifications', icon: Bell, path: '/notifications' },
   { name: 'Settings', icon: Settings, path: '/settings' },
 ];
 
 const getActiveItemFromPath = (pathname) => {
+  if (pathname === '/payment') {
+    return 'New Transaction';
+  }
   if (pathname === '/transaction-management') {
     return 'Transaction Management';
   }
@@ -45,7 +50,7 @@ const getActiveItemFromPath = (pathname) => {
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAdmin } = useAuth();
+  const { isAdmin, logout } = useAuth();
   const [activeItem, setActiveItem] = useState(() => getActiveItemFromPath(location.pathname));
 
   const menuItems = isAdmin ? adminMenuItems : userMenuItems;
@@ -54,6 +59,14 @@ const Sidebar = () => {
     setActiveItem(item.name);
     if (item.path) {
       navigate(item.path);
+    }
+  };
+
+  const handleLogout = () => {
+    const confirmed = window.confirm('Are you sure you want to log out?');
+    if (confirmed) {
+      logout();
+      navigate('/login');
     }
   };
 
@@ -92,33 +105,16 @@ const Sidebar = () => {
             </button>
           ))}
         </nav>
-
-        {/* Transaction Management - Admin only */}
-        {isAdmin && (
-          <button
-            type="button"
-            onClick={() => {
-              setActiveItem('Transaction Management');
-              navigate('/transaction-management');
-            }}
-            className={`mt-4 flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left transition-colors ${
-              activeItem === 'Transaction Management'
-                ? 'bg-[#10B981] text-white shadow-sm'
-                : 'bg-transparent text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <ReceiptText
-              size={18}
-              className={activeItem === 'Transaction Management' ? 'text-white' : 'text-[#8A8FA3]'}
-            />
-            <span className="text-sm font-semibold">Transaction Management</span>
-          </button>
-        )}
       </div>
 
-      {/* New Analysis Button - Bottom */}
-      <button className="bg-[#0F1117] text-white text-sm font-semibold py-3 rounded-xl hover:bg-gray-800 transition-colors">
-        + New Analysis
+      {/* Logout Button - Bottom */}
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="flex items-center justify-center gap-2 bg-[#0F1117] text-white text-sm font-semibold py-3 rounded-xl hover:bg-gray-800 transition-colors"
+      >
+        <LogOut size={16} />
+        Logout
       </button>
     </div>
   );
