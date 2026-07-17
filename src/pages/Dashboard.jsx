@@ -3,6 +3,7 @@ import { Plus, FileText, Eye, Download, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
+import TransactionDetailModal from "../components/TransactionDetailModal";
 import api from "../services/api";
 import {
   getPaymentSummary,
@@ -10,7 +11,7 @@ import {
 } from "../services/paymentHistoryService";
 import { StatusBadge } from "./PaymentSuccess";
 
-const FILTERS = ["All", "Completed", "Pending", "Flagged", "Failed"];
+const FILTERS = ["All", "Completed", "Pending", "Failed"];
 const PAGE_SIZE = 5;
 
 function formatAmount(amount, currency) {
@@ -80,6 +81,7 @@ export default function Dashboard() {
   const [page, setPage] = useState(1);
   const [tableLoading, setTableLoading] = useState(true);
   const [tableError, setTableError] = useState(null);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
 
   // Fetch user name for welcome heading
   useEffect(() => {
@@ -152,11 +154,11 @@ export default function Dashboard() {
   };
 
   const handleViewDetails = (transaction) => {
-    console.log("View details for", transaction.transactionId);
+    setSelectedTransaction(transaction);
   };
 
   const handleDownloadReceipt = (transaction) => {
-    console.log("Download receipt for", transaction.transactionId);
+    setSelectedTransaction(transaction);
   };
 
   const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
@@ -193,14 +195,14 @@ export default function Dashboard() {
               >
                 <FileText size={15} /> Export CSV
               </button>
-              <button
+              {/* <button
                 type="button"
                 onClick={() => navigate("/payment")}
                 className="flex items-center gap-2 rounded-lg bg-[#0A192F] px-4 py-2 text-sm font-medium text-white hover:bg-[#0d223f]"
               >
                 <Plus size={15} />
                 New Transaction
-              </button>
+              </button> */}
             </div>
           </div>
 
@@ -229,12 +231,14 @@ export default function Dashboard() {
               value={summary ? summary.successfulCount.toLocaleString() : "—"}
               caption={summary ? `${summary.successRatePct}% success rate` : ""}
             />
+            
             <StatCard
               dotColor="bg-amber-500"
-              label="Flagged"
-              value={summary ? summary.flaggedCount.toLocaleString() : "—"}
-              caption="Manual review required"
+              label="Pending"
+              value={summary ? (summary.pendingCount ?? 0).toLocaleString() : "—"}
+              caption="Awaiting processing"
             />
+
             <StatCard
               dotColor="bg-red-500"
               label="Failed"
@@ -243,19 +247,17 @@ export default function Dashboard() {
             />
           </div>
 
-          {/* ── Payment History Table ── */}
-          <div className="mt-6 bg-white rounded-xl border border-slate-200">
-            {/* Search + Filter bar */}
-            <div className="flex flex-col gap-4 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="relative flex-1 sm:max-w-xs">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  placeholder="Search by transaction ID or method..."
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
-                />
+          {/* Search + filters — OUTSIDE the table card */}
+          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <div className="relative flex-1 sm:max-w-xs">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder="Search by transaction ID or method..."
+                className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+              />
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -276,17 +278,21 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto">
+            {/* ── Payment History Table ── */}
+            <div className="bg-white rounded-xl border border-slate-200">
+              {/* Table */}
+              <div className="overflow-x-auto">
+
+
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="text-xs uppercase tracking-wide text-slate-400">
+                  <tr className="text-xs uppercase tracking-wide text-slate-500 bg-slate-50 border-b border-slate-200">
                     <th className="px-4 py-3 font-medium">Date / Time</th>
                     <th className="px-4 py-3 font-medium">Transaction ID</th>
                     <th className="px-4 py-3 font-medium">Method</th>
                     <th className="px-4 py-3 font-medium">Amount</th>
                     <th className="px-4 py-3 font-medium">Status</th>
-                    <th className="px-4 py-3" />
+                    <th className="px-4 py-3 font-medium text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -323,23 +329,23 @@ export default function Dashboard() {
                       return (
                         <tr
                           key={t.id}
-                          className="border-t border-slate-50 text-slate-700 hover:bg-slate-50"
+                          className="border-t border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
                         >
-                          <td className="px-4 py-3 text-slate-500">
+                          <td className="px-4 py-4 text-slate-500">
                             {formatDateTime(t.dateTime || t.createdAt)}
                           </td>
-                          <td className="px-4 py-3 font-medium text-slate-900">
+                          <td className="px-4 py-4 font-medium text-slate-900">
                             {t.transactionId}
                           </td>
-                          <td className="px-4 py-3">{t.method}</td>
-                          <td className="px-4 py-3 font-medium text-slate-900">
+                          <td className="px-4 py-4">{t.method}</td>
+                          <td className={`px-4 py-4 font-medium ${t.status === "Failed" ? "text-red-600" : "text-slate-900"}`}>
                             {formatAmount(t.amount, t.currency)}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-4">
                             <StatusBadge status={t.status} />
                           </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex items-center justify-end gap-3">
+                          <td className="px-4 py-4 text-center">
+                            <div className="flex items-center justify-center gap-3">
                               {isRefundable ? (
                                 <button
                                   type="button"
@@ -422,6 +428,14 @@ export default function Dashboard() {
           </div>
         </main>
       </div>
+
+      {/* Transaction Detail Modal */}
+      {selectedTransaction && (
+        <TransactionDetailModal
+          transaction={selectedTransaction}
+          onClose={() => setSelectedTransaction(null)}
+        />
+      )}
     </div>
   );
 }
