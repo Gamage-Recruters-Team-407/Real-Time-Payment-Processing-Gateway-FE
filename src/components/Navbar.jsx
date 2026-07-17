@@ -2,27 +2,54 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, Settings, ChevronDown, Calendar, Clock } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import NotificationBadge from "./NotificationBadge";
+import { getUnreadCount } from "../services/notificationService";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
-  const [now, setNow] = useState(new Date());
 
+  // Live clock in the top-left date/time chips
+  const [now, setNow] = useState(new Date());
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const formattedDate = now.toLocaleDateString('en-GB', {
-    weekday: 'short',
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
+  // Live unread notification count for the bell badge
+  const [unreadCount, setUnreadCount] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadUnreadCount() {
+      try {
+        const count = await getUnreadCount();
+        if (!cancelled) setUnreadCount(count);
+      } catch (err) {
+        console.error("Failed to load unread notification count:", err);
+      }
+    }
+
+    loadUnreadCount();
+    // Poll every 30s so the badge stays roughly live without needing sockets.
+    const interval = setInterval(loadUnreadCount, 30000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
+  const formattedDate = now.toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
   });
-  const formattedTime = now.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
+  const formattedTime = now.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
     hour12: true,
   });
 
@@ -37,7 +64,7 @@ const Navbar = () => {
 
     if (!name) return "U";
 
-    if (typeof name === 'string') {
+    if (typeof name === "string") {
       const names = name.split(" ");
       if (names.length >= 2 && names[0] && names[1]) {
         return `${names[0][0]}${names[1][0]}`.toUpperCase();
@@ -90,16 +117,9 @@ const Navbar = () => {
           onClick={() => navigate("/settings")}
           className="text-gray-400 cursor-pointer hover:text-gray-600 transition-colors"
         />
-        <div
-          onClick={() => navigate("/notifications")}
-          className="relative cursor-pointer"
-        >
-          <Bell
-            size={20}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          />
-          <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-        </div>
+
+        <NotificationBadge count={unreadCount} onClick={() => navigate("/notifications")} />
+
         <div
           onClick={() => navigate("/profile")}
           className="flex items-center gap-3 cursor-pointer pl-3 ml-1 border-l border-gray-200 rounded-xl py-1.5 pr-2 hover:bg-[#F8FAFC] transition-colors duration-200"
