@@ -207,8 +207,10 @@ const OTPVerification = () => {
 
         setMessage("Verification successful!");
         setTimeout(() => {
-          if (purpose === 'password_forgot') {
-            navigate('/forgot-password', { state: { email, verified: true } });
+          // if (purpose === 'password_forgot') { 
+          //   navigate('/forgot-password', { state: { email, verified: true } });
+          if (purpose === 'password_forgot') { 
+          navigate(`/new-password-setup?email=${encodeURIComponent(email)}`, { state: { email, verified: true } });
           } else if (purpose === 'payment') {
             navigate('/card-payment', { state: { verified: true } });
           }
@@ -303,7 +305,8 @@ const OTPVerification = () => {
             <div className="inline-flex items-center justify-center w-12 h-12 bg-emerald-600 rounded-xl mb-4">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 mb-2">Gamage Pay</h1>
+            <h1 className="text-2xl font-bold mb-2 text-[#0F1117]">
+                Gamage<span className="text-[#10B981]">Pay</span></h1>
             <p className="text-sm text-slate-500">
               Enterprise-grade payment orchestration for secure transactions.
             </p>

@@ -26,9 +26,29 @@ export async function getTransactionSummary() {
  * @param {{ status?: string, search?: string, page?: number, limit?: number }} params
  */
 export async function getTransactions(params = {}) {
-  const { status = "All", search = "", page = 1, limit = 5 } = params;
+  const {
+    status = "",
+    search = "",
+    page = 1,
+    limit = 5,
+    minAmount,
+    maxAmount,
+    startDate,
+    endDate,
+    merchantName,
+  } = params;
   const response = await api.get("/transactions", {
-    params: { status, search, page, limit },
+    params: {
+      status,
+      search,
+      page,
+      limit,
+      minAmount,
+      maxAmount,
+      startDate,
+      endDate,
+      merchantName,
+    },
   });
   
   // Adapt to the response structure of the test backend

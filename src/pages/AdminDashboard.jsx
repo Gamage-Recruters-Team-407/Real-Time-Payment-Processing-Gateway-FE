@@ -18,8 +18,7 @@ import {
   Cell,
 } from "recharts";
 import api from "../services/api";
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
+import DashboardLayout from "../layouts/DashboardLayout";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 const ACTIVITY_ICON_MAP = {
@@ -107,164 +106,153 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f1f5f9] flex flex-col font-sans">
-      {/* Navbar - Top */}
-      <Navbar />
+    <DashboardLayout>
+      <div className="flex-1 px-8 py-6 space-y-6">
+        {/* Error Message */}
+        {error && (
+          <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            {error}
+          </div>
+        )}
 
-      <div className="flex flex-1">
-        {/* Sidebar - Left */}
-        <Sidebar />
+        {/* Header */}
+        <div>
+          <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Overview</p>
+          <h1 className="text-2xl font-bold text-slate-900 mt-0.5">Admin Dashboard</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Real-time snapshot of payments, merchants, and platform health.
+          </p>
+        </div>
 
-        {/* Main Content - Right */}
-        <div className="flex-1 flex flex-col">
-          <main className="flex-1 px-8 py-6 space-y-6">
-            {/* Error Message */}
-            {error && (
-              <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                {error}
+        {/* Stats Cards */}
+        <div className="grid grid-cols-4 gap-4">
+          <StatCard
+            dotColor="bg-emerald-500"
+            label="Total revenue"
+            value={formatCurrencyShort(overview.revenue?.total || 0)}
+            caption={`+${overview.revenue?.todayChangePct ?? 12.5}% from last month`}
+          />
+          <StatCard
+            dotColor="bg-emerald-500"
+            label="Transactions today"
+            value={formatNumber(overview.transactions?.today || 0)}
+            caption={`${overview.transactions?.successRate ?? 99.2}% success rate`}
+          />
+          <StatCard
+            dotColor="bg-amber-500"
+            label="Merchants pending"
+            value={formatNumber(overview.merchants?.pendingApproval || 0)}
+            caption="Awaiting verification"
+          />
+          <StatCard
+            dotColor="bg-emerald-500"
+            label="Active users"
+            value={formatNumber(overview.users?.total || 0)}
+            caption={`+${overview.users?.newThisWeek ?? 8} new this week`}
+          />
+        </div>
+
+        {/* Charts and Activity */}
+        <div className="grid grid-cols-3 gap-4">
+          {/* Chart */}
+          <div className="col-span-2 bg-white rounded-xl border border-slate-200 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm font-medium text-slate-800">Transaction volume</p>
+                <p className="text-xs text-slate-400">Last 7 days, LKR millions</p>
               </div>
-            )}
-
-            {/* Header */}
-            <div>
-              <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Overview</p>
-              <h1 className="text-2xl font-bold text-slate-900 mt-0.5">Dashboard</h1>
-              <p className="text-sm text-slate-500 mt-1">
-                Real-time snapshot of payments, merchants, and platform health.
-              </p>
+              <button 
+                onClick={fetchDashboardData}
+                className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1 transition"
+              >
+                <RefreshCw size={12} />
+                Refresh
+              </button>
             </div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-4 gap-4">
-              <StatCard
-                dotColor="bg-emerald-500"
-                label="Total revenue"
-                value={formatCurrencyShort(overview.revenue?.total || 0)}
-                caption={`+${overview.revenue?.todayChangePct ?? 12.5}% from last month`}
-              />
-              <StatCard
-                dotColor="bg-emerald-500"
-                label="Transactions today"
-                value={formatNumber(overview.transactions?.today || 0)}
-                caption={`${overview.transactions?.successRate ?? 99.2}% success rate`}
-              />
-              <StatCard
-                dotColor="bg-amber-500"
-                label="Merchants pending"
-                value={formatNumber(overview.merchants?.pendingApproval || 0)}
-                caption="Awaiting verification"
-              />
-              <StatCard
-                dotColor="bg-emerald-500"
-                label="Active users"
-                value={formatNumber(overview.users?.total || 0)}
-                caption={`+${overview.users?.newThisWeek ?? 8} new this week`}
-              />
-            </div>
-
-            {/* Charts and Activity */}
-            <div className="grid grid-cols-3 gap-4">
-              {/* Chart */}
-              <div className="col-span-2 bg-white rounded-xl border border-slate-200 p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-sm font-medium text-slate-800">Transaction volume</p>
-                    <p className="text-xs text-slate-400">Last 7 days, LKR millions</p>
-                  </div>
-                  <button 
-                    onClick={fetchDashboardData}
-                    className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1 transition"
-                  >
-                    <RefreshCw size={12} />
-                    Refresh
-                  </button>
-                </div>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={trend} barCategoryGap="30%">
-                      <XAxis
-                        dataKey="date"
-                        tickFormatter={(v, i) => {
-                          const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-                          return days[i] || v;
-                        }}
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 11, fill: "#94a3b8" }}
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={trend} barCategoryGap="30%">
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(v, i) => {
+                      const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+                      return days[i] || v;
+                    }}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: "#94a3b8" }}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "rgba(15,23,42,0.04)" }}
+                    formatter={(value) => [`LKR ${value}M`, "Volume"]}
+                  />
+                  <Bar dataKey="totalAmount" radius={[4, 4, 0, 0]}>
+                    {trend.map((entry, index) => (
+                      <Cell
+                        key={entry.date || index}
+                        fill={entry.totalAmount / maxTrendValue > 0.55 ? "#10b981" : "#a7f3d0"}
                       />
-                      <Tooltip
-                        cursor={{ fill: "rgba(15,23,42,0.04)" }}
-                        formatter={(value) => [`LKR ${value}M`, "Volume"]}
-                      />
-                      <Bar dataKey="totalAmount" radius={[4, 4, 0, 0]}>
-                        {trend.map((entry, index) => (
-                          <Cell
-                            key={entry.date || index}
-                            fill={entry.totalAmount / maxTrendValue > 0.55 ? "#10b981" : "#a7f3d0"}
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Recent Activity */}
-              <div className="bg-white rounded-xl border border-slate-200 p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-sm font-medium text-slate-800">Recent activity</p>
-                    <p className="text-xs text-slate-400">Across the platform</p>
-                  </div>
-                  <button className="text-xs text-emerald-600 hover:text-emerald-700 font-medium transition">
-                    View all
-                  </button>
-                </div>
-                <ul className="space-y-4">
-                  {activity.map((item) => {
-                    const cfg = ACTIVITY_ICON_MAP[item.type] || ACTIVITY_ICON_MAP.approval;
-                    const Icon = cfg.icon;
-                    return (
-                      <li key={item.id} className="flex items-start gap-3">
-                        <span className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${cfg.tone}`}>
-                          <Icon size={14} />
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-slate-800 truncate font-medium">{item.title}</p>
-                          <p className="text-xs text-slate-400 truncate">{item.subtitle}</p>
-                        </div>
-                        <span className="text-[11px] text-slate-400 whitespace-nowrap">{item.time}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
+          </div>
 
-            {/* Quick Access */}
-            <div>
-              <p className="text-sm font-medium text-slate-800 mb-3">Quick access</p>
-              <div className="grid grid-cols-3 gap-4">
-                {QUICK_ACCESS.map(({ icon: Icon, title, subtitle }) => (
-                  <button
-                    key={title}
-                    className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3 text-left hover:border-slate-300 hover:shadow-sm transition-all"
-                  >
-                    <span className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-slate-500 border border-slate-100">
-                      <Icon size={18} />
+          {/* Recent Activity */}
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm font-medium text-slate-800">Recent activity</p>
+                <p className="text-xs text-slate-400">Across the platform</p>
+              </div>
+              <button className="text-xs text-emerald-600 hover:text-emerald-700 font-medium transition">
+                View all
+              </button>
+            </div>
+            <ul className="space-y-4">
+              {activity.map((item) => {
+                const cfg = ACTIVITY_ICON_MAP[item.type] || ACTIVITY_ICON_MAP.approval;
+                const Icon = cfg.icon;
+                return (
+                  <li key={item.id} className="flex items-start gap-3">
+                    <span className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${cfg.tone}`}>
+                      <Icon size={14} />
                     </span>
-                    <div>
-                      <p className="text-sm font-medium text-slate-800">{title}</p>
-                      <p className="text-xs text-slate-400">{subtitle}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-slate-800 truncate font-medium">{item.title}</p>
+                      <p className="text-xs text-slate-400 truncate">{item.subtitle}</p>
                     </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </main>
+                    <span className="text-[11px] text-slate-400 whitespace-nowrap">{item.time}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+
+        {/* Quick Access */}
+        <div>
+          <p className="text-sm font-medium text-slate-800 mb-3">Quick access</p>
+          <div className="grid grid-cols-3 gap-4">
+            {QUICK_ACCESS.map(({ icon: Icon, title, subtitle }) => (
+              <button
+                key={title}
+                className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3 text-left hover:border-slate-300 hover:shadow-sm transition-all"
+              >
+                <span className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-slate-500 border border-slate-100">
+                  <Icon size={18} />
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-slate-800">{title}</p>
+                  <p className="text-xs text-slate-400">{subtitle}</p>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
 

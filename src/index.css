@@ -19,6 +19,8 @@
   --color-warning-light: rgba(245, 158, 11, 0.1);
   --color-success: #10B981;
   --color-success-light: rgba(16, 185, 129, 0.1);
+  --color-yellow: #EAB308;
+  --color-yellow-light: rgba(234, 179, 8, 0.1);
 
   --color-border: #E5E7EB;
   
@@ -112,6 +114,11 @@ ul {
 .badge-success {
   background-color: var(--color-success-light);
   color: var(--color-success);
+}
+
+.badge-yellow {
+  background-color: var(--color-yellow-light);
+  color: var(--color-yellow);
 }
 
 .badge-warning {
@@ -420,16 +427,13 @@ ul {
 }
 
 .tooltip-card {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  width: 320px;
+  margin-top: 16px;
+  width: 100%;
   background: white;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 16px;
-  box-shadow: var(--shadow-md);
-  z-index: 10;
+  box-shadow: var(--shadow-sm);
 }
 
 .tooltip-header {
@@ -542,6 +546,10 @@ ul {
 
 .data-table tbody tr.row-danger {
   background-color: rgba(225, 29, 72, 0.02);
+}
+
+.data-table tbody tr.row-escalated {
+  background-color: rgba(225, 29, 72, 0.08);
 }
 
 .data-table tbody tr:hover {

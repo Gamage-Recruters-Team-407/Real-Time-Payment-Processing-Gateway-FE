@@ -4,11 +4,14 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from './layouts/DashboardLayout';
+import RoleBasedRoute from "./components/RoleBasedRoute";
 
 // Auth pages
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import NewPasswordSetup from "./pages/NewPasswordSetup";
 
 // User pages
 import Dashboard from "./pages/Dashboard";
@@ -25,7 +28,8 @@ import PaymentHistory from "./pages/PaymentHistory";
 import RefundRequest from "./pages/RefundRequest";
 
 // OTP Verification
-import OTPVerification from "./pages/OTPVerification"; 
+import OTPVerification from "./pages/OTPVerification";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 // Admin pages
 import AdminDashboard from "./pages/AdminDashboard";
@@ -33,30 +37,59 @@ import AdminDashboard from "./pages/AdminDashboard";
 // Transaction Management
 import TransactionManagement from "./pages/TransactionManagement";
 
+// Refund Management
+import RefundManagement from "./pages/RefundManagement";
 
-
-
+import Payment from "./pages/Payment.jsx";
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-
           {/* Auth Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/new-password-setup" element={<NewPasswordSetup />} />
 
-          {/* Default Route */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          {/* Default Route - Role based redirect */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <RoleBasedRoute />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* User Routes */}
+          {/* User Dashboard - Only for regular users */}
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireUser>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Admin Dashboard - Only for admins */}
+          <Route
+            path="/admin-dashboard"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Old admin route - redirect to admin-dashboard */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute requireAdmin>
+                <Navigate to="/admin-dashboard" replace />
               </ProtectedRoute>
             }
           />
@@ -76,11 +109,14 @@ function App() {
             path="/profile"
             element={
               <ProtectedRoute>
-                <Profile />
+                <DashboardLayout>
+                  <Profile />
+                </DashboardLayout>
               </ProtectedRoute>
             }
           />
 
+          {/* Setting - Direct use Sidebar and Navbar (NO DashboardLayout) */}
           <Route
             path="/settings"
             element={
@@ -90,12 +126,14 @@ function App() {
             }
           />
 
-          {/* Notification Route */}
+          {/* Notification Route - DashboardLayout eken wrap kara */}
           <Route
             path="/notifications"
             element={
               <ProtectedRoute>
-                <Notification />
+                <DashboardLayout>
+                  <Notification />
+                </DashboardLayout>
               </ProtectedRoute>
             }
           />
@@ -105,20 +143,46 @@ function App() {
             path="/card-payment"
             element={
               <ProtectedRoute>
-                <CardPayment />
+                <DashboardLayout>
+                  <CardPayment />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Payment Success Route */}
+          <Route
+            path="/payment-success"
+            element={
+              <ProtectedRoute>
+                <PaymentSuccess />
               </ProtectedRoute>
             }
           />
 
           {/* OTP Verification Route */}
-          <Route path="/otp-verification" element={<OTPVerification />} />
+          <Route
+            path="/otp-verification" 
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <OTPVerification/>
+                </DashboardLayout>
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* OTP Verification for Forgot Password (Public Route) */}
+          <Route path="/forgot-password/otp" element={<OTPVerification />} />
 
           {/* Payment History Route */}
           <Route
             path="/payment-history"
             element={
               <ProtectedRoute>
-                <PaymentHistory />
+                <DashboardLayout>
+                  <PaymentHistory />
+                </DashboardLayout>
               </ProtectedRoute>
             }
           />
@@ -141,7 +205,7 @@ function App() {
             }
           />
 
-          {/* Transaction Management */}
+          {/* Transaction Management - Direct use Sidebar and Navbar */}
           <Route
             path="/transaction-management"
             element={
@@ -151,18 +215,32 @@ function App() {
             }
           />
 
-          {/* Admin Route */}
+          {/* Refund Management */}
           <Route
-            path="/admin"
+            path="/refund-management"
             element={
-              <ProtectedRoute requireAdmin>
-                <AdminDashboard />
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <RefundManagement />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Developer 3 - Payment Processing */}
+          <Route
+            path="/payment"
+            element={
+              <ProtectedRoute requireUser>
+                <DashboardLayout>
+                  <Payment />
+                </DashboardLayout>
               </ProtectedRoute>
             }
           />
 
           {/* Fallback */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
 
         </Routes>
       </AuthProvider>
