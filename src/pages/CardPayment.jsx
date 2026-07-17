@@ -287,7 +287,11 @@ export default function CardPayment() {
                 body: JSON.stringify({
                     amount: amountValue,
                     currency: "LKR",
-                    description: `Card payment by ${details.cardholderName}`
+                    description: `Card payment by ${details.cardholderName}`,
+                    cardDetails: {
+                        cardholderName: details.cardholderName,
+                        cardNumber: cleanCardNumber
+                    }
                 })
             });
 
