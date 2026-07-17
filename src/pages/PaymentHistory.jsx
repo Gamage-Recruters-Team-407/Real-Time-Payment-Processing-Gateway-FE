@@ -12,13 +12,14 @@ import { useNavigate } from "react-router-dom";
 import { Search, Eye, Download } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
+import TransactionDetailModal from "../components/TransactionDetailModal";
 import {
   getPaymentSummary,
   getPaymentHistory,
 } from "../services/paymentHistoryService";
 import { StatusBadge } from "./PaymentSuccess";
 
-const FILTERS = ["All", "Completed", "Pending", "Flagged", "Failed"];
+const FILTERS = ["All", "Completed", "Pending", "Failed"];
 const PAGE_SIZE = 5;
 
 function formatAmount(amount, currency) {
@@ -67,8 +68,10 @@ export default function PaymentHistory() {
   const [status, setStatus] = useState("All");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [month, setMonth] = useState("");
   const [loading, setLoading] = useState(true);
   const [tableError, setTableError] = useState(null);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
 
   useEffect(() => {
     getPaymentSummary()
@@ -79,7 +82,7 @@ export default function PaymentHistory() {
     setLoading(true);
     setTableError(null);
     const handle = setTimeout(() => {
-      getPaymentHistory({ status, search, page, limit: PAGE_SIZE })
+      getPaymentHistory({ status, search, page, limit: PAGE_SIZE, month })
         .then((res) => {
           setRows(res.results);
           setTotal(res.total);
@@ -88,7 +91,7 @@ export default function PaymentHistory() {
         .finally(() => setLoading(false));
     }, 300);
     return () => clearTimeout(handle);
-  }, [status, search, page]);
+  }, [status, search, page, month]);
 
   const handleFilterChange = (next) => {
     setStatus(next);
@@ -120,11 +123,11 @@ export default function PaymentHistory() {
   };
 
   const handleViewDetails = (transaction) => {
-    console.log("View details for", transaction.transactionId);
+    setSelectedTransaction(transaction);
   };
 
   const handleDownloadReceipt = (transaction) => {
-    console.log("Download receipt for", transaction.transactionId);
+    setSelectedTransaction(transaction);
   };
 
   const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
@@ -194,9 +197,9 @@ export default function PaymentHistory() {
               />
               <StatCard
                 dotColor="bg-amber-500"
-                label="Flagged"
-                value={summary ? summary.flaggedCount.toLocaleString() : "—"}
-                caption="Manual review required"
+                label="Pending"
+                value={summary ? (summary.pendingCount ?? 0).toLocaleString() : "—"}
+                caption="Awaiting processing"
               />
               <StatCard
                 dotColor="bg-red-500"
@@ -206,47 +209,74 @@ export default function PaymentHistory() {
               />
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200">
-              <div className="flex flex-col gap-4 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="relative flex-1 sm:max-w-xs">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    placeholder="Search by transaction ID or method..."
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
-                  />
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {FILTERS.map((f) => (
-                    <button
-                      key={f}
-                      type="button"
-                      onClick={() => handleFilterChange(f)}
-                      className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                        status === f
-                          ? "bg-[#0F1117] text-white"
-                          : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                      }`}
-                    >
-                      {f}
-                    </button>
-                  ))}
-                </div>
+            {/* Search + filters — separated from the table card */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
+              <div className="relative flex-1 sm:max-w-xs">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  placeholder="Search by transaction ID or method..."
+                  className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                />
               </div>
+
+            <div className="flex flex-wrap gap-2">
+              {FILTERS.map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => handleFilterChange(f)}
+                  className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                    status === f
+                      ? "bg-[#0F1117] text-white"
+                      : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+
+              <select
+                  value={month}
+                  onChange={(e) => {
+                    setMonth(e.target.value);
+                    setPage(1);
+                  }}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                >
+                  <option value="">All Months</option>
+                  <option value="01">January</option>
+                  <option value="02">February</option>
+                  <option value="03">March</option>
+                  <option value="04">April</option>
+                  <option value="05">May</option>
+                  <option value="06">June</option>
+                  <option value="07">July</option>
+                  <option value="08">August</option>
+                  <option value="09">September</option>
+                  <option value="10">October</option>
+                  <option value="11">November</option>
+                  <option value="12">December</option>
+                </select>
+
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-slate-200">
+
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="text-xs uppercase tracking-wide text-slate-400">
+                    <tr className="text-xs uppercase tracking-wide text-slate-500 bg-slate-50 border-b border-slate-200">
                       <th className="px-4 py-3 font-medium">Date / time</th>
                       <th className="px-4 py-3 font-medium">Transaction ID</th>
                       <th className="px-4 py-3 font-medium">Method</th>
                       <th className="px-4 py-3 font-medium">Amount</th>
                       <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3" />
+                      <th className="px-4 py-3 font-medium text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -275,23 +305,24 @@ export default function PaymentHistory() {
                         return (
                           <tr
                             key={t.id}
-                            className="border-t border-slate-50 text-slate-700 hover:bg-slate-50"
+                            className="border-t border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
                           >
-                            <td className="px-4 py-3 text-slate-500">
+                            <td className="px-4 py-4 text-slate-500">
                               {formatDateTime(t.dateTime || t.createdAt)}
                             </td>
-                            <td className="px-4 py-3 font-medium text-slate-900">
+                            <td className="px-4 py-4 font-medium text-slate-900">
                               {t.transactionId}
                             </td>
-                            <td className="px-4 py-3">{t.method}</td>
-                            <td className="px-4 py-3 font-medium text-slate-900">
+                            <td className="px-4 py-4">{t.method}</td>
+                            <td className={`px-4 py-4 font-medium ${t.status === "Failed" ? "text-red-600" : "text-slate-900"}`}>
                               {formatAmount(t.amount, t.currency)}
                             </td>
-                            <td className="px-4 py-3">
+
+                            <td className="px-4 py-4">
                               <StatusBadge status={t.status} />
                             </td>
-                            <td className="px-4 py-3 text-right">
-                              <div className="flex items-center justify-end gap-3">
+                            <td className="px-4 py-4 text-center">
+                              <div className="flex items-center justify-center gap-3">
                                 {isRefundable ? (
                                   <button
                                     type="button"
@@ -374,6 +405,14 @@ export default function PaymentHistory() {
           </main>
         </div>
       </div>
+
+      {/* Transaction Detail Modal */}
+      {selectedTransaction && (
+        <TransactionDetailModal
+          transaction={selectedTransaction}
+          onClose={() => setSelectedTransaction(null)}
+        />
+      )}
     </div>
   );
 }

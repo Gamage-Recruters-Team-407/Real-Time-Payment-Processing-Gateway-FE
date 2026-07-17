@@ -14,9 +14,9 @@ export async function getPaymentSummary() {
  * GET /api/user-payment-history?status=&search=&page=&limit=
  */
 export async function getPaymentHistory(params = {}) {
-  const { status = "", search = "", page = 1, limit = 5 } = params;
+  const { status = "", search = "", page = 1, limit = 5, month = "" } = params;
   const response = await api.get("/user-payment-history", {
-    params: { status, search, page, limit },
+    params: { status, search, page, limit, month },
   });
   return response.data?.data !== undefined ? response.data.data : response.data;
 }
