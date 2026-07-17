@@ -91,7 +91,7 @@ const Sidebar = () => {
               type="button"
               key={item.name}
               onClick={() => handleNavigation(item)}
-              className={`flex items-center gap-3 rounded-xl px-4 py-3.5 text-left transition-colors ${
+              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${
                 item.name === activeItem
                   ? 'bg-[#10B981] text-white shadow-sm'
                   : 'bg-transparent text-gray-700 hover:bg-gray-50'
@@ -99,9 +99,9 @@ const Sidebar = () => {
             >
               <item.icon
                 size={18}
-                className={item.name === activeItem ? 'text-white' : 'text-[#8A8FA3]'}
+                className={`shrink-0 ${item.name === activeItem ? 'text-white' : 'text-[#8A8FA3]'}`}
               />
-              <span className="text-sm font-semibold">{item.name}</span>
+              <span className="text-sm font-semibold leading-tight">{item.name}</span>
             </button>
           ))}
         </nav>
