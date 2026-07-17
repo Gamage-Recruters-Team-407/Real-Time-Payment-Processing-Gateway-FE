@@ -164,11 +164,11 @@ function App() {
           <Route
             path="/otp-verification" 
             element={
-              <ProtectedRoute>
+              // <ProtectedRoute>
                 <DashboardLayout>
                   <OTPVerification/>
                 </DashboardLayout>
-              </ProtectedRoute>
+              // </ProtectedRoute>
             } 
           />
 
