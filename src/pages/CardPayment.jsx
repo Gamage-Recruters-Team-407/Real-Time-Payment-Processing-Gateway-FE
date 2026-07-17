@@ -557,7 +557,7 @@ export default function CardPayment() {
                                         Card Holder
                                     </span>
                                     <span className="text-xs md:text-sm font-semibold tracking-wide font-sans truncate max-w-[180px] text-white">
-                                        {cardDetails.cardholderName || 'LAHIRU MUDITH'}
+                                        {cardDetails.cardholderName}
                                     </span>
                                 </div>
                                 <div className="flex flex-col items-end">
