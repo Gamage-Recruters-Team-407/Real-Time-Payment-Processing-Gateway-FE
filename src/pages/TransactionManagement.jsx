@@ -11,7 +11,6 @@ import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import TransactionTable from "../components/TransactionTable";
 import {
-  exportTransactions,
   getTransactionById,
   getTransactions,
 } from "../services/transactionService";
@@ -20,24 +19,11 @@ const EMPTY_FILTERS = {
   status: "",
   minAmount: "",
   maxAmount: "",
-  startDate: "",
-  endDate: "",
+  date: "",
 };
 
 const STATUS_OPTIONS = ["", "Pending", "Processing", "Successful", "Failed", "Cancelled"];
 const SINGLE_SHOP_NAME = "Main Shop";
-
-const downloadTextFile = (content, filename, mimeType) => {
-  const blob = new Blob([content], { type: mimeType });
-  const url = window.URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
-  window.URL.revokeObjectURL(url);
-};
 
 const formatDateTime = (value) => {
   if (!value) {
@@ -66,6 +52,252 @@ const formatAmount = (amount, currency) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+};
+
+const escapeHtml = (value) =>
+  String(value ?? "-")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+
+const buildAppliedFilters = (filters) => {
+  const selectedDate = filters.date?.trim();
+
+  return {
+    status: filters.status,
+    minAmount: filters.minAmount,
+    maxAmount: filters.maxAmount,
+    startDate: selectedDate,
+    endDate: selectedDate,
+  };
+};
+
+const openTransactionPdfReport = ({ merchantName, filters, transactions }) => {
+  const reportWindow = window.open("", "_blank", "width=1280,height=900");
+
+  if (!reportWindow) {
+    throw new Error("Popup blocked. Please allow popups to generate the PDF report.");
+  }
+
+  const generatedAt = new Date().toLocaleString();
+  const filterSummary = [
+    filters.status ? `Status: ${filters.status}` : "Status: All",
+    filters.minAmount ? `Min amount: ${filters.minAmount}` : null,
+    filters.maxAmount ? `Max amount: ${filters.maxAmount}` : null,
+    filters.date ? `Date: ${filters.date}` : null,
+  ]
+    .filter(Boolean)
+    .join(" | ");
+
+  const rowsMarkup =
+    transactions.length > 0
+      ? transactions
+          .map(
+            (transaction, index) => `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${escapeHtml(transaction.transactionId)}</td>
+                <td>${escapeHtml(formatDateTime(transaction.createdAt))}</td>
+                <td>${escapeHtml(transaction.customerName || "-")}</td>
+                <td>${escapeHtml(transaction.customerEmail || "-")}</td>
+                <td>${escapeHtml(formatAmount(transaction.amount, transaction.currency))}</td>
+                <td>${escapeHtml(transaction.paymentMethod || "-")}</td>
+                <td>${escapeHtml(transaction.status || "-")}</td>
+                <td>${escapeHtml(transaction.paymentReference || "-")}</td>
+              </tr>
+            `
+          )
+          .join("")
+      : `
+          <tr>
+            <td colspan="9" class="empty">No transactions found for the selected filters.</td>
+          </tr>
+        `;
+
+  const reportMarkup = `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Transaction Report</title>
+        <style>
+          :root {
+            color-scheme: light;
+            --ink: #0f172a;
+            --muted: #475569;
+            --line: #dbe3ef;
+            --soft: #f8fafc;
+            --accent: #059669;
+            --accent-soft: #ecfdf5;
+          }
+          * { box-sizing: border-box; }
+          body {
+            margin: 0;
+            padding: 32px;
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            color: var(--ink);
+            background: white;
+          }
+          .sheet {
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            overflow: hidden;
+          }
+          .header {
+            padding: 28px 32px 20px;
+            background: linear-gradient(135deg, #f0fdf4, #eff6ff);
+            border-bottom: 1px solid var(--line);
+          }
+          .eyebrow {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+          }
+          h1 {
+            margin: 14px 0 8px;
+            font-size: 28px;
+          }
+          .meta, .summary {
+            color: var(--muted);
+            font-size: 14px;
+          }
+          .summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            padding: 20px 32px 0;
+          }
+          .card {
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 16px;
+            background: var(--soft);
+          }
+          .card strong {
+            display: block;
+            font-size: 22px;
+            color: var(--ink);
+            margin-top: 6px;
+          }
+          .filters {
+            padding: 20px 32px 8px;
+            font-size: 13px;
+            color: var(--muted);
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+          }
+          thead {
+            background: #f8fafc;
+          }
+          th, td {
+            padding: 12px 14px;
+            border-top: 1px solid var(--line);
+            text-align: left;
+            vertical-align: top;
+            font-size: 13px;
+          }
+          th {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+          }
+          tbody tr:nth-child(even) {
+            background: #fcfdff;
+          }
+          .table-wrap {
+            padding: 0 32px 28px;
+          }
+          .empty {
+            text-align: center;
+            color: var(--muted);
+            padding: 28px;
+          }
+          @media print {
+            body {
+              padding: 0;
+            }
+            .sheet {
+              border: 0;
+              border-radius: 0;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <section class="sheet">
+          <div class="header">
+            <span class="eyebrow">Transaction PDF Report</span>
+            <h1>${escapeHtml(merchantName)} Transactions</h1>
+            <div class="meta">Generated on ${escapeHtml(generatedAt)}</div>
+          </div>
+
+          <div class="summary">
+            <div class="card">
+              <span>Total records</span>
+              <strong>${transactions.length}</strong>
+            </div>
+            <div class="card">
+              <span>Successful payments</span>
+              <strong>${transactions.filter((item) => item.status === "Successful").length}</strong>
+            </div>
+            <div class="card">
+              <span>Failed payments</span>
+              <strong>${transactions.filter((item) => item.status === "Failed").length}</strong>
+            </div>
+          </div>
+
+          <div class="filters">
+            <strong>Applied filters:</strong> ${escapeHtml(filterSummary || "None")}
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Transaction ID</th>
+                  <th>Date</th>
+                  <th>Customer</th>
+                  <th>Email</th>
+                  <th>Amount</th>
+                  <th>Method</th>
+                  <th>Status</th>
+                  <th>Reference</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsMarkup}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </body>
+    </html>
+  `;
+
+  reportWindow.document.open();
+  reportWindow.document.write(reportMarkup);
+  reportWindow.document.close();
+  reportWindow.focus();
+
+  reportWindow.onload = () => {
+    reportWindow.setTimeout(() => {
+      reportWindow.focus();
+      reportWindow.print();
+    }, 300);
+  };
 };
 
 const getErrorMessage = (error) => {
@@ -134,7 +366,7 @@ export default function TransactionManagement() {
       page: currentPage,
       limit: pageSize,
       search: appliedCriteria.search,
-      ...appliedCriteria.filters,
+      ...buildAppliedFilters(appliedCriteria.filters),
     }),
     [appliedCriteria.filters, appliedCriteria.search, currentPage, pageSize]
   );
@@ -219,11 +451,17 @@ export default function TransactionManagement() {
 
   const handleExport = async () => {
     try {
-      const response = await exportTransactions({
+      const reportData = await getTransactions({
+        page: 1,
+        limit: Math.max(pagination.total || 0, pageSize, 10),
         search: appliedCriteria.search,
-        ...appliedCriteria.filters,
+        ...buildAppliedFilters(appliedCriteria.filters),
       });
-      downloadTextFile(response.data, "transactions.csv", "text/csv;charset=utf-8;");
+      openTransactionPdfReport({
+        merchantName,
+        filters: appliedCriteria.filters,
+        transactions: reportData.transactions || [],
+      });
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     }
@@ -298,7 +536,7 @@ export default function TransactionManagement() {
                 </p>
               </div>
 
-              <form onSubmit={handleSearch} className="grid gap-3 lg:grid-cols-[1fr_auto_auto_auto_auto_auto]">
+              <form onSubmit={handleSearch} className="grid gap-3 lg:grid-cols-[1fr_auto_auto_auto_auto]">
                 <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                   <Search size={18} className="text-slate-400" />
                   <input
@@ -315,14 +553,6 @@ export default function TransactionManagement() {
                 >
                   <Search size={16} />
                   Search
-                </button>
-                <button
-                  type="button"
-                  onClick={handleApplyFilters}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
-                >
-                  <Filter size={16} />
-                  Apply Filters
                 </button>
                 <button
                   type="button"
@@ -345,11 +575,11 @@ export default function TransactionManagement() {
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700"
                 >
                   <Download size={16} />
-                  Export CSV
+                  Export PDF
                 </button>
               </form>
 
-              <div className="grid gap-3 lg:grid-cols-5">
+              <div className="grid gap-3 lg:grid-cols-[1.1fr_1fr_1fr_1fr_auto]">
                 <select
                   value={draftFilters.status}
                   onChange={(event) =>
@@ -387,20 +617,20 @@ export default function TransactionManagement() {
                 />
                 <input
                   type="date"
-                  value={draftFilters.startDate}
+                  value={draftFilters.date}
                   onChange={(event) =>
-                    setDraftFilters((current) => ({ ...current, startDate: event.target.value }))
+                    setDraftFilters((current) => ({ ...current, date: event.target.value }))
                   }
                   className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
                 />
-                <input
-                  type="date"
-                  value={draftFilters.endDate}
-                  onChange={(event) =>
-                    setDraftFilters((current) => ({ ...current, endDate: event.target.value }))
-                  }
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
-                />
+                <button
+                  type="button"
+                  onClick={handleApplyFilters}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
+                >
+                  <Filter size={16} />
+                  Apply Filter
+                </button>
               </div>
             </div>
 
