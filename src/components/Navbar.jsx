@@ -1,9 +1,35 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import NotificationBadge from "./NotificationBadge";
+import { getUnreadCount } from "../services/notificationService";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadUnreadCount() {
+      try {
+        const count = await getUnreadCount();
+        if (!cancelled) setUnreadCount(count);
+      } catch (err) {
+        console.error("Failed to load unread notification count:", err);
+      }
+    }
+
+    loadUnreadCount();
+    // Poll every 30s so the badge stays roughly live without needing sockets.
+    const interval = setInterval(loadUnreadCount, 30000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
 
   console.log("Navbar - User data:", user);
 
@@ -58,10 +84,7 @@ const Navbar = () => {
           className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-56 focus:outline-none focus:ring-1 focus:ring-[#10B981] focus:border-[#10B981]"
         />
         <span className="text-gray-400 cursor-pointer hover:text-gray-600 transition-colors">⚙️</span>
-        <span className="text-gray-400 cursor-pointer hover:text-gray-600 transition-colors relative">
-          🔔
-          <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-        </span>
+        <NotificationBadge count={unreadCount} onClick={() => navigate("/notifications")} />
         <div
           onClick={() => navigate("/profile")}
           className="flex items-center gap-2 cursor-pointer pl-2 border-l border-gray-200"
