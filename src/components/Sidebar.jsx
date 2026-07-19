@@ -1,54 +1,42 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  CreditCard,
   Bell,
   Settings,
   ReceiptText,
   ShieldCheck,
   LayoutDashboard,
+  Undo2,
+  LogOut,
+  Plus,
   Users,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
-const menuItems = [
-  {
-    name: 'Dashboard',
-    icon: LayoutDashboard,
-    path: '/dashboard',
-  },
-  {
-    name: 'Settlement',
-    icon: CreditCard,
-    path: '/',
-  },
+const adminMenuItems = [
+  { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  { name: 'Transaction Management', icon: ReceiptText, path: '/transaction-management' },
+  { name: 'Refund Management', icon: Undo2, path: '/refund-management' },
+  { name: 'User Management', icon: Users, path: '/user-management' },
+  { name: 'Fraud Detection', icon: ShieldCheck, path: '/fraud-detection' },
+  { name: 'Notifications', icon: Bell, path: '/notifications' },
+  { name: 'Settings', icon: Settings, path: '/settings' },
+];
 
-  // My part
-  {
-    name: 'User Management',
-    icon: Users,
-    path: '/user-management',
-  },
-
-  {
-    name: 'Fraud Detection',
-    icon: ShieldCheck,
-    path: '/fraud-detection',
-  },
-  {
-    name: 'Notifications',
-    icon: Bell,
-    path: '/notifications',
-  },
-  {
-    name: 'Settings',
-    icon: Settings,
-    path: '/settings',
-  },
+const userMenuItems = [
+  { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  { name: 'New Transaction', icon: Plus, path: '/payment' },
+  { name: 'Notifications', icon: Bell, path: '/notifications' },
+  { name: 'Settings', icon: Settings, path: '/settings' },
 ];
 
 const getActiveItemFromPath = (pathname) => {
   if (pathname.startsWith('/transaction-management')) {
     return 'Transaction Management';
+  }
+
+  if (pathname.startsWith('/refund-management')) {
+    return 'Refund Management';
   }
 
   if (pathname.startsWith('/user-management')) {
@@ -71,33 +59,36 @@ const getActiveItemFromPath = (pathname) => {
     return 'Dashboard';
   }
 
-  if (pathname.startsWith('/profile')) {
+  if (pathname === '/profile') {
     return '';
   }
 
-  if (pathname === '/') {
-    return 'Settlement';
-  }
-
-  return '';
+  return 'Dashboard';
 };
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAdmin, logout } = useAuth();
+  const [activeItem, setActiveItem] = useState(() => getActiveItemFromPath(location.pathname));
 
-  const [activeItem, setActiveItem] = useState(() =>
-    getActiveItemFromPath(location.pathname)
-  );
-
-  // Automatically update the active menu item when URL changes
   useEffect(() => {
     setActiveItem(getActiveItemFromPath(location.pathname));
   }, [location.pathname]);
 
+  const menuItems = isAdmin ? adminMenuItems : userMenuItems;
+
   const handleNavigation = (item) => {
     setActiveItem(item.name);
     navigate(item.path);
+  };
+
+  const handleLogout = () => {
+    const confirmed = window.confirm('Are you sure you want to log out?');
+    if (confirmed) {
+      logout();
+      navigate('/login');
+    }
   };
 
   return (
@@ -118,18 +109,18 @@ const Sidebar = () => {
           </div>
         </div>
 
-        {/* Main menu */}
-        <nav className="flex flex-col gap-4">
+        {/* Menu Items */}
+        <nav className="flex flex-col gap-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeItem === item.name;
+            const isActive = item.name === activeItem;
 
             return (
               <button
                 type="button"
                 key={item.name}
                 onClick={() => handleNavigation(item)}
-                className={`flex w-full items-center gap-3 rounded-xl px-4 py-4 text-left transition-colors ${
+                className={`flex items-center gap-3 rounded-xl px-4 py-3.5 text-left transition-colors ${
                   isActive
                     ? 'bg-[#10B981] text-white shadow-sm'
                     : 'bg-transparent text-gray-700 hover:bg-gray-50'
@@ -137,43 +128,24 @@ const Sidebar = () => {
               >
                 <Icon
                   size={18}
-                  className={
-                    isActive ? 'text-white' : 'text-[#8A8FA3]'
-                  }
+                  className={isActive ? 'text-white' : 'text-[#8A8FA3]'}
                 />
-
-                <span className="text-sm font-semibold">
-                  {item.name}
-                </span>
+                <span className="text-sm font-semibold">{item.name}</span>
               </button>
             );
           })}
         </nav>
-
-        {/* Transaction Management */}
-        <button
-          type="button"
-          onClick={() => navigate('/transaction-management')}
-          className={`mt-6 flex w-full items-center gap-3 rounded-xl px-4 py-4 text-left transition-colors ${
-            activeItem === 'Transaction Management'
-              ? 'bg-[#10B981] text-white shadow-sm'
-              : 'bg-transparent text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          <ReceiptText
-            size={18}
-            className={
-              activeItem === 'Transaction Management'
-                ? 'text-white'
-                : 'text-[#8A8FA3]'
-            }
-          />
-
-          <span className="text-sm font-semibold">
-            Transaction Management
-          </span>
-        </button>
       </div>
+
+      {/* Logout Button - Bottom */}
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="flex items-center justify-center gap-2 rounded-xl bg-[#0F1117] py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
+      >
+        <LogOut size={16} />
+        Logout
+      </button>
     </aside>
   );
 };

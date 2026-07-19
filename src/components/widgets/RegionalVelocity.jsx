@@ -39,18 +39,35 @@ export default function RegionalVelocity() {
       </div>
 
       <div className="map-container">
-         {/* Simple SVG World Map outline mock */}
-         <svg width="100%" height="100%" viewBox="0 0 400 200" style={{ opacity: 0.1 }}>
-            <path d="M50 50 Q 100 20 150 50 T 250 50 T 350 50" stroke="#000" strokeWidth="2" fill="none"/>
-            <path d="M50 100 Q 100 70 150 100 T 250 100 T 350 100" stroke="#000" strokeWidth="2" fill="none"/>
-            <path d="M50 150 Q 100 120 150 150 T 250 150 T 350 150" stroke="#000" strokeWidth="2" fill="none"/>
-         </svg>
+         {/* Live World Map Background */}
+         <img 
+           src="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg" 
+           alt="World Map" 
+           style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.15 }} 
+         />
          
          {/* Map nodes */}
-         <div style={{ position: 'absolute', top: '40%', left: '20%', width: '12px', height: '12px', backgroundColor: '#10B981', borderRadius: '50%', boxShadow: '0 0 10px rgba(16,185,129,0.5)' }}></div>
-         <div style={{ position: 'absolute', top: '35%', left: '55%', width: '16px', height: '16px', backgroundColor: '#F59E0B', borderRadius: '50%', boxShadow: '0 0 10px rgba(245,158,11,0.5)' }}></div>
-         <div style={{ position: 'absolute', top: '30%', left: '60%', width: '12px', height: '12px', backgroundColor: '#E11D48', borderRadius: '50%', boxShadow: '0 0 10px rgba(225,29,72,0.5)' }}></div>
-         <div style={{ position: 'absolute', top: '50%', left: '80%', width: '18px', height: '18px', backgroundColor: '#BE185D', borderRadius: '50%', boxShadow: '0 0 10px rgba(190,24,93,0.5)' }}></div>
+         {regions.map((r, i) => {
+           // Approximate coordinates for demo country codes
+           const coords = {
+             'US': { top: '40%', left: '20%' },
+             'CA': { top: '25%', left: '25%' },
+             'RU': { top: '30%', left: '65%' },
+             'NG': { top: '60%', left: '50%' },
+             'GB': { top: '35%', left: '48%' },
+             'HK': { top: '45%', left: '80%' },
+             'East Asia': { top: '45%', left: '80%' },
+             'Eastern Europe': { top: '30%', left: '65%' },
+             'North America': { top: '40%', left: '20%' }
+           }[r.name] || { top: `${30 + (i * 10)}%`, left: `${30 + (i * 15)}%` };
+
+           const color = r.riskLevel === 'CRITICAL' ? '#BE185D' : r.riskLevel === 'HIGH' ? '#E11D48' : r.riskLevel === 'MEDIUM' ? '#F59E0B' : '#10B981';
+           const size = r.riskLevel === 'CRITICAL' ? '18px' : r.riskLevel === 'HIGH' ? '16px' : '12px';
+
+           return (
+             <div key={r.name} style={{ position: 'absolute', top: coords.top, left: coords.left, width: size, height: size, backgroundColor: color, borderRadius: '50%', boxShadow: `0 0 10px ${color}80` }}></div>
+           );
+         })}
       </div>
     </div>
   );

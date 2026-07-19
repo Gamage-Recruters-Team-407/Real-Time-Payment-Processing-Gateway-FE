@@ -1,10 +1,17 @@
 import React from 'react';
 
-const DeleteUserModal = ({ isOpen, onClose, onDeleteUser, user }) => {
-  const handleDelete = () => {
-    onDeleteUser(user.id);
-    onClose();
+const DeleteUserModal = ({ isOpen, onClose, onDeleteUser, user, isDeleting, error }) => {
+  const handleDelete = async () => {
+    try {
+      await onDeleteUser();
+      onClose();
+    } catch (error) {
+      // Keep the modal open and preserve the current state.
+    }
   };
+
+  const displayName = user?.name || 'this user';
+  const userId = user?._id || user?.id || '-';
 
   if (!isOpen) return null;
 
@@ -16,27 +23,33 @@ const DeleteUserModal = ({ isOpen, onClose, onDeleteUser, user }) => {
           <button className="text-2xl text-slate-400 hover:text-slate-600" onClick={onClose} type="button">×</button>
         </div>
 
+        {error ? (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
+
         <div className="space-y-4">
           <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
             <span className="text-lg">⚠️</span>
-            <p>Are you sure you want to delete this user?</p>
+            <p>Are you sure you want to permanently delete {displayName}?</p>
           </div>
 
           {user && (
             <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-600 text-lg font-semibold text-white">
-                {user.name.charAt(0).toUpperCase()}
+                {(displayName || 'U').charAt(0).toUpperCase()}
               </div>
               <div>
-                <h4 className="font-semibold text-slate-900">{user.name}</h4>
-                <p className="text-sm text-slate-600">{user.email}</p>
-                <p className="text-sm text-slate-500">{user.id}</p>
+                <h4 className="font-semibold text-slate-900">{displayName}</h4>
+                <p className="text-sm text-slate-600">{user.email || '-'}</p>
+                <p className="text-sm text-slate-500">{userId}</p>
               </div>
             </div>
           )}
 
           <p className="text-sm text-slate-600">
-            This action cannot be undone. The user will be permanently removed from the system.
+            This action permanently removes the user from the system and cannot be undone.
           </p>
         </div>
 
@@ -44,8 +57,8 @@ const DeleteUserModal = ({ isOpen, onClose, onDeleteUser, user }) => {
           <button type="button" className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50" onClick={onClose}>
             Cancel
           </button>
-          <button type="button" className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700" onClick={handleDelete}>
-            Delete User
+          <button type="button" className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-400" onClick={handleDelete} disabled={isDeleting}>
+            {isDeleting ? 'Deleting...' : 'Delete User'}
           </button>
         </div>
       </div>

@@ -13,6 +13,7 @@ const RefundTable = ({ refunds, fetchRefunds }) => {
      const [refundDates, setRefundDates] = useState({});
   const [dateErrors, setDateErrors] = useState({});
   const [confirmAction, setConfirmAction] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null); // holds the URL of the image to show large
   // confirmAction shape: { type: "approve" | "reject" | "delete" | "refund", id: string }
 
   const runApprove = async (id) => {
@@ -97,20 +98,28 @@ const RefundTable = ({ refunds, fetchRefunds }) => {
     });
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "Approved":
-        return "bg-orange-50 text-orange-600 border border-orange-200";
-      case "Rejected":
-        return "bg-red-50 text-red-600 border border-red-200";
-      case "New":
-        return "bg-emerald-50 text-emerald-600 border border-emerald-200";
-      case "Failed":
-        return "bg-gray-100 text-gray-500 border border-gray-200";
-      default:
-        return "bg-gray-50 text-gray-600 border border-gray-200";
-    }
-  };
+const getStatusBadge = (status) => {
+  switch (status?.trim().toLowerCase()) {
+
+    case "successful":
+    case "approved":
+      return "bg-emerald-50 text-emerald-600 border border-emerald-200";
+
+    case "processing":
+    case "new":
+      return "bg-blue-50 text-blue-600 border border-blue-200";
+
+    case "failed":
+    case "rejected":
+      return "bg-red-50 text-red-600 border border-red-200";
+
+    case "cancelled":
+      return "bg-gray-100 text-gray-600 border border-gray-200";
+
+    default:
+      return "bg-gray-50 text-gray-500 border border-gray-200";
+  }
+};
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -174,18 +183,19 @@ const RefundTable = ({ refunds, fetchRefunds }) => {
                     <img
                       src={refund.itemPhoto}
                       alt="Proof"
-                      className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                      onClick={() => setPreviewImage(refund.itemPhoto)}
+                      className="w-12 h-12 rounded-lg object-cover border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
                     />
                   </td>
 
                   <td className="p-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${getStatusBadge(
-                        refund.status
-                      )}`}
-                    >
-                      {refund.status}
-                    </span>
+                 <span
+  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadge(
+    refund.status
+  )}`}
+>
+  {refund.status}
+</span>
                   </td>
 
                   <td className="p-4 text-gray-600 whitespace-nowrap">
@@ -288,6 +298,31 @@ const RefundTable = ({ refunds, fetchRefunds }) => {
         onConfirm={handleConfirm}
         onCancel={() => setConfirmAction(null)}
       />
+
+      {previewImage && (
+        <div
+          className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-6"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div
+            className="relative max-w-3xl max-h-[85vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setPreviewImage(null)}
+              className="absolute -top-3 -right-3 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-md text-gray-600 hover:text-gray-900 text-lg font-bold"
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <img
+              src={previewImage}
+              alt="Proof (large)"
+              className="max-w-full max-h-[85vh] rounded-lg object-contain shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

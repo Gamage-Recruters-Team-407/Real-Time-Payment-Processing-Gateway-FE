@@ -15,6 +15,7 @@ export default function RefundRequest() {
   const [name, setName] = useState("");
   const [txnId, setTxnId] = useState(transactionId || "");
   const [phone, setPhone] = useState("");
+  const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [photo, setPhoto] = useState(null); // Base64 data URL
   const [photoName, setPhotoName] = useState("");
@@ -74,6 +75,11 @@ export default function RefundRequest() {
       return;
     }
 
+    if (isNaN(Number(amount)) || Number(amount) <= 0) {
+      setError("Please enter a valid amount greater than 0.");
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -82,6 +88,7 @@ export default function RefundRequest() {
         name,
         transactionId: txnId,
         phone,
+        amount: Number(amount),
         reason,
         itemPhoto: photo,
       });
@@ -99,16 +106,21 @@ export default function RefundRequest() {
     }
   };
 
-  const isFormValid = name.trim() && txnId.trim().length === 12 && phone.trim().length === 10 && reason.trim() && photo;
+  const isFormValid = name.trim() && txnId.trim().length === 12 && phone.trim().length === 10 && amount.trim() && Number(amount) > 0 && reason.trim() && photo;
 
   return (
-    <div className="min-h-screen bg-[#f1f5f9] flex flex-col font-sans">
-      <Navbar />
-      <div className="flex flex-1">
-        <Sidebar />
-        <div className="flex-1 flex flex-col">
-          <main className="flex-1 px-8 py-6 space-y-6">
-            
+    <div className="flex h-screen w-full bg-[#F8FAFC] font-sans text-[#0A192F]">
+      {/* ---------------- Sidebar ---------------- */}
+      <Sidebar />
+
+      {/* ---------------- Main ---------------- */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Top nav */}
+        <Navbar />
+
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto p-8 space-y-6">
+
             {/* Header / Breadcrumb */}
             <div className="flex items-center gap-4">
               <button
@@ -133,7 +145,7 @@ export default function RefundRequest() {
 
             <div className="max-w-2xl mx-auto">
               <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
-                
+
                 {success ? (
                   // Success State
                   <div className="flex flex-col items-center text-center py-8">
@@ -146,7 +158,7 @@ export default function RefundRequest() {
                     <p className="text-slate-500 text-sm mt-2 max-w-sm">
                       Your request has been successfully submitted to the refund-management team. We will review it shortly.
                     </p>
-                    
+
                     <div className="mt-8 flex gap-3 w-full max-w-xs">
                       <button
                         onClick={() => navigate("/payment-history")}
@@ -165,7 +177,7 @@ export default function RefundRequest() {
                 ) : (
                   // Form State
                   <form onSubmit={handleSubmit} className="space-y-6">
-                    
+
                     {error && (
                       <div className="flex items-center gap-2.5 rounded-lg bg-rose-50 border border-rose-100 p-4 text-sm text-rose-600">
                         <AlertCircle size={18} className="shrink-0" />
@@ -211,24 +223,46 @@ export default function RefundRequest() {
                       </div>
                     </div>
 
-                    {/* Phone Number */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 block">
-                        Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, "");
-                          if (val.length <= 10) {
-                            setPhone(val);
-                          }
-                        }}
-                        placeholder="e.g. 0771234567 (10 digits)"
-                        required
-                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all"
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Phone Number */}
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700 block">
+                          Phone Number
+                        </label>
+                        <input
+                          type="tel"
+                          value={phone}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, "");
+                            if (val.length <= 10) {
+                              setPhone(val);
+                            }
+                          }}
+                          placeholder="e.g. 0771234567 (10 digits)"
+                          required
+                          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all"
+                        />
+                      </div>
+
+                      {/* Refund Amount */}
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700 block">
+                          Refund Amount (Rs)
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-medium">Rs</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            placeholder="e.g. 50.00"
+                            required
+                            className="w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all"
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     {/* Reason for Refund */}
@@ -251,7 +285,7 @@ export default function RefundRequest() {
                       <label className="text-sm font-semibold text-slate-700 block">
                         Photo of the Item <span className="text-rose-500">*</span>
                       </label>
-                      
+
                       <input
                         type="file"
                         accept="image/*"
@@ -319,7 +353,7 @@ export default function RefundRequest() {
                           "Submit Refund Request"
                         )}
                       </button>
-                      
+
                       {!isFormValid && (
                         <p className="text-center text-xs text-slate-400 mt-2">
                           * Submit button will be active once all fields are filled and a photo is uploaded.
@@ -330,8 +364,7 @@ export default function RefundRequest() {
                 )}
               </div>
             </div>
-          </main>
-        </div>
+        </main>
       </div>
     </div>
   );
