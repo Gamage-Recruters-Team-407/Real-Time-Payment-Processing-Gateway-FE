@@ -1,12 +1,27 @@
 import { useState, useEffect } from 'react';
 import { X, ShieldHalf, AlertTriangle } from 'lucide-react';
 import { getAlertById, addToWhitelist } from '../../services/fraudApi';
+import { useAuth } from '../../context/AuthContext';
 
 export default function WhitelistModal({ isOpen, onClose, targetId }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [reason, setReason] = useState('');
+  const { user } = useAuth();
+
+  const getAnalystName = () => {
+    if (!user) return "Analyst";
+    if (user.name) return user.name;
+    if (user.fullName) return user.fullName;
+    if (user.fullname) return user.fullname;
+    if (user.displayName) return user.displayName;
+    if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
+    if (user.firstName) return user.firstName;
+    if (user.username) return user.username;
+    if (user.email) return user.email.split("@")[0];
+    return "Analyst";
+  };
 
   useEffect(() => {
     if (isOpen && targetId) {
@@ -29,13 +44,13 @@ export default function WhitelistModal({ isOpen, onClose, targetId }) {
       setSubmitting(true);
       const entityId = data?.transactionDetails?.userId || data?.accountId || data?.userId || targetId;
       await addToWhitelist({
-        entityType: 'USER', 
+        entityType: 'ACCOUNT', 
         entityId: entityId,
         reason: reason,
-        performedBy: 'System Analyst'
+        performedBy: getAnalystName()
       });
       // Optionally trigger a parent reload here if needed
-      onClose();
+      onClose(true);
     } catch (err) {
       console.error(err);
       alert('Failed to whitelist entity.');
@@ -50,14 +65,14 @@ export default function WhitelistModal({ isOpen, onClose, targetId }) {
 
   return (
     <>
-      <div className="modal-backdrop" onClick={onClose}></div>
-      <div className="modal-container">
+      <div className="modal-backdrop" onClick={() => onClose(false)} style={{ zIndex: 300 }}></div>
+      <div className="modal-container" style={{ zIndex: 310 }}>
         <div className="modal-header">
           <div className="modal-title">
             <ShieldHalf size={20} className="text-muted" />
             <span>Add to Whitelist</span>
           </div>
-          <button className="modal-close" onClick={onClose} disabled={submitting}>
+          <button className="modal-close" onClick={() => onClose(false)} disabled={submitting}>
             <X size={20} />
           </button>
         </div>
@@ -108,7 +123,7 @@ export default function WhitelistModal({ isOpen, onClose, targetId }) {
         </div>
 
         <div className="modal-footer">
-          <button className="btn-cancel" onClick={onClose} disabled={submitting}>Cancel</button>
+          <button className="btn-cancel" onClick={() => onClose(false)} disabled={submitting}>Cancel</button>
           <button 
             className="btn-confirm" 
             onClick={handleConfirm}
