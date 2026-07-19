@@ -5,20 +5,25 @@ import '@xyflow/react/dist/style.css';
 import { getEntityLinkData, runLivePrediction } from '../../services/fraudApi';
 import { useSelector } from 'react-redux';
 
-export default function EntityLinkAnalysis({ onLiveFeedClick, onInvestigateClick, onWhitelistClick }) {
+export default function EntityLinkAnalysis({ onLiveFeedClick, onInvestigateClick, onWhitelistClick, selectedTransaction }) {
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [activeSeedId, setActiveSeedId] = useState(null);
   const [isPredicting, setIsPredicting] = useState(false);
   const { items: alerts } = useSelector(state => state.alerts);
 
+  // Compute the desired seedId directly
+  let targetSeedId = 'USER-DEFAULT';
+  if (selectedTransaction) {
+    targetSeedId = selectedTransaction.userId || selectedTransaction.accountId || selectedTransaction.id;
+  } else if (alerts.length > 0) {
+    targetSeedId = alerts[0].accountId || alerts[0].userId;
+  }
+
   useEffect(() => {
     const fetchGraph = async () => {
-      // Use the latest alert's userId as the seed for the graph, if available
-      const seedId = alerts.length > 0 ? alerts[0].accountId || alerts[0].userId : 'USER-DEFAULT';
-      
       try {
-        const data = await getEntityLinkData(seedId);
+        const data = await getEntityLinkData(targetSeedId);
         if (data && data.nodes) {
           // Map backend nodes to React Flow format
           const mappedNodes = data.nodes.map((n, idx) => ({
@@ -49,11 +54,13 @@ export default function EntityLinkAnalysis({ onLiveFeedClick, onInvestigateClick
         console.error("Failed to load graph data", err);
       }
     };
-    fetchGraph();
-  }, [alerts]);
+    if (targetSeedId) {
+      fetchGraph();
+    }
+  }, [targetSeedId]);
 
   const handlePredict = async () => {
-    const targetId = alerts[0]?._id || alerts[0]?.id || alerts[0]?.transactionId || activeSeedId;
+    const targetId = selectedTransaction?.id || selectedTransaction?.transactionId || selectedTransaction?._id || alerts[0]?._id || alerts[0]?.id || alerts[0]?.transactionId || activeSeedId;
     if (!targetId) return;
 
     try {
@@ -70,7 +77,7 @@ export default function EntityLinkAnalysis({ onLiveFeedClick, onInvestigateClick
     }
   };
 
-  const getTargetId = () => alerts[0]?._id || alerts[0]?.id || alerts[0]?.transactionId || null;
+  const getTargetId = () => selectedTransaction?._id || selectedTransaction?.transactionId || selectedTransaction?.id || alerts[0]?._id || alerts[0]?.id || alerts[0]?.transactionId || null;
 
   return (
     <div className="card" style={{ height: '100%' }}>
@@ -85,14 +92,27 @@ export default function EntityLinkAnalysis({ onLiveFeedClick, onInvestigateClick
       </div>
       
       <div className="graph-container" style={{ width: '100%', height: '300px', position: 'relative' }}>
-        <ReactFlow nodes={nodes} edges={edges} fitView>
+        <ReactFlow key={activeSeedId || 'default'} nodes={nodes} edges={edges} fitView>
           <Background />
           <Controls showInteractive={false} />
         </ReactFlow>
       </div>
 
       <div className="tooltip-card">
-        {alerts.length > 0 ? (
+        {selectedTransaction ? (
+          <>
+            <div className="tooltip-header">
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: selectedTransaction.riskScore >= 90 ? '#6C1E20' : '#F59E0B' }}></div>
+                <span>Selected Transaction (Score: {Math.round(selectedTransaction.riskScore || 0)})</span>
+            </div>
+            <p className="tooltip-desc">
+              {selectedTransaction.alertReason || selectedTransaction.status || "Transaction selected from event stream."}
+              <br/><br/>
+              <strong>Account:</strong> {selectedTransaction.userId || selectedTransaction.accountId || 'Unknown'}<br/>
+              <strong>Transaction:</strong> {selectedTransaction.transactionId || selectedTransaction.id || selectedTransaction._id || 'Unknown'}
+            </p>
+          </>
+        ) : alerts.length > 0 ? (
           <>
             <div className="tooltip-header">
                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: alerts[0].riskScore >= 90 ? '#6C1E20' : '#F59E0B' }}></div>

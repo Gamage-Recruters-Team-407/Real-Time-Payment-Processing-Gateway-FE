@@ -29,6 +29,7 @@ import RefundRequest from "./pages/RefundRequest";
 
 // OTP Verification
 import OTPVerification from "./pages/OTPVerification";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 // Admin pages
 import AdminDashboard from "./pages/AdminDashboard";
@@ -145,13 +146,37 @@ function App() {
             path="/card-payment"
             element={
               <ProtectedRoute>
-                <CardPayment />
+                <DashboardLayout>
+                  <CardPayment />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Payment Success Route */}
+          <Route
+            path="/payment-success"
+            element={
+              <ProtectedRoute>
+                <PaymentSuccess />
               </ProtectedRoute>
             }
           />
 
           {/* OTP Verification Route */}
-          <Route path="/otp-verification" element={<OTPVerification />} />
+          <Route
+            path="/otp-verification" 
+            element={
+              // <ProtectedRoute>
+                <DashboardLayout>
+                  <OTPVerification/>
+                </DashboardLayout>
+              // </ProtectedRoute>
+            } 
+          />
+
+          {/* OTP Verification for Forgot Password (Public Route) */}
+          <Route path="/forgot-password/otp" element={<OTPVerification />} />
 
           {/* Payment History Route */}
           <Route

@@ -2,7 +2,7 @@ import api from './api';
 
 export const startInvestigation = async (alertId, data) => {
   // data: { assignedTo, priority, notes }
-  const response = await api.post(`/fraud/investigate`, { alertId, ...data });
+  const response = await api.post(`/fraud/alerts/${alertId}/investigate`, data);
   return response.data;
 };
 

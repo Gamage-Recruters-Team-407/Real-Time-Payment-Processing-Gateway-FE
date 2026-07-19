@@ -71,6 +71,7 @@ const Sidebar = () => {
   const location = useLocation();
   const { isAdmin, logout } = useAuth();
   const [activeItem, setActiveItem] = useState(() => getActiveItemFromPath(location.pathname));
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     setActiveItem(getActiveItemFromPath(location.pathname));

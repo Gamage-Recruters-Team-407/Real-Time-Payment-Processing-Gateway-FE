@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { Plus, FileText, Eye, Download, Search } from "lucide-react";
+import { Plus, FileText, Eye, Download, Search, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
+import TransactionDetailModal from "../components/TransactionDetailModal";
 import api from "../services/api";
 import {
   getPaymentSummary,
   getPaymentHistory,
 } from "../services/paymentHistoryService";
 import { StatusBadge } from "./PaymentSuccess";
+import html2pdf from "html2pdf.js";
 
-const FILTERS = ["All", "Completed", "Pending", "Flagged", "Failed"];
+const FILTERS = ["All", "Completed", "Pending", "Failed"];
 const PAGE_SIZE = 5;
 
 function formatAmount(amount, currency) {
@@ -62,6 +64,8 @@ function StatCard({ dotColor, label, value, caption }) {
   );
 }
 
+
+
 export default function Dashboard() {
   const navigate = useNavigate();
 
@@ -80,6 +84,12 @@ export default function Dashboard() {
   const [page, setPage] = useState(1);
   const [tableLoading, setTableLoading] = useState(true);
   const [tableError, setTableError] = useState(null);
+  const [month, setMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
 
   // Fetch user name for welcome heading
   useEffect(() => {
@@ -109,7 +119,7 @@ export default function Dashboard() {
     setTableLoading(true);
     setTableError(null);
     const handle = setTimeout(() => {
-      getPaymentHistory({ status, search, page, limit: PAGE_SIZE })
+      getPaymentHistory({ status, search, page, limit: PAGE_SIZE, month })
         .then((res) => {
           setRows(res.results);
           setTotal(res.total);
@@ -120,7 +130,7 @@ export default function Dashboard() {
         .finally(() => setTableLoading(false));
     }, 300);
     return () => clearTimeout(handle);
-  }, [status, search, page]);
+  }, [status, search, page, month, refreshKey]);
 
   const handleFilterChange = (next) => {
     setStatus(next);
@@ -132,31 +142,128 @@ export default function Dashboard() {
     setPage(1);
   };
 
-  const handleExportCsv = () => {
-    const header = ["Date/Time", "Transaction ID", "Method", "Amount", "Status"];
-    const lines = rows.map((t) => [
-      formatDateTime(t.dateTime || t.createdAt),
-      t.transactionId,
-      t.method,
-      formatAmount(t.amount, t.currency),
-      t.status,
-    ]);
-    const csv = [header, ...lines].map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "payment-history.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const handleDownloadPdf = async () => {
+    try {
+      const res = await getPaymentHistory({ status, search, page: 1, limit: 100000, month });
+      const transactions = res.results || [];
+      
+      const totalVolume = transactions
+        .filter((t) => t.status === "Successful" || t.status === "Completed")
+        .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+      const successfulCount = transactions.filter((t) => t.status === "Successful" || t.status === "Completed").length;
+      const pendingCount = transactions.filter((t) => t.status === "Pending" || t.status === "Processing").length;
+      const failedCount = transactions.filter((t) => t.status === "Failed").length;
 
+      const nowStr = new Date().toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+
+      const monthDisplay = month ? new Date(month + "-02").toLocaleString("default", { month: "long", year: "numeric" }) : "All Months";
+      const statusDisplay = status;
+
+      const element = document.createElement("div");
+      element.innerHTML = `
+        <div style="width: 190mm; padding: 15px; font-family: 'Segoe UI', -apple-system, sans-serif; color: #1e293b; background-color: #ffffff; box-sizing: border-box;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 30px;">
+            <div>
+              <h1 style="font-size: 28px; font-weight: 800; color: #0F1117; margin: 0; letter-spacing: -0.025em;">Gamage<span style="color: #10b981;">Pay</span></h1>
+              <p style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; margin: 4px 0 0 0; font-weight: 700;">Transaction Statement</p>
+            </div>
+            <div style="text-align: right; font-size: 12px; color: #64748b; line-height: 1.6;">
+              <div>Statement Date: <strong>${nowStr}</strong></div>
+              <div>Account Owner: <strong>${userName || 'Valued Merchant'}</strong></div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500;">Month Range: <strong>${monthDisplay}</strong></div>
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500;">Status Filter: <strong>${statusDisplay}</strong></div>
+            ${search ? `<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500;">Search Term: <strong>"${search}"</strong></div>` : ''}
+          </div>
+
+          <div style="display: flex; gap: 16px; margin-bottom: 30px; width: 100%;">
+            <div style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background-color: #f8fafc; box-sizing: border-box;">
+              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.05em;">Total Volume</div>
+              <div style="font-size: 18px; font-weight: 700; color: #0F1117; margin-top: 4px;">LKR ${totalVolume.toLocaleString("en-LK", { minimumFractionDigits: 2 })}</div>
+            </div>
+            <div style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background-color: #f8fafc; box-sizing: border-box;">
+              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.05em;">Successful</div>
+              <div style="font-size: 18px; font-weight: 700; color: #0F1117; margin-top: 4px;">${successfulCount}</div>
+            </div>
+            <div style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background-color: #f8fafc; box-sizing: border-box;">
+              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.05em;">Pending</div>
+              <div style="font-size: 18px; font-weight: 700; color: #0F1117; margin-top: 4px;">${pendingCount}</div>
+            </div>
+            <div style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background-color: #f8fafc; box-sizing: border-box;">
+              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.05em;">Failed</div>
+              <div style="font-size: 18px; font-weight: 700; color: #0F1117; margin-top: 4px;">${failedCount}</div>
+            </div>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; margin-top: 10px;">
+            <thead>
+              <tr>
+                <th style="background-color: #f8fafc; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Date / Time</th>
+                <th style="background-color: #f8fafc; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Transaction ID</th>
+                <th style="background-color: #f8fafc; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Method</th>
+                <th style="background-color: #f8fafc; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Amount</th>
+                <th style="background-color: #f8fafc; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${transactions.length === 0 ? `
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 30px; color: #94a3b8;">
+                    No transactions found for the selected filters.
+                  </td>
+                </tr>
+              ` : transactions.map(t => {
+                const statusClass = t.status === "Successful" || t.status === "Completed" ? "color: #059669; background-color: #ecfdf5;" : t.status === "Failed" ? "color: #dc2626; background-color: #fef2f2;" : "color: #d97706; background-color: #fffbeb;";
+                const amtStyle = t.status === "Failed" ? "color: #dc2626; font-weight: 600;" : "color: #334155; font-weight: 600;";
+                return `
+                  <tr>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9;">${formatDateTime(t.dateTime || t.createdAt)}</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; font-family: monospace; font-size: 11px;">${t.transactionId}</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9;">${t.method}</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; ${amtStyle}">LKR ${Number(t.amount || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9;"><span style="display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 600; text-transform: uppercase; ${statusClass}">${t.status}</span></td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+
+          <div style="margin-top: 40px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+            This is a system-generated statement from GamagePay and does not require a signature.
+          </div>
+        </div>
+      `;
+
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: `GamagePay_Statement_${month || 'All'}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 4, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().from(element).set(opt).save();
+    } catch (err) {
+      console.error("Failed to export PDF:", err);
+      alert("Failed to export PDF statement. Please try again.");
+    }
+  };
   const handleViewDetails = (transaction) => {
-    console.log("View details for", transaction.transactionId);
+    setSelectedTransaction(transaction);
   };
 
   const handleDownloadReceipt = (transaction) => {
-    console.log("Download receipt for", transaction.transactionId);
+    setSelectedTransaction(transaction);
   };
 
   const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
@@ -188,22 +295,22 @@ export default function Dashboard() {
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={handleExportCsv}
-                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                onClick={handleDownloadPdf}
+                className="flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-100 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-emerald-200 transition-colors shadow-sm"
               >
-                <FileText size={15} /> Export CSV
+                <FileText size={15} /> Download PDF
               </button>
-              <button
+              {/* <button
                 type="button"
                 onClick={() => navigate("/payment")}
                 className="flex items-center gap-2 rounded-lg bg-[#0A192F] px-4 py-2 text-sm font-medium text-white hover:bg-[#0d223f]"
               >
                 <Plus size={15} />
                 New Transaction
-              </button>
+              </button> */}
             </div>
           </div>
-
+ 
           {/* ── Stat Cards ── */}
           {summaryError && (
             <p className="mt-4 text-sm text-red-500">{summaryError}</p>
@@ -214,7 +321,10 @@ export default function Dashboard() {
               label="Total volume"
               value={
                 summary
-                  ? `LKR ${(summary.totalVolume / 1_000_000).toFixed(2)}M`
+                  ? `LKR ${Number(summary.totalVolume).toLocaleString("en-LK", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}`
                   : "—"
               }
               caption={
@@ -229,12 +339,14 @@ export default function Dashboard() {
               value={summary ? summary.successfulCount.toLocaleString() : "—"}
               caption={summary ? `${summary.successRatePct}% success rate` : ""}
             />
+            
             <StatCard
               dotColor="bg-amber-500"
-              label="Flagged"
-              value={summary ? summary.flaggedCount.toLocaleString() : "—"}
-              caption="Manual review required"
+              label="Pending"
+              value={summary ? (summary.pendingCount ?? 0).toLocaleString() : "—"}
+              caption="Awaiting processing"
             />
+
             <StatCard
               dotColor="bg-red-500"
               label="Failed"
@@ -243,19 +355,17 @@ export default function Dashboard() {
             />
           </div>
 
-          {/* ── Payment History Table ── */}
-          <div className="mt-6 bg-white rounded-xl border border-slate-200">
-            {/* Search + Filter bar */}
-            <div className="flex flex-col gap-4 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="relative flex-1 sm:max-w-xs">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  placeholder="Search by transaction ID or method..."
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
-                />
+          {/* Search + filters — OUTSIDE the table card */}
+          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4 border border-slate-200 bg-white rounded-xl p-4 shadow-sm">
+            <div className="relative flex-1 sm:max-w-xs">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder="Search by transaction ID"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+              />
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -274,19 +384,46 @@ export default function Dashboard() {
                   </button>
                 ))}
               </div>
+
+              <input
+                type="month"
+                value={month}
+                onChange={(e) => { setMonth(e.target.value); setPage(1); }}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+              />
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setStatus("All");
+                  setPage(1);
+                  const now = new Date();
+                  setMonth(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
+                  setRefreshKey((k) => k + 1);
+                }}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Refresh
+              </button>
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto">
+            {/* ── Payment History Table ── */}
+            <div className="bg-white rounded-xl border border-slate-200">
+              {/* Table */}
+              <div className="overflow-x-auto">
+
+
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="text-xs uppercase tracking-wide text-slate-400">
+                  <tr className="text-xs uppercase tracking-wide text-slate-500 bg-slate-50 border-b border-slate-200">
                     <th className="px-4 py-3 font-medium">Date / Time</th>
                     <th className="px-4 py-3 font-medium">Transaction ID</th>
                     <th className="px-4 py-3 font-medium">Method</th>
                     <th className="px-4 py-3 font-medium">Amount</th>
                     <th className="px-4 py-3 font-medium">Status</th>
-                    <th className="px-4 py-3" />
+                    <th className="px-4 py-3 font-medium text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -323,23 +460,23 @@ export default function Dashboard() {
                       return (
                         <tr
                           key={t.id}
-                          className="border-t border-slate-50 text-slate-700 hover:bg-slate-50"
+                          className="border-t border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
                         >
-                          <td className="px-4 py-3 text-slate-500">
+                          <td className="px-4 py-4 text-slate-500">
                             {formatDateTime(t.dateTime || t.createdAt)}
                           </td>
-                          <td className="px-4 py-3 font-medium text-slate-900">
+                          <td className="px-4 py-4 font-medium text-slate-900">
                             {t.transactionId}
                           </td>
-                          <td className="px-4 py-3">{t.method}</td>
-                          <td className="px-4 py-3 font-medium text-slate-900">
+                          <td className="px-4 py-4">{t.method}</td>
+                          <td className={`px-4 py-4 font-medium ${t.status === "Failed" ? "text-red-600" : "text-slate-900"}`}>
                             {formatAmount(t.amount, t.currency)}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-4">
                             <StatusBadge status={t.status} />
                           </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex items-center justify-end gap-3">
+                          <td className="px-4 py-4 text-center">
+                            <div className="flex items-center justify-center gap-3">
                               {isRefundable ? (
                                 <button
                                   type="button"
@@ -372,18 +509,6 @@ export default function Dashboard() {
                                 className="text-slate-400 transition-colors hover:text-slate-600"
                               >
                                 <Eye className="h-4 w-4" />
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDownloadReceipt(t);
-                                }}
-                                title="Download Receipt"
-                                className="text-slate-400 transition-colors hover:text-slate-600"
-                              >
-                                <Download className="h-4 w-4" />
                               </button>
                             </div>
                           </td>
@@ -422,6 +547,14 @@ export default function Dashboard() {
           </div>
         </main>
       </div>
+
+      {/* Transaction Detail Modal */}
+      {selectedTransaction && (
+        <TransactionDetailModal
+          transaction={selectedTransaction}
+          onClose={() => setSelectedTransaction(null)}
+        />
+      )}
     </div>
   );
 }

@@ -24,6 +24,7 @@ import {
   getLatestTransaction,
   downloadReceipt,
 } from "../services/transactionService";
+import api from "../services/api";
 
 function formatAmount(amount, currency) {
   const formatted = Number(amount).toLocaleString("en-LK", {
@@ -64,9 +65,30 @@ export default function PaymentSuccess() {
     setLoading(true);
     setLoadError(null);
 
-    getLatestTransaction()
-      .then((data) => {
-        if (!cancelled) setTransaction(data);
+    const params = new URLSearchParams(location.search);
+    const paymentId = params.get('paymentId');
+
+    if (!paymentId) {
+      setLoadError("No payment ID provided.");
+      setLoading(false);
+      return;
+    }
+
+    api.get(`/payments/${paymentId}`)
+      .then((response) => {
+        const data = response.data?.data;
+        if (!data) throw new Error("No data returned");
+        
+        const formatted = {
+          transactionId: data.transactionId || data.paymentId,
+          amount: data.amount,
+          currency: data.currency,
+          dateTime: data.createdAt,
+          method: data.paymentMethod + (data.cardLastFourDigits ? ` •••• ${data.cardLastFourDigits}` : ""),
+          status: data.status.charAt(0) + data.status.slice(1).toLowerCase(),
+        };
+
+        if (!cancelled) setTransaction(formatted);
       })
       .catch((err) => {
         if (!cancelled) {
@@ -84,7 +106,7 @@ export default function PaymentSuccess() {
     return () => {
       cancelled = true;
     };
-  }, [transaction]);
+  }, [transaction, location.search]);
 
   const handleDownloadReceipt = async () => {
     setDownloading(true);
@@ -186,10 +208,10 @@ function Row({ label, value }) {
 
 const STATUS_STYLES = {
   Completed: "bg-emerald-50 text-emerald-600",
-  Pending: "bg-slate-100 text-slate-600",
-  Flagged: "bg-amber-50 text-amber-600",
+  Pending: "bg-amber-50 text-amber-600",
   Failed: "bg-red-50 text-red-600",
 };
+
 
 export function StatusBadge({ status }) {
   const style = STATUS_STYLES[status] || STATUS_STYLES.Pending;
