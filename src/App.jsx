@@ -29,12 +29,16 @@ import RefundRequest from "./pages/RefundRequest";
 
 // OTP Verification
 import OTPVerification from "./pages/OTPVerification";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 // Admin pages
 import AdminDashboard from "./pages/AdminDashboard";
 
 // Transaction Management
 import TransactionManagement from "./pages/TransactionManagement";
+
+// User Management
+import UserManagement from "./pages/UserManagement";
 
 // Refund Management
 import RefundManagement from "./pages/RefundManagement";
@@ -142,13 +146,37 @@ function App() {
             path="/card-payment"
             element={
               <ProtectedRoute>
-                <CardPayment />
+                <DashboardLayout>
+                  <CardPayment />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Payment Success Route */}
+          <Route
+            path="/payment-success"
+            element={
+              <ProtectedRoute>
+                <PaymentSuccess />
               </ProtectedRoute>
             }
           />
 
           {/* OTP Verification Route */}
-          <Route path="/otp-verification" element={<OTPVerification />} />
+          <Route
+            path="/otp-verification" 
+            element={
+              // <ProtectedRoute>
+                <DashboardLayout>
+                  <OTPVerification/>
+                </DashboardLayout>
+              // </ProtectedRoute>
+            } 
+          />
+
+          {/* OTP Verification for Forgot Password (Public Route) */}
+          <Route path="/forgot-password/otp" element={<OTPVerification />} />
 
           {/* Payment History Route */}
           <Route
@@ -190,6 +218,16 @@ function App() {
             }
           />
 
+          {/* User Management */}
+          <Route
+            path="/user-management"
+            element={
+              <ProtectedRoute requireAdmin>
+                <UserManagement />
+              </ProtectedRoute>
+            }
+          />
+
           {/* Refund Management */}
           <Route
             path="/refund-management"
@@ -202,7 +240,7 @@ function App() {
             }
           />
 
-          {/* Developer 3 - Payment Processing */}
+          {/* Payment Processing */}
           <Route
             path="/payment"
             element={

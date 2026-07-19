@@ -269,30 +269,6 @@ export default function TransactionDetailModal({ transaction, onClose }) {
                 <span className="text-slate-900">Rs.{formatCurrency(netSettlement)}</span>
               </div>
             </div>
-
-            <hr className="divider border-t border-slate-200 my-3" />
-
-            {/* Technical Metrics */}
-            <div>
-              <p className="section-title text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
-                Technical Metrics
-              </p>
-              <div className="metrics flex gap-3 mt-2">
-                <div className="metric-box flex-1 bg-slate-50 rounded-lg p-3 text-center">
-                  <p className="metric-label text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-                    Latency
-                  </p>
-                  <p className="metric-value text-xl font-bold text-slate-900 mt-1">{latency}ms</p>
-                </div>
-                <div className="metric-box flex-1 bg-slate-50 rounded-lg p-3 text-center">
-                  <p className="metric-label text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-                    Risk Score
-                  </p>
-                  <p className="metric-value text-xl font-bold text-slate-900 mt-1">{riskScore}</p>
-                </div>
-              </div>
-            </div>
-
             {/* Security Badge */}
             <div className="security-badge mt-4 bg-emerald-50 rounded-lg p-3 flex items-center gap-3">
               <ShieldCheck className="h-8 w-8 text-emerald-500 flex-shrink-0" />
@@ -307,19 +283,11 @@ export default function TransactionDetailModal({ transaction, onClose }) {
         </div>
 
         {/* Action Buttons */}
-        <div className="px-6 pb-5 pt-2 space-y-2.5 border-t border-slate-100">
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#0F1117] py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
-          >
-            <Printer className="h-4 w-4" />
-            Print Statement
-          </button>
+        <div className="px-6 pb-5 pt-4 border-t border-slate-100">
           <button
             type="button"
             onClick={handleDownload}
-            className="w-full flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+            className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#0F1117] py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors shadow-sm"
           >
             <Download className="h-4 w-4" />
             Download Receipt

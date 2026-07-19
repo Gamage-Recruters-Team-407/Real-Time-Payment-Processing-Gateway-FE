@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Filter, Flag, MoreHorizontal, ArrowRight, CheckCircle2, AlertTriangle } from 'lucide-react';
 
-export default function RealTimeEventStream({ transactions = [], onReviewClick, onInvestigateClick, onFreezeClick, onReleaseClick }) {
+export default function RealTimeEventStream({ transactions = [], onReviewClick, onInvestigateClick, onFreezeClick, onReleaseClick, onTransactionSelect }) {
   const [pulse, setPulse] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -73,7 +73,12 @@ export default function RealTimeEventStream({ transactions = [], onReviewClick, 
               const rowClass = isAlert ? 'row-danger' : '';
 
               return (
-                <tr key={tx._id || i} className={rowClass}>
+                <tr 
+                  key={tx._id || i} 
+                  className={rowClass}
+                  onClick={() => onTransactionSelect && onTransactionSelect(tx)}
+                  style={{ cursor: onTransactionSelect ? 'pointer' : 'default' }}
+                >
                   <td className="cell-timestamp">{timeString}</td>
                   <td className="cell-account">
                     <div className="cell-account-inner">
@@ -123,7 +128,8 @@ export default function RealTimeEventStream({ transactions = [], onReviewClick, 
                               color: tx.riskScore > 80 ? '#DC2626' : tx.riskScore >= 50 ? '#F97316' : '#EAB308',
                               borderColor: tx.riskScore > 80 ? '#DC2626' : tx.riskScore >= 50 ? '#F97316' : '#EAB308'
                             }}
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               if ((action === 'REVIEW NOW' || action === 'REVIEW') && onReviewClick) onReviewClick(tx._id);
                               else if (action === 'INVESTIGATE' && onInvestigateClick) onInvestigateClick(tx._id);
                               else if (action === 'FREEZE' && onFreezeClick) onFreezeClick(tx._id);
@@ -136,7 +142,7 @@ export default function RealTimeEventStream({ transactions = [], onReviewClick, 
                             <Flag 
                               size={16} 
                               className="text-muted cursor-pointer" 
-                              onClick={() => { if (onReviewClick) onReviewClick(tx._id); }} 
+                              onClick={(e) => { e.stopPropagation(); if (onReviewClick) onReviewClick(tx._id); }} 
                             />
                           )}
                         </div>

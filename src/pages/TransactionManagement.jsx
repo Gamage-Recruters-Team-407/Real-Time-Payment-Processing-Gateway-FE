@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   Download,
   Filter,
@@ -54,14 +56,6 @@ const formatAmount = (amount, currency) => {
   })}`;
 };
 
-const escapeHtml = (value) =>
-  String(value ?? "-")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-
 const buildAppliedFilters = (filters) => {
   const selectedDate = filters.date?.trim();
 
@@ -75,229 +69,101 @@ const buildAppliedFilters = (filters) => {
 };
 
 const openTransactionPdfReport = ({ merchantName, filters, transactions }) => {
-  const reportWindow = window.open("", "_blank", "width=1280,height=900");
-
-  if (!reportWindow) {
-    throw new Error("Popup blocked. Please allow popups to generate the PDF report.");
-  }
-
+  const document = new jsPDF("landscape");
   const generatedAt = new Date().toLocaleString();
-  const filterSummary = [
-    filters.status ? `Status: ${filters.status}` : "Status: All",
-    filters.minAmount ? `Min amount: ${filters.minAmount}` : null,
-    filters.maxAmount ? `Max amount: ${filters.maxAmount}` : null,
-    filters.date ? `Date: ${filters.date}` : null,
-  ]
-    .filter(Boolean)
-    .join(" | ");
+  const filterSummary =
+    [
+      filters.status ? `Status: ${filters.status}` : "Status: All",
+      filters.minAmount ? `Min amount: ${filters.minAmount}` : null,
+      filters.maxAmount ? `Max amount: ${filters.maxAmount}` : null,
+      filters.date ? `Date: ${filters.date}` : null,
+    ]
+      .filter(Boolean)
+      .join(" | ") || "None";
 
-  const rowsMarkup =
+  const tableRows =
     transactions.length > 0
-      ? transactions
-          .map(
-            (transaction, index) => `
-              <tr>
-                <td>${index + 1}</td>
-                <td>${escapeHtml(transaction.transactionId)}</td>
-                <td>${escapeHtml(formatDateTime(transaction.createdAt))}</td>
-                <td>${escapeHtml(transaction.customerName || "-")}</td>
-                <td>${escapeHtml(transaction.customerEmail || "-")}</td>
-                <td>${escapeHtml(formatAmount(transaction.amount, transaction.currency))}</td>
-                <td>${escapeHtml(transaction.paymentMethod || "-")}</td>
-                <td>${escapeHtml(transaction.status || "-")}</td>
-                <td>${escapeHtml(transaction.paymentReference || "-")}</td>
-              </tr>
-            `
-          )
-          .join("")
-      : `
-          <tr>
-            <td colspan="9" class="empty">No transactions found for the selected filters.</td>
-          </tr>
-        `;
+      ? transactions.map((transaction, index) => [
+          index + 1,
+          transaction.transactionId || "-",
+          formatDateTime(transaction.createdAt),
+          transaction.customerName || "-",
+          formatAmount(transaction.amount, transaction.currency),
+          transaction.paymentMethod || "-",
+          transaction.status || "-",
+          transaction.paymentReference || "-",
+        ])
+      : [["-", "-", "-", "-", "-", "-", "-", "No transactions found for the selected filters."]];
 
-  const reportMarkup = `
-    <!doctype html>
-    <html>
-      <head>
-        <meta charset="utf-8" />
-        <title>Transaction Report</title>
-        <style>
-          :root {
-            color-scheme: light;
-            --ink: #0f172a;
-            --muted: #475569;
-            --line: #dbe3ef;
-            --soft: #f8fafc;
-            --accent: #059669;
-            --accent-soft: #ecfdf5;
-          }
-          * { box-sizing: border-box; }
-          body {
-            margin: 0;
-            padding: 32px;
-            font-family: "Segoe UI", Tahoma, sans-serif;
-            color: var(--ink);
-            background: white;
-          }
-          .sheet {
-            border: 1px solid var(--line);
-            border-radius: 24px;
-            overflow: hidden;
-          }
-          .header {
-            padding: 28px 32px 20px;
-            background: linear-gradient(135deg, #f0fdf4, #eff6ff);
-            border-bottom: 1px solid var(--line);
-          }
-          .eyebrow {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 999px;
-            background: var(--accent-soft);
-            color: var(--accent);
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-          }
-          h1 {
-            margin: 14px 0 8px;
-            font-size: 28px;
-          }
-          .meta, .summary {
-            color: var(--muted);
-            font-size: 14px;
-          }
-          .summary {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 12px;
-            padding: 20px 32px 0;
-          }
-          .card {
-            border: 1px solid var(--line);
-            border-radius: 18px;
-            padding: 16px;
-            background: var(--soft);
-          }
-          .card strong {
-            display: block;
-            font-size: 22px;
-            color: var(--ink);
-            margin-top: 6px;
-          }
-          .filters {
-            padding: 20px 32px 8px;
-            font-size: 13px;
-            color: var(--muted);
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 12px;
-          }
-          thead {
-            background: #f8fafc;
-          }
-          th, td {
-            padding: 12px 14px;
-            border-top: 1px solid var(--line);
-            text-align: left;
-            vertical-align: top;
-            font-size: 13px;
-          }
-          th {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--muted);
-          }
-          tbody tr:nth-child(even) {
-            background: #fcfdff;
-          }
-          .table-wrap {
-            padding: 0 32px 28px;
-          }
-          .empty {
-            text-align: center;
-            color: var(--muted);
-            padding: 28px;
-          }
-          @media print {
-            body {
-              padding: 0;
-            }
-            .sheet {
-              border: 0;
-              border-radius: 0;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <section class="sheet">
-          <div class="header">
-            <span class="eyebrow">Transaction PDF Report</span>
-            <h1>${escapeHtml(merchantName)} Transactions</h1>
-            <div class="meta">Generated on ${escapeHtml(generatedAt)}</div>
-          </div>
+  document.setFont("helvetica", "bold");
+  document.setFontSize(18);
+  document.text("Transactions", 14, 18);
 
-          <div class="summary">
-            <div class="card">
-              <span>Total records</span>
-              <strong>${transactions.length}</strong>
-            </div>
-            <div class="card">
-              <span>Successful payments</span>
-              <strong>${transactions.filter((item) => item.status === "Successful").length}</strong>
-            </div>
-            <div class="card">
-              <span>Failed payments</span>
-              <strong>${transactions.filter((item) => item.status === "Failed").length}</strong>
-            </div>
-          </div>
+  document.setFont("helvetica", "normal");
+  document.setFontSize(10);
+  document.text(`Generated on ${generatedAt}`, 14, 26);
+  document.text(`Applied filters: ${filterSummary}`, 14, 32);
 
-          <div class="filters">
-            <strong>Applied filters:</strong> ${escapeHtml(filterSummary || "None")}
-          </div>
+  document.setFontSize(11);
+  document.text(`Total records: ${transactions.length}`, 14, 40);
+  document.text(
+    `Successful payments: ${transactions.filter((item) => item.status === "Successful").length}`,
+    78,
+    40
+  );
+  document.text(
+    `Failed payments: ${transactions.filter((item) => item.status === "Failed").length}`,
+    165,
+    40
+  );
 
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Transaction ID</th>
-                  <th>Date</th>
-                  <th>Customer</th>
-                  <th>Email</th>
-                  <th>Amount</th>
-                  <th>Method</th>
-                  <th>Status</th>
-                  <th>Reference</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rowsMarkup}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </body>
-    </html>
-  `;
+  autoTable(document, {
+    startY: 48,
+    head: [[
+      "#",
+      "Transaction ID",
+      "Date",
+      "Customer",
+      "Amount",
+      "Method",
+      "Status",
+      "Reference",
+    ]],
+    body: tableRows,
+    styles: {
+      fontSize: 9,
+      cellPadding: 3,
+      overflow: "linebreak",
+      valign: "middle",
+    },
+    headStyles: {
+      fillColor: [15, 23, 42],
+      textColor: [255, 255, 255],
+      fontStyle: "bold",
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252],
+    },
+    margin: {
+      top: 14,
+      left: 14,
+      right: 14,
+      bottom: 16,
+    },
+    didDrawPage: () => {
+      const pageWidth = document.internal.pageSize.getWidth();
+      const pageHeight = document.internal.pageSize.getHeight();
+      const pageNumber = document.internal.getCurrentPageInfo().pageNumber;
 
-  reportWindow.document.open();
-  reportWindow.document.write(reportMarkup);
-  reportWindow.document.close();
-  reportWindow.focus();
+      document.setFont("helvetica", "normal");
+      document.setFontSize(9);
+      document.text("Real-Time Payment Processing Gateway", 14, pageHeight - 8);
+      document.text(`Page ${pageNumber}`, pageWidth - 26, pageHeight - 8);
+    },
+  });
 
-  reportWindow.onload = () => {
-    reportWindow.setTimeout(() => {
-      reportWindow.focus();
-      reportWindow.print();
-    }, 300);
-  };
+  const reportDate = new Date().toISOString().split("T")[0];
+  document.save(`transaction_report_${reportDate}.pdf`);
 };
 
 const getErrorMessage = (error) => {
