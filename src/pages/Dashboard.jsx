@@ -281,11 +281,11 @@ export default function Dashboard() {
         <Navbar />
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           {/* ── Header row ── */}
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-[#0A192F]">
+              <h1 className="text-xl sm:text-2xl font-bold text-[#0A192F]">
                 {userName ? `Welcome, ${userName}` : "Payment History"}
               </h1>
               <p className="mt-1 text-sm text-slate-400">
@@ -315,7 +315,7 @@ export default function Dashboard() {
           {summaryError && (
             <p className="mt-4 text-sm text-red-500">{summaryError}</p>
           )}
-          <div className="mt-6 flex gap-4">
+          <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard
               dotColor="bg-emerald-500"
               label="Total volume"
@@ -356,7 +356,7 @@ export default function Dashboard() {
           </div>
 
           {/* Search + filters — OUTSIDE the table card */}
-          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4 border border-slate-200 bg-white rounded-xl p-4 shadow-sm">
+          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between mb-4 border border-slate-200 bg-white rounded-xl p-4 shadow-sm">
             <div className="relative flex-1 sm:max-w-xs">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
@@ -415,7 +415,7 @@ export default function Dashboard() {
               <div className="overflow-x-auto">
 
 
-              <table className="w-full text-left text-sm">
+              <table className="w-full min-w-[640px] text-left text-sm">
                 <thead>
                   <tr className="text-xs uppercase tracking-wide text-slate-500 bg-slate-50 border-b border-slate-200">
                     <th className="px-4 py-3 font-medium">Date / Time</th>
