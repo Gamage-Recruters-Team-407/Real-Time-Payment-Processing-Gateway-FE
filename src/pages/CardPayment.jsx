@@ -423,8 +423,20 @@ export default function CardPayment() {
 
             setIsProcessing(false);
 
-            // 3. Redirect to OTP verification page
-            navigate('/otp-verification?purpose=payment');
+            // 3. Get user info from localStorage to pass as query params for reliability
+            const userStr = localStorage.getItem("user");
+            let userId = "";
+            let email = "";
+            if (userStr) {
+                try {
+                    const u = JSON.parse(userStr);
+                    userId = u.id || u._id || "";
+                    email = u.email || "";
+                } catch (e) {}
+            }
+
+            // 4. Redirect to OTP verification page
+            navigate(`/otp-verification?purpose=payment&userId=${userId}&email=${email}`);
 
         } catch (err) {
             console.error('Failed to create pending payment:', err.message);
