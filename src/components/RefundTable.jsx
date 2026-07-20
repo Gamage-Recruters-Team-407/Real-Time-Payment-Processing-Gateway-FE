@@ -107,7 +107,8 @@ const getStatusBadge = (status) => {
 
     case "processing":
     case "new":
-      return "bg-blue-50 text-blue-600 border border-blue-200";
+    case "pending":
+      return "bg-amber-50 text-amber-600 border border-amber-200";
 
     case "failed":
     case "rejected":

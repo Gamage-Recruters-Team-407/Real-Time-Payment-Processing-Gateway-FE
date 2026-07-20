@@ -10,6 +10,7 @@ import {
   getPaymentHistory,
 } from "../services/paymentHistoryService";
 import { StatusBadge } from "./PaymentSuccess";
+import RefundStatusBadge from "../components/RefundStatusBadge";
 import html2pdf from "html2pdf.js";
 
 const FILTERS = ["All", "Completed", "Pending", "Failed"];
@@ -32,6 +33,17 @@ function formatDateTime(iso) {
     minute: "2-digit",
     hour12: false,
   });
+}
+
+function getRefundButtonTitle(t) {
+  if (t.refundSummary?.hasRefundRequest) {
+    const status = t.refundSummary.latestRefundStatus?.toUpperCase();
+    if (status === "PENDING") return "Refund request is pending review.";
+    if (status === "APPROVED" || status === "REFUNDED") return "Refund has been completed.";
+    if (status === "REJECTED") return "Refund request was rejected.";
+    return "Refund request already submitted.";
+  }
+  return "Only available for Completed transactions within 7 days.";
 }
 
 const REFUND_WINDOW_DAYS = 7;
@@ -112,7 +124,7 @@ export default function Dashboard() {
     getPaymentSummary()
       .then(setSummary)
       .catch(() => setSummaryError("Couldn't load summary stats."));
-  }, []);
+  }, [refreshKey]);
 
   // Load transactions
   useEffect(() => {
@@ -473,7 +485,13 @@ export default function Dashboard() {
                             {formatAmount(t.amount, t.currency)}
                           </td>
                           <td className="px-4 py-4">
-                            <StatusBadge status={t.status} />
+                            {t.refundSummary?.hasRefundRequest ? (
+                              <RefundStatusBadge
+                                refundStatus={t.refundSummary.latestRefundStatus}
+                              />
+                            ) : (
+                              <StatusBadge status={t.status} />
+                            )}
                           </td>
                           <td className="px-4 py-4 text-center">
                             <div className="flex items-center justify-center gap-3">
@@ -482,7 +500,9 @@ export default function Dashboard() {
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    navigate(`/refund/${t.transactionId}`);
+                                    navigate(
+                                      `/refund/${t.transactionId}?amount=${encodeURIComponent(t.amount)}`
+                                    );
                                   }}
                                   className="rounded bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600 shadow-sm transition-colors hover:bg-rose-100"
                                 >
@@ -492,7 +512,7 @@ export default function Dashboard() {
                                 <button
                                   type="button"
                                   disabled
-                                  title="Only available for Completed transactions within 7 days."
+                                  title={getRefundButtonTitle(t)}
                                   className="cursor-not-allowed rounded bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-400 opacity-50"
                                 >
                                   Return &amp; Refund
