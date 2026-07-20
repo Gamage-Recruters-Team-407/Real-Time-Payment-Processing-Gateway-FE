@@ -5,7 +5,7 @@ import { Upload, X, ArrowLeft, Loader2, CheckCircle2, AlertCircle, CloudUpload }
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import api from "../services/api";
-import { uploadImageToCloudinary } from "../services/cloudinaryService";
+
 
 export default function RefundRequest() {
   const { transactionId } = useParams();
@@ -67,64 +67,72 @@ export default function RefundRequest() {
   };
 
   // Submit Form — uploads image to Cloudinary first, then POSTs the URL
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (phone.length !== 10) {
-      setError("Phone number must be exactly 10 digits.");
-      return;
-    }
-    if (txnId.length !== 12) {
-      setError("Transaction ID must be exactly 12 characters.");
-      return;
-    }
-    if (!photoFile) {
-      setError("Please upload a photo of the item to proceed.");
-      return;
-    }
-    if (isNaN(Number(amount)) || Number(amount) <= 0) {
-      setError("Please enter a valid amount greater than 0.");
-      return;
-    }
+ const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    setSubmitting(true);
-    setError(null);
+  if (phone.length !== 10) {
+    setError("Phone number must be exactly 10 digits.");
+    return;
+  }
 
-    try {
-      // Step 1 — Upload image to Cloudinary
-      setUploading(true);
-      setUploadProgress(0);
-      const cloudinaryUrl = await uploadImageToCloudinary(photoFile, (pct) => {
-        setUploadProgress(pct);
-      });
-      setUploading(false);
+  if (txnId.length !== 12) {
+    setError("Transaction ID must be exactly 12 characters.");
+    return;
+  }
 
-      // Step 2 — Submit refund request with the Cloudinary URL
-      const response = await api.post("/refunds", {
-        name,
-        transactionId: txnId,
-        phone,
-        amount: Number(amount),
-        reason,
-        itemPhoto: cloudinaryUrl,
-      });
+  if (!photoFile) {
+    setError("Please upload a photo of the item.");
+    return;
+  }
 
-      if (response.data.success) {
-        setSuccess(true);
-      } else {
-        setError(response.data.message || "Something went wrong.");
+  if (isNaN(Number(amount)) || Number(amount) <= 0) {
+    setError("Please enter a valid amount.");
+    return;
+  }
+
+  setSubmitting(true);
+  setError(null);
+
+  try {
+    // Create FormData
+    const formData = new FormData();
+
+    formData.append("name", name);
+    formData.append("transactionId", txnId);
+    formData.append("phone", phone);
+    formData.append("amount", amount);
+    formData.append("reason", reason);
+    formData.append("itemPhoto", photoFile);
+
+    // Send request to backend
+    const response = await api.post(
+      "/refunds/create",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       }
-    } catch (err) {
-      setUploading(false);
-      console.error(err);
+    );
+
+    if (response.data.success) {
+      setSuccess(true);
+    } else {
       setError(
-        err.message?.startsWith("Cloudinary")
-          ? err.message
-          : err.response?.data?.message || "Failed to submit refund request. Please try again."
+        response.data.message || "Failed to submit refund request."
       );
-    } finally {
-      setSubmitting(false);
     }
-  };
+  } catch (err) {
+    console.error(err);
+
+    setError(
+      err.response?.data?.message ||
+        "Failed to submit refund request. Please try again."
+    );
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const isFormValid = name.trim() && txnId.trim().length === 12 && phone.trim().length === 10 && amount.trim() && Number(amount) > 0 && reason.trim() && photoFile;
 
