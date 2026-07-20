@@ -12,6 +12,7 @@ import {
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import TransactionTable from "../components/TransactionTable";
+import { getAllRefunds } from "../services/refundService";
 import {
   getTransactionById,
   getTransactions,
@@ -174,6 +175,12 @@ const getErrorMessage = (error) => {
   );
 };
 
+const getLatestRefundForTransaction = (refunds, transactionId) => {
+  return refunds
+    .filter((refund) => refund.transactionId === transactionId)
+    .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt))[0] || null;
+};
+
 function DetailRow({ label, value }) {
   return (
     <div className="flex items-start justify-between gap-4 border-b border-slate-100 py-2 last:border-0">
@@ -300,7 +307,8 @@ export default function TransactionManagement() {
     });
   };
 
-  const handleClearFilters = () => {
+  const handleRefresh = () => {
+    setError("");
     setSearchInput("");
     setDraftFilters(EMPTY_FILTERS);
     setCurrentPage(1);
@@ -308,10 +316,6 @@ export default function TransactionManagement() {
       search: "",
       filters: EMPTY_FILTERS,
     });
-  };
-
-  const handleRefresh = () => {
-    setError("");
     setRefreshToken((value) => value + 1);
   };
 
@@ -336,7 +340,21 @@ export default function TransactionManagement() {
   const handleViewDetails = async (transaction) => {
     try {
       const data = await getTransactionById(transaction._id);
-      setDetailsTransaction(data);
+      let refundDetails = null;
+
+      if (data.refundSummary?.hasRefundRequest && data.transactionId) {
+        const refundResponse = await getAllRefunds();
+        const refunds = Array.isArray(refundResponse?.data)
+          ? refundResponse.data
+          : refundResponse?.data?.data || [];
+
+        refundDetails = getLatestRefundForTransaction(refunds, data.transactionId);
+      }
+
+      setDetailsTransaction({
+        ...data,
+        refundDetails,
+      });
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     }
@@ -402,7 +420,7 @@ export default function TransactionManagement() {
                 </p>
               </div>
 
-              <form onSubmit={handleSearch} className="grid gap-3 lg:grid-cols-[1fr_auto_auto_auto_auto]">
+              <form onSubmit={handleSearch} className="grid gap-3 lg:grid-cols-[1fr_auto_auto_auto]">
                 <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                   <Search size={18} className="text-slate-400" />
                   <input
@@ -419,13 +437,6 @@ export default function TransactionManagement() {
                 >
                   <Search size={16} />
                   Search
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClearFilters}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                  Clear Filters
                 </button>
                 <button
                   type="button"
@@ -546,6 +557,16 @@ export default function TransactionManagement() {
               <DetailRow label="Description" value={detailsTransaction.description} />
               <DetailRow label="Created date" value={formatDateTime(detailsTransaction.createdAt)} />
               <DetailRow label="Updated date" value={formatDateTime(detailsTransaction.updatedAt)} />
+              {detailsTransaction.refundDetails ? (
+                <>
+                  <DetailRow label="Refund ID" value={detailsTransaction.refundDetails.refundId} />
+                  <DetailRow label="Refund amount" value={formatAmount(detailsTransaction.refundDetails.amount, detailsTransaction.currency)} />
+                  <DetailRow label="Refund reason" value={detailsTransaction.refundDetails.reason} />
+                  <DetailRow label="Refund requested date" value={formatDateTime(detailsTransaction.refundDetails.createdAt)} />
+                  <DetailRow label="Refund approved date" value={formatDateTime(detailsTransaction.refundDetails.approvedDate)} />
+                  <DetailRow label="Refunded date" value={formatDateTime(detailsTransaction.refundDetails.refundedDate)} />
+                </>
+              ) : null}
             </div>
 
             <div className="space-y-4">
