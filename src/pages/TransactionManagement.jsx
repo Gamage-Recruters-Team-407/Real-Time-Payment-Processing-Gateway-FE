@@ -415,9 +415,6 @@ export default function TransactionManagement() {
                 <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
                   Transaction Management
                 </h1>
-                <p className="mt-2 max-w-2xl text-sm text-slate-600">
-                  Track, inspect, and export payment transactions for your shop directly from MongoDB.
-                </p>
               </div>
 
               <form onSubmit={handleSearch} className="grid gap-3 lg:grid-cols-[1fr_auto_auto_auto]">
