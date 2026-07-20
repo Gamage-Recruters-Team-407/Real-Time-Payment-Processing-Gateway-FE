@@ -9,6 +9,21 @@ import {
 import masterCardLogo from '../assets/logos/master-card.svg';
 import CardForm from '../components/CardForm';
 
+// Helper to generate a UUID for Device Fingerprinting
+function generateDeviceId() {
+    return 'DEV-' + Math.random().toString(36).substring(2, 10) + '-' + Date.now().toString(36);
+}
+
+// Ensure persistent device ID on client
+const getDeviceId = () => {
+    let deviceId = localStorage.getItem('device_id');
+    if (!deviceId) {
+        deviceId = generateDeviceId();
+        localStorage.setItem('device_id', deviceId);
+    }
+    return deviceId;
+};
+
 export default function CardPayment() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -357,14 +372,8 @@ export default function CardPayment() {
                 }
             }
         } catch (err) {
-            console.warn('Backend payment status update failed, executing simulation success fallback:', err.message);
-            
-            // Simulating real-time communication response delay
-            setTimeout(() => {
-                sessionStorage.removeItem('pending_payment');
-                sessionStorage.removeItem('payment_initiated');
-                navigate('/payment-success');
-            }, 2000);
+            console.error('Backend payment status update failed:', err.message);
+            setErrors({ submit: 'Unable to complete the payment on the server. Please contact out support team.' });
         }
 
         setIsProcessing(false);
@@ -379,6 +388,17 @@ export default function CardPayment() {
         setErrors({});
 
         try {
+            // 0. Capture Real-World Metrics (Device ID and Public IP)
+            const deviceId = getDeviceId();
+            let ipAddress = '127.0.0.1'; // fallback
+            try {
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                ipAddress = ipData.ip;
+            } catch (ipErr) {
+                console.warn("Failed to fetch public IP, using fallback", ipErr);
+            }
+
             // 1. Create a PENDING payment in the backend
             const token = localStorage.getItem("token");
             const cleanCardNumber = cardDetails.cardNumber.replace(/\s+/g, '');
@@ -397,8 +417,10 @@ export default function CardPayment() {
                         cardholderName: cardDetails.cardholderName,
                         cardNumber: cleanCardNumber,
                         expiry: cardDetails.expiry,
-                        cvc: cardDetails.cvc
-                    }
+                        cvc: cardDetails.cvc,
+                    },
+                    deviceId,
+                    ipAddress
                 })
             });
 
@@ -429,31 +451,25 @@ export default function CardPayment() {
 
             setIsProcessing(false);
 
-            // 3. Redirect to OTP verification page
-            navigate('/otp-verification?purpose=payment');
+            // 3. Get user info from localStorage to pass as query params for reliability
+            const userStr = localStorage.getItem("user");
+            let userId = "";
+            let email = "";
+            if (userStr) {
+                try {
+                    const u = JSON.parse(userStr);
+                    userId = u.id || u._id || "";
+                    email = u.email || "";
+                } catch (e) {}
+            }
+
+            // 4. Redirect to OTP verification page
+            navigate(`/otp-verification?purpose=payment&userId=${userId}&email=${email}`);
 
         } catch (err) {
-            console.error('Failed to create pending payment, using local fallback:', err.message);
-            
-            // Fallback: use a mocked payment ID
-            const mockPaymentId = `PAY-MOCK-${Date.now()}`;
-            const pendingPayment = {
-                personalDetails,
-                cardDetails,
-                agreeTerms,
-                saveCard,
-                selectedMethod,
-                totalAmount,
-                paymentId: mockPaymentId,
-                description: passedDescription,
-                currency: passedCurrency,
-                paymentMethod: passedPaymentMethod
-            };
-            sessionStorage.setItem('pending_payment', JSON.stringify(pendingPayment));
-            sessionStorage.setItem('payment_initiated', 'true');
+            console.error('Failed to create pending payment:', err.message);
+            setErrors({ submit: 'Unable to connect to the payment server. Please ensure the backend is running and try again.' });
             setIsProcessing(false);
-            
-            navigate('/otp-verification?purpose=payment');
         }
     };
 

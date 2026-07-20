@@ -47,7 +47,19 @@ export default function InvestigationDrawer({ isOpen, onClose, targetId, onActio
     if (isOpen && targetId) {
       setLoading(true);
       getAlertById(targetId)
-        .then(res => setData(res))
+        .then(res => {
+          setData(res);
+          // Auto-start investigation if it doesn't exist
+          if (!res.investigationData || !res.investigationData.caseId) {
+            startInvestigation(targetId, { 
+              assignedTo: getAnalystName(), 
+              priority: 'MEDIUM', 
+              notes: 'Investigation opened' 
+            }).then(() => {
+              getAlertById(targetId).then(updatedRes => setData(updatedRes));
+            }).catch(err => console.error("Failed to auto-start investigation", err));
+          }
+        })
         .catch(console.error)
         .finally(() => setLoading(false));
     } else {
@@ -297,7 +309,7 @@ export default function InvestigationDrawer({ isOpen, onClose, targetId, onActio
 
           <button 
             className="drawer-footer-btn" 
-            style={{ backgroundColor: '#10B981', color: 'white', border: 'none', opacity: actionLoading ? 0.6 : 1 }}
+            style={{ backgroundColor: '#F59E0B', color: 'white', border: 'none', opacity: actionLoading ? 0.6 : 1 }}
             onClick={handleWhitelist}
             disabled={!!actionLoading}
           >

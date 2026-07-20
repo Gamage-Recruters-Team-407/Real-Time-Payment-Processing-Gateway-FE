@@ -1,6 +1,6 @@
 // src/pages/RefundRequest.jsx
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Upload, X, ArrowLeft, Loader2, CheckCircle2, AlertCircle, CloudUpload } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -9,14 +9,17 @@ import api from "../services/api";
 
 export default function RefundRequest() {
   const { transactionId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const isLinkedTransaction = Boolean(transactionId);
+  const prefilledAmount = searchParams.get("amount") || "";
 
   // Form State
   const [name, setName] = useState("");
   const [txnId, setTxnId] = useState(transactionId || "");
   const [phone, setPhone] = useState("");
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(prefilledAmount);
   const [reason, setReason] = useState("");
   const [photoFile, setPhotoFile] = useState(null); // Raw File object
   const [photoPreview, setPhotoPreview] = useState(null); // Local object URL for preview
@@ -33,7 +36,10 @@ export default function RefundRequest() {
     if (transactionId) {
       setTxnId(transactionId);
     }
-  }, [transactionId]);
+    if (prefilledAmount) {
+      setAmount(prefilledAmount);
+    }
+  }, [transactionId, prefilledAmount]);
 
   // Handle Photo Selection — stores file + creates local preview URL
   const handlePhotoChange = (e) => {
@@ -238,15 +244,21 @@ export default function RefundRequest() {
                           type="text"
                           value={txnId}
                           onChange={(e) => {
+                            if (isLinkedTransaction) return;
                             const val = e.target.value;
                             if (val.length <= 12) {
                               setTxnId(val);
                             }
                           }}
+                          readOnly={isLinkedTransaction}
                           placeholder="e.g. TXN_98214300 (12 characters)"
                           required
                           maxLength={12}
-                          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all"
+                          className={`w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 transition-all ${
+                            isLinkedTransaction
+                              ? "bg-slate-100 cursor-not-allowed text-slate-500"
+                              : "bg-slate-50 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                          }`}
                         />
                       </div>
                     </div>
@@ -284,10 +296,18 @@ export default function RefundRequest() {
                             step="0.01"
                             min="0"
                             value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
+                            onChange={(e) => {
+                              if (isLinkedTransaction) return;
+                              setAmount(e.target.value);
+                            }}
+                            readOnly={isLinkedTransaction}
                             placeholder="e.g. 50.00"
                             required
-                            className="w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all"
+                            className={`w-full rounded-lg border border-slate-200 pl-10 pr-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 transition-all ${
+                              isLinkedTransaction
+                                ? "bg-slate-100 cursor-not-allowed text-slate-500"
+                                : "bg-slate-50 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                            }`}
                           />
                         </div>
                       </div>
