@@ -121,7 +121,7 @@ export default function PaymentSuccess() {
   };
 
   const handleDone = () => {
-    navigate("/payment-history");
+    navigate("/dashboard");
   };
 
   return (

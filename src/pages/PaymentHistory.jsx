@@ -126,7 +126,7 @@ export default function PaymentHistory() {
     try {
       const res = await getPaymentHistory({ status, search, page: 1, limit: 100000, month });
       const transactions = res.results || [];
-      
+
       const totalVolume = transactions
         .filter((t) => t.status === "Successful" || t.status === "Completed")
         .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
@@ -203,9 +203,9 @@ export default function PaymentHistory() {
                   </td>
                 </tr>
               ` : transactions.map(t => {
-                const statusClass = t.status === "Successful" || t.status === "Completed" ? "color: #059669; background-color: #ecfdf5;" : t.status === "Failed" ? "color: #dc2626; background-color: #fef2f2;" : "color: #d97706; background-color: #fffbeb;";
-                const amtStyle = t.status === "Failed" ? "color: #dc2626; font-weight: 600;" : "color: #334155; font-weight: 600;";
-                return `
+        const statusClass = t.status === "Successful" || t.status === "Completed" ? "color: #059669; background-color: #ecfdf5;" : t.status === "Failed" ? "color: #dc2626; background-color: #fef2f2;" : "color: #d97706; background-color: #fffbeb;";
+        const amtStyle = t.status === "Failed" ? "color: #dc2626; font-weight: 600;" : "color: #334155; font-weight: 600;";
+        return `
                   <tr>
                     <td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9;">${formatDateTime(t.dateTime || t.createdAt)}</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; font-family: monospace; font-size: 11px;">${t.transactionId}</td>
@@ -214,7 +214,7 @@ export default function PaymentHistory() {
                     <td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9;"><span style="display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 600; text-transform: uppercase; ${statusClass}">${t.status}</span></td>
                   </tr>
                 `;
-              }).join('')}
+      }).join('')}
             </tbody>
           </table>
 
@@ -297,9 +297,9 @@ export default function PaymentHistory() {
                 value={
                   summary
                     ? `LKR ${Number(summary.totalVolume).toLocaleString("en-LK", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}`
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}`
                     : "—"
                 }
                 caption={
@@ -341,64 +341,63 @@ export default function PaymentHistory() {
                 />
               </div>
 
-            <div className="flex flex-wrap gap-2">
-              {FILTERS.map((f) => (
+              <div className="flex flex-wrap gap-2">
+                {FILTERS.map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => handleFilterChange(f)}
+                    className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${status === f
+                        ? "bg-[#0F1117] text-white"
+                        : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                      }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+
+                <input
+                  type="month"
+                  value={month}
+                  onChange={(e) => {
+                    setMonth(e.target.value);
+                    setPage(1);
+                  }}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                />
+
                 <button
-                  key={f}
                   type="button"
-                  onClick={() => handleFilterChange(f)}
-                  className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                    status === f
-                      ? "bg-[#0F1117] text-white"
-                      : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                  }`}
+                  onClick={() => {
+                    setSearch("");
+                    setStatus("All");
+                    setPage(1);
+                    const now = new Date();
+                    setMonth(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
+                    setRefreshKey((k) => k + 1);
+                  }}
+                  className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
                 >
-                  {f}
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Refresh
                 </button>
-              ))}
 
-              <input
-                type="month"
-                value={month}
-                onChange={(e) => {
-                  setMonth(e.target.value);
-                  setPage(1);
-                }}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
-              />
-
-              <button
-                type="button"
-                onClick={() => {
-                  setSearch("");
-                  setStatus("All");
-                  setPage(1);
-                  const now = new Date();
-                  setMonth(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
-                  setRefreshKey((k) => k + 1);
-                }}
-                className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-                Refresh
-              </button>
-
+              </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-xl border border-slate-200">
+            <div className="bg-white rounded-xl border border-slate-200">
 
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="text-xs uppercase tracking-wide text-slate-500 bg-slate-50 border-b border-slate-200">
-                      <th className="px-4 py-3 font-medium">Date / time</th>
-                      <th className="px-4 py-3 font-medium">Transaction ID</th>
-                      <th className="px-4 py-3 font-medium">Method</th>
-                      <th className="px-4 py-3 font-medium">Amount</th>
-                      <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3 font-medium text-center">Actions</th>
+                      <th className="px-6 py-3.5 font-medium text-left">Date / time</th>
+                      <th className="px-6 py-3.5 font-medium text-left">Transaction ID</th>
+                      <th className="px-6 py-3.5 font-medium text-center">Method</th>
+                      <th className="px-6 py-3.5 font-medium text-center">Amount</th>
+                      <th className="px-6 py-3.5 font-medium text-center">Status</th>
+                      <th className="px-6 py-3.5 font-medium text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -429,27 +428,29 @@ export default function PaymentHistory() {
                             key={t.id}
                             className="border-t border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
                           >
-                            <td className="px-4 py-4 text-slate-500">
+                            <td className="px-6 py-4 text-left text-slate-500">
                               {formatDateTime(t.dateTime || t.createdAt)}
                             </td>
-                            <td className="px-4 py-4 font-medium text-slate-900">
+                            <td className="px-6 py-4 text-left font-medium text-slate-900">
                               {t.transactionId}
                             </td>
-                            <td className="px-4 py-4">{t.method}</td>
-                            <td className={`px-4 py-4 font-medium ${t.status === "Failed" ? "text-red-600" : "text-slate-900"}`}>
+                            <td className="px-6 py-4 text-center">{t.method}</td>
+                            <td className={`px-6 py-4 text-center font-medium ${t.status === "Failed" ? "text-red-600" : "text-slate-900"}`}>
                               {formatAmount(t.amount, t.currency)}
                             </td>
 
-                            <td className="px-4 py-4">
-                              {t.refundSummary?.hasRefundRequest ? (
-                                <RefundStatusBadge
-                                  refundStatus={t.refundSummary.latestRefundStatus}
-                                />
-                              ) : (
-                                <StatusBadge status={t.status} />
-                              )}
+                            <td className="px-6 py-4 text-center">
+                              <div className="flex justify-center">
+                                {t.refundSummary?.hasRefundRequest ? (
+                                  <RefundStatusBadge
+                                    refundStatus={t.refundSummary.latestRefundStatus}
+                                  />
+                                ) : (
+                                  <StatusBadge status={t.status} />
+                                )}
+                              </div>
                             </td>
-                            <td className="px-4 py-4 text-center">
+                            <td className="px-6 py-4 text-center">
                               <div className="flex items-center justify-center gap-3">
                                 {isRefundable ? (
                                   <button
@@ -462,7 +463,7 @@ export default function PaymentHistory() {
                                     }}
                                     className="rounded bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600 shadow-sm transition-colors hover:bg-rose-100"
                                   >
-                                    Return & Refund
+                                    Return &amp; Refund
                                   </button>
                                 ) : (
                                   <button
@@ -471,7 +472,7 @@ export default function PaymentHistory() {
                                     title={getRefundButtonTitle(t)}
                                     className="cursor-not-allowed rounded bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-400 opacity-50"
                                   >
-                                    Return & Refund
+                                    Return &amp; Refund
                                   </button>
                                 )}
 
