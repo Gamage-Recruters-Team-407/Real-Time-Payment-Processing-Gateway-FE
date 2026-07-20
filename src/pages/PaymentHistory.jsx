@@ -18,6 +18,7 @@ import {
   getPaymentHistory,
 } from "../services/paymentHistoryService";
 import { StatusBadge } from "./PaymentSuccess";
+import html2pdf from "html2pdf.js";
 
 const FILTERS = ["All", "Completed", "Pending", "Failed"];
 const PAGE_SIZE = 5;
@@ -57,6 +58,8 @@ function computeIsRefundable(t) {
     isWithinWindow
   );
 }
+
+
 
 export default function PaymentHistory() {
   const navigate = useNavigate();
@@ -107,7 +110,7 @@ export default function PaymentHistory() {
     setPage(1);
   };
 
-  const handleExportPdf = async () => {
+  const handleDownloadPdf = async () => {
     try {
       const res = await getPaymentHistory({ status, search, page: 1, limit: 100000, month });
       const transactions = res.results || [];
@@ -131,247 +134,98 @@ export default function PaymentHistory() {
       const monthDisplay = month ? new Date(month + "-02").toLocaleString("default", { month: "long", year: "numeric" }) : "All Months";
       const statusDisplay = status;
 
-      const printWindow = window.open("", "_blank");
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>GamagePay - Transaction Statement</title>
-            <style>
-              body {
-                font-family: 'Segoe UI', -apple-system, sans-serif;
-                color: #1e293b;
-                padding: 40px;
-                background-color: #ffffff;
-                margin: 0;
-              }
-              .header-container {
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-start;
-                border-bottom: 2px solid #f1f5f9;
-                padding-bottom: 20px;
-                margin-bottom: 30px;
-              }
-              .brand-title {
-                font-size: 28px;
-                font-weight: 800;
-                color: #0F1117;
-                margin: 0;
-                letter-spacing: -0.025em;
-              }
-              .brand-title span {
-                color: #10b981;
-              }
-              .statement-title {
-                font-size: 14px;
-                text-transform: uppercase;
-                letter-spacing: 0.1em;
-                color: #64748b;
-                margin: 4px 0 0 0;
-                font-weight: 700;
-              }
-              .meta-info {
-                text-align: right;
-                font-size: 12px;
-                color: #64748b;
-                line-height: 1.6;
-              }
-              .filter-badge-container {
-                display: flex;
-                gap: 12px;
-                margin-bottom: 24px;
-              }
-              .filter-badge {
-                background-color: #f8fafc;
-                border: 1px solid #e2e8f0;
-                padding: 6px 12px;
-                border-radius: 6px;
-                font-size: 12px;
-                font-weight: 500;
-              }
-              .filter-badge strong {
-                color: #0F1117;
-              }
-              .stats-grid {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 16px;
-                margin-bottom: 30px;
-              }
-              .stat-box {
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-                padding: 14px;
-                background-color: #f8fafc;
-              }
-              .stat-label {
-                font-size: 11px;
-                text-transform: uppercase;
-                color: #64748b;
-                font-weight: 600;
-                letter-spacing: 0.05em;
-              }
-              .stat-value {
-                font-size: 18px;
-                font-weight: 700;
-                color: #0F1117;
-                margin-top: 4px;
-              }
-              table {
-                width: 100%;
-                border-collapse: collapse;
-                text-align: left;
-                font-size: 12px;
-                margin-top: 10px;
-              }
-              th {
-                background-color: #f8fafc;
-                color: #475569;
-                font-weight: 600;
-                text-transform: uppercase;
-                font-size: 10px;
-                letter-spacing: 0.05em;
-                padding: 12px 16px;
-                border-bottom: 1px solid #e2e8f0;
-              }
-              td {
-                padding: 12px 16px;
-                border-bottom: 1px solid #f1f5f9;
-                color: #334155;
-              }
-              tr:nth-child(even) td {
-                background-color: #fbfcfd;
-              }
-              .status-pill {
-                display: inline-block;
-                padding: 2px 8px;
-                border-radius: 99px;
-                font-size: 10px;
-                font-weight: 600;
-                text-transform: uppercase;
-              }
-              .status-completed {
-                background-color: #ecfdf5;
-                color: #059669;
-              }
-              .status-pending {
-                background-color: #fffbeb;
-                color: #d97706;
-              }
-              .status-failed {
-                background-color: #fef2f2;
-                color: #dc2626;
-              }
-              .amount-failed {
-                color: #dc2626;
-                font-weight: 600;
-              }
-              .amount-normal {
-                font-weight: 600;
-              }
-              .footer {
-                margin-top: 40px;
-                text-align: center;
-                font-size: 11px;
-                color: #94a3b8;
-                border-top: 1px solid #e2e8f0;
-                padding-top: 16px;
-              }
-              @media print {
-                body { padding: 0; }
-                .no-print { display: none; }
-              }
-            </style>
-          </head>
-          <body>
-            <div class="header-container">
-              <div>
-                <h1 class="brand-title">Gamage<span>Pay</span></h1>
-                <p class="statement-title">Transaction Statement</p>
-              </div>
-              <div class="meta-info">
-                <div>Statement Date: <strong>${nowStr}</strong></div>
-                <div>Account Owner: <strong>Valued Merchant</strong></div>
-              </div>
+      const element = document.createElement("div");
+      element.innerHTML = `
+        <div style="width: 190mm; padding: 15px; font-family: 'Segoe UI', -apple-system, sans-serif; color: #1e293b; background-color: #ffffff; box-sizing: border-box;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 30px;">
+            <div>
+              <h1 style="font-size: 28px; font-weight: 800; color: #0F1117; margin: 0; letter-spacing: -0.025em;">Gamage<span style="color: #10b981;">Pay</span></h1>
+              <p style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; margin: 4px 0 0 0; font-weight: 700;">Transaction Statement</p>
             </div>
-
-            <div class="filter-badge-container">
-              <div class="filter-badge">Month Range: <strong>${monthDisplay}</strong></div>
-              <div class="filter-badge">Status Filter: <strong>${statusDisplay}</strong></div>
-              ${search ? `<div class="filter-badge">Search Term: <strong>"${search}"</strong></div>` : ''}
+            <div style="text-align: right; font-size: 12px; color: #64748b; line-height: 1.6;">
+              <div>Statement Date: <strong>${nowStr}</strong></div>
+              <div>Account Owner: <strong>Valued Merchant</strong></div>
             </div>
+          </div>
 
-            <div class="stats-grid">
-              <div class="stat-box">
-                <div class="stat-label">Total Volume</div>
-                <div class="stat-value">LKR ${totalVolume.toLocaleString("en-LK", { minimumFractionDigits: 2 })}</div>
-              </div>
-              <div class="stat-box">
-                <div class="stat-label">Successful</div>
-                <div class="stat-value">${successfulCount}</div>
-              </div>
-              <div class="stat-box">
-                <div class="stat-label">Pending</div>
-                <div class="stat-value">${pendingCount}</div>
-              </div>
-              <div class="stat-box">
-                <div class="stat-label">Failed</div>
-                <div class="stat-value">${failedCount}</div>
-              </div>
+          <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500;">Month Range: <strong>${monthDisplay}</strong></div>
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500;">Status Filter: <strong>${statusDisplay}</strong></div>
+            ${search ? `<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500;">Search Term: <strong>"${search}"</strong></div>` : ''}
+          </div>
+
+          <div style="display: flex; gap: 16px; margin-bottom: 30px; width: 100%;">
+            <div style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background-color: #f8fafc; box-sizing: border-box;">
+              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.05em;">Total Volume</div>
+              <div style="font-size: 18px; font-weight: 700; color: #0F1117; margin-top: 4px;">LKR ${totalVolume.toLocaleString("en-LK", { minimumFractionDigits: 2 })}</div>
             </div>
+            <div style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background-color: #f8fafc; box-sizing: border-box;">
+              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.05em;">Successful</div>
+              <div style="font-size: 18px; font-weight: 700; color: #0F1117; margin-top: 4px;">${successfulCount}</div>
+            </div>
+            <div style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background-color: #f8fafc; box-sizing: border-box;">
+              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.05em;">Pending</div>
+              <div style="font-size: 18px; font-weight: 700; color: #0F1117; margin-top: 4px;">${pendingCount}</div>
+            </div>
+            <div style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background-color: #f8fafc; box-sizing: border-box;">
+              <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.05em;">Failed</div>
+              <div style="font-size: 18px; font-weight: 700; color: #0F1117; margin-top: 4px;">${failedCount}</div>
+            </div>
+          </div>
 
-            <table>
-              <thead>
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; margin-top: 10px;">
+            <thead>
+              <tr>
+                <th style="background-color: #f8fafc; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Date / Time</th>
+                <th style="background-color: #f8fafc; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Transaction ID</th>
+                <th style="background-color: #f8fafc; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Method</th>
+                <th style="background-color: #f8fafc; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Amount</th>
+                <th style="background-color: #f8fafc; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${transactions.length === 0 ? `
                 <tr>
-                  <th>Date / Time</th>
-                  <th>Transaction ID</th>
-                  <th>Method</th>
-                  <th>Amount</th>
-                  <th>Status</th>
+                  <td colspan="5" style="text-align: center; padding: 30px; color: #94a3b8;">
+                    No transactions found for the selected filters.
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                ${transactions.length === 0 ? `
+              ` : transactions.map(t => {
+                const statusClass = t.status === "Successful" || t.status === "Completed" ? "color: #059669; background-color: #ecfdf5;" : t.status === "Failed" ? "color: #dc2626; background-color: #fef2f2;" : "color: #d97706; background-color: #fffbeb;";
+                const amtStyle = t.status === "Failed" ? "color: #dc2626; font-weight: 600;" : "color: #334155; font-weight: 600;";
+                return `
                   <tr>
-                    <td colspan="5" style="text-align: center; padding: 30px; color: #94a3b8;">
-                      No transactions found for the selected filters.
-                    </td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9;">${formatDateTime(t.dateTime || t.createdAt)}</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; font-family: monospace; font-size: 11px;">${t.transactionId}</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9;">${t.method}</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; ${amtStyle}">LKR ${Number(t.amount || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9;"><span style="display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 600; text-transform: uppercase; ${statusClass}">${t.status}</span></td>
                   </tr>
-                ` : transactions.map(t => {
-                  const statusClass = t.status === "Successful" || t.status === "Completed" ? "status-completed" : t.status === "Failed" ? "status-failed" : "status-pending";
-                  const amtClass = t.status === "Failed" ? "amount-failed" : "amount-normal";
-                  return `
-                    <tr>
-                      <td>${formatDateTime(t.dateTime || t.createdAt)}</td>
-                      <td style="font-family: monospace; font-size: 11px;">${t.transactionId}</td>
-                      <td>${t.method}</td>
-                      <td class="${amtClass}">LKR ${Number(t.amount || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                      <td><span class="status-pill ${statusClass}">${t.status}</span></td>
-                    </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
 
-            <div class="footer">
-              This is a system-generated statement from GamagePay and does not require a signature.
-            </div>
+          <div style="margin-top: 40px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+            This is a system-generated statement from GamagePay and does not require a signature.
+          </div>
+        </div>
+      `;
 
-            <script>
-              window.onload = function() {
-                window.print();
-              };
-            </script>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: `GamagePay_Statement_${month || 'All'}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 4, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().from(element).set(opt).save();
     } catch (err) {
       console.error("Failed to export PDF:", err);
       alert("Failed to export PDF statement. Please try again.");
     }
   };
-
   const handleViewDetails = (transaction) => {
     setSelectedTransaction(transaction);
   };
@@ -406,10 +260,10 @@ export default function PaymentHistory() {
               <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={handleExportPdf}
-                  className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                  onClick={handleDownloadPdf}
+                  className="rounded-lg border border-emerald-300 bg-emerald-100 px-4 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-emerald-200 shadow-sm"
                 >
-                  Export PDF
+                  Download PDF
                 </button>
                 <button
                   type="button"
@@ -430,7 +284,10 @@ export default function PaymentHistory() {
                 label="Total volume"
                 value={
                   summary
-                    ? `LKR ${(summary.totalVolume / 1_000_000).toFixed(2)}M`
+                    ? `LKR ${Number(summary.totalVolume).toLocaleString("en-LK", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}`
                     : "—"
                 }
                 caption={
@@ -467,7 +324,7 @@ export default function PaymentHistory() {
                   type="text"
                   value={search}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  placeholder="Search by transaction ID or method..."
+                  placeholder="Search by transaction ID"
                   className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
                 />
               </div>

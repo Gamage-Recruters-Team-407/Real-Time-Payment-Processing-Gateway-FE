@@ -53,8 +53,6 @@ const Navbar = () => {
     hour12: true,
   });
 
-  console.log("Navbar - User data:", user);
-
   // Get user initials for avatar
   const getUserInitials = () => {
     if (!user) return "U";

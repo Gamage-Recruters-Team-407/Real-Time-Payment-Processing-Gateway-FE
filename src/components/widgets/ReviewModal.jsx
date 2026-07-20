@@ -1,13 +1,29 @@
 import { useState, useEffect } from 'react';
-import { Eye, X, Globe, MapPin, AlertTriangle, CheckCircle, Flag, Ban, FileText } from 'lucide-react';
-import { getAlertById, handleTransactionAction } from '../../services/fraudApi';
-import { startInvestigation } from '../../services/investigationApi';
+import { Eye, X, Globe, MapPin, AlertTriangle, CheckCircle, Flag, Ban, FileText, ShieldHalf } from 'lucide-react';
+import { getAlertById, handleTransactionAction, addToWhitelist } from '../../services/fraudApi';
+import WhitelistModal from './WhitelistModal';
+import { useAuth } from '../../context/AuthContext';
 
 export default function ReviewModal({ isOpen, onClose, targetId, onActionComplete }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [notes, setNotes] = useState('');
+  const [whitelistModalOpen, setWhitelistModalOpen] = useState(false);
+  const { user } = useAuth();
+
+  const getAnalystName = () => {
+    if (!user) return "Analyst";
+    if (user.name) return user.name;
+    if (user.fullName) return user.fullName;
+    if (user.fullname) return user.fullname;
+    if (user.displayName) return user.displayName;
+    if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
+    if (user.firstName) return user.firstName;
+    if (user.username) return user.username;
+    if (user.email) return user.email.split("@")[0];
+    return "Analyst";
+  };
 
   useEffect(() => {
     if (isOpen && targetId) {
@@ -30,7 +46,7 @@ export default function ReviewModal({ isOpen, onClose, targetId, onActionComplet
   const handleApprove = async () => {
     try {
       setActionLoading(true);
-      await handleTransactionAction(targetId, { action: 'RELEASE', notes, performedBy: 'Analyst #1' });
+      await handleTransactionAction(targetId, { action: 'RELEASE', notes, performedBy: getAnalystName() });
       handleSuccess();
     } catch (err) {
       console.error(err);
@@ -40,23 +56,14 @@ export default function ReviewModal({ isOpen, onClose, targetId, onActionComplet
     }
   };
 
-  const handleFlag = async () => {
-    try {
-      setActionLoading(true);
-      await startInvestigation(targetId, { assignedTo: 'Analyst #1', priority: 'MEDIUM', notes });
-      handleSuccess();
-    } catch (err) {
-      console.error(err);
-      alert('Failed to flag transaction for investigation');
-    } finally {
-      setActionLoading(false);
-    }
+  const handleWhitelist = () => {
+    setWhitelistModalOpen(true);
   };
 
   const handleBlock = async () => {
     try {
       setActionLoading(true);
-      await handleTransactionAction(targetId, { action: 'BLOCK', notes, performedBy: 'Analyst #1' });
+      await handleTransactionAction(targetId, { action: 'BLOCK', notes, performedBy: getAnalystName() });
       handleSuccess();
     } catch (err) {
       console.error(err);
@@ -71,7 +78,7 @@ export default function ReviewModal({ isOpen, onClose, targetId, onActionComplet
   return (
     <>
       <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 200, backgroundColor: 'rgba(0,0,0,0.4)' }}></div>
-      <div className="modal-container" style={{ zIndex: 210, width: '520px', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
+      <div className="modal-container" style={{ zIndex: 210, width: '640px', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid #FCA5A5', backgroundColor: '#fff', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#D97706', fontWeight: 700, fontSize: '1.2rem' }}>
@@ -168,28 +175,28 @@ export default function ReviewModal({ isOpen, onClose, targetId, onActionComplet
 
         {/* Footer */}
         <div style={{ backgroundColor: '#FEF2F2', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #FEE2E2', flexShrink: 0 }}>
-          <button onClick={onClose} style={{ padding: '8px 20px', backgroundColor: 'white', border: '1px solid #9CA3AF', borderRadius: '6px', color: '#4B5563', fontWeight: 600, fontSize: '0.85rem' }}>
+          <button onClick={onClose} style={{ height: '40px', padding: '0 16px', backgroundColor: 'white', border: '1px solid #9CA3AF', borderRadius: '6px', color: '#4B5563', fontWeight: 600, fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap' }}>
             Cancel
           </button>
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
             <button 
               onClick={handleApprove}
               disabled={!data || actionLoading}
-              style={{ backgroundColor: '#10B981', color: 'white', padding: '8px 20px', borderRadius: '6px', fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', opacity: (!data || actionLoading) ? 0.6 : 1 }}
+              style={{ height: '40px', backgroundColor: '#10B981', color: 'white', padding: '0 16px', borderRadius: '6px', fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', opacity: (!data || actionLoading) ? 0.6 : 1, whiteSpace: 'nowrap', border: 'none' }}
             >
               <CheckCircle size={16} /> MARK SAFE
             </button>
             <button 
-              onClick={handleFlag}
+              onClick={handleWhitelist}
               disabled={!data || actionLoading}
-              style={{ backgroundColor: '#D97706', color: 'white', padding: '8px 20px', borderRadius: '6px', fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', opacity: (!data || actionLoading) ? 0.6 : 1 }}
+              style={{ height: '40px', backgroundColor: '#D97706', color: 'white', padding: '0 16px', borderRadius: '6px', fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', opacity: (!data || actionLoading) ? 0.6 : 1, whiteSpace: 'nowrap', border: 'none' }}
             >
-              <Flag size={16} /> FLAG
+              <ShieldHalf size={16} /> WHITELIST
             </button>
             <button 
               onClick={handleBlock}
               disabled={!data || actionLoading}
-              style={{ backgroundColor: '#9F1239', color: 'white', padding: '8px 20px', borderRadius: '6px', fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', opacity: (!data || actionLoading) ? 0.6 : 1 }}
+              style={{ height: '40px', backgroundColor: '#9F1239', color: 'white', padding: '0 16px', borderRadius: '6px', fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', opacity: (!data || actionLoading) ? 0.6 : 1, whiteSpace: 'nowrap', border: 'none' }}
             >
               <Ban size={16} /> MARK FRAUD
             </button>
@@ -197,6 +204,28 @@ export default function ReviewModal({ isOpen, onClose, targetId, onActionComplet
         </div>
         
       </div>
+
+      <WhitelistModal
+        isOpen={whitelistModalOpen}
+        onClose={async (success) => {
+          setWhitelistModalOpen(false);
+          if (success) {
+            if (targetId) {
+              try {
+                await handleTransactionAction(targetId, { 
+                  action: 'RELEASE', 
+                  notes: 'Whitelisted user', 
+                  performedBy: getAnalystName() 
+                });
+              } catch (e) {
+                console.error("Failed to release transaction after whitelisting", e);
+              }
+            }
+            handleSuccess();
+          }
+        }}
+        targetId={targetId}
+      />
     </>
   );
 }

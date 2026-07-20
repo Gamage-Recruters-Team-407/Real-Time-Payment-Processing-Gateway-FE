@@ -58,8 +58,8 @@ const OTPVerification = () => {
     setPurpose(urlPurpose);
     
     // Get userId and email, falling back to auth user or sessionStorage
-    const finalUserId = params.get('userId') || (urlPurpose === 'payment' ? user?._id : '') || sessionStorage.getItem(`otp_userId_${urlPurpose}`) || '';
-    const finalEmail = params.get('email') || (urlPurpose === 'password_forgot' ? user?.email : '') || sessionStorage.getItem(`otp_email_${urlPurpose}`) || '';
+    const finalUserId = params.get('userId') || (urlPurpose === 'payment' ? (user?._id || user?.id) : '') || sessionStorage.getItem(`otp_userId_${urlPurpose}`) || '';
+    const finalEmail = params.get('email') || user?.email || sessionStorage.getItem(`otp_email_${urlPurpose}`) || '';
 
     if (finalUserId) {
       setUserId(finalUserId);
