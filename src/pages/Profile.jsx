@@ -79,7 +79,7 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="flex-1 p-8">
+      <div className="flex-1 p-4 sm:p-6 lg:p-8">
         <div className="h-24 animate-pulse rounded-xl bg-white ring-1 ring-slate-100" />
       </div>
     );
@@ -95,9 +95,9 @@ export default function Profile() {
 
   return (
     <>
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0A192F]">My Profile</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-[#0A192F]">My Profile</h1>
           <p className="mt-1 text-sm text-slate-400">
             Manage your personal information and account details.
           </p>
@@ -126,9 +126,9 @@ export default function Profile() {
         </div>
       )}
 
-      <div className="mt-6 flex gap-6">
+      <div className="mt-6 flex flex-col gap-6 lg:flex-row">
         {/* Left: avatar card */}
-        <div className="w-64 shrink-0 rounded-xl bg-white p-6 text-center shadow-sm ring-1 ring-slate-100">
+        <div className="w-full lg:w-64 shrink-0 rounded-xl bg-white p-6 text-center shadow-sm ring-1 ring-slate-100">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#0A192F] text-2xl font-semibold text-white">
             {profile?.name?.charAt(0) ?? "U"}
           </div>
@@ -149,7 +149,7 @@ export default function Profile() {
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
             Personal Information
           </p>
-          <div className="mt-4 grid grid-cols-2 gap-4">
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field icon={User} label="Full Name" name="name" value={profile?.name} editing={editing} onChange={handleChange} />
             <Field icon={Mail} label="Email Address" name="email" value={profile?.email} editing={editing} onChange={handleChange} disabled />
             <Field icon={Phone} label="Phone Number" name="phone" value={profile?.phone} editing={editing} onChange={handleChange} />
