@@ -357,14 +357,8 @@ export default function CardPayment() {
                 }
             }
         } catch (err) {
-            console.warn('Backend payment status update failed, executing simulation success fallback:', err.message);
-            
-            // Simulating real-time communication response delay
-            setTimeout(() => {
-                sessionStorage.removeItem('pending_payment');
-                sessionStorage.removeItem('payment_initiated');
-                navigate('/payment-success');
-            }, 2000);
+            console.error('Backend payment status update failed:', err.message);
+            setErrors({ submit: 'Unable to complete the payment on the server. Please contact out support team.' });
         }
 
         setIsProcessing(false);
@@ -433,27 +427,9 @@ export default function CardPayment() {
             navigate('/otp-verification?purpose=payment');
 
         } catch (err) {
-            console.error('Failed to create pending payment, using local fallback:', err.message);
-            
-            // Fallback: use a mocked payment ID
-            const mockPaymentId = `PAY-MOCK-${Date.now()}`;
-            const pendingPayment = {
-                personalDetails,
-                cardDetails,
-                agreeTerms,
-                saveCard,
-                selectedMethod,
-                totalAmount,
-                paymentId: mockPaymentId,
-                description: passedDescription,
-                currency: passedCurrency,
-                paymentMethod: passedPaymentMethod
-            };
-            sessionStorage.setItem('pending_payment', JSON.stringify(pendingPayment));
-            sessionStorage.setItem('payment_initiated', 'true');
+            console.error('Failed to create pending payment:', err.message);
+            setErrors({ submit: 'Unable to connect to the payment server. Please ensure the backend is running and try again.' });
             setIsProcessing(false);
-            
-            navigate('/otp-verification?purpose=payment');
         }
     };
 
@@ -557,7 +533,7 @@ export default function CardPayment() {
                                         Card Holder
                                     </span>
                                     <span className="text-xs md:text-sm font-semibold tracking-wide font-sans truncate max-w-[180px] text-white">
-                                        {cardDetails.cardholderName || 'LAHIRU MUDITH'}
+                                        {cardDetails.cardholderName}
                                     </span>
                                 </div>
                                 <div className="flex flex-col items-end">

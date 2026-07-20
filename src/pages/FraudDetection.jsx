@@ -22,6 +22,7 @@ export default function FraudDetection() {
   const [whitelistTarget, setWhitelistTarget] = useState(null);
   const [reviewTarget, setReviewTarget] = useState(null);
   const [isFraudListOpen, setIsFraudListOpen] = useState(false);
+  const [selectedGraphTx, setSelectedGraphTx] = useState(null);
 
   const dispatch = useDispatch();
   const { data: metrics } = useSelector(state => state.metrics);
@@ -121,6 +122,7 @@ export default function FraudDetection() {
           onLiveFeedClick={() => setIsLiveFeedOpen(true)} 
           onInvestigateClick={(id) => setInvestigationTarget(id)}
           onWhitelistClick={(id) => setWhitelistTarget(id)}
+          selectedTransaction={selectedGraphTx}
         />
         <RegionalVelocity />
       </div>
@@ -131,6 +133,7 @@ export default function FraudDetection() {
         onReviewClick={(id) => setReviewTarget(id)}
         onFreezeClick={(id) => handleAction(id, 'FREEZE')}
         onReleaseClick={(id) => handleAction(id, 'RELEASE')}
+        onTransactionSelect={(tx) => setSelectedGraphTx(tx)}
       />
 
       <LiveFeedDrawer 
