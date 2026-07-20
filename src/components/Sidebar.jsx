@@ -10,6 +10,7 @@ import {
   LogOut,
   Plus,
   Users,
+  ChevronLeft,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -95,20 +96,44 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="relative z-30 flex min-h-screen w-64 shrink-0 flex-col justify-between border-r border-gray-100 bg-white px-4 py-6">
+    <aside
+      className={`relative z-30 flex min-h-screen shrink-0 flex-col justify-between border-r border-gray-100 bg-white px-4 py-6 transition-all duration-300 ${
+        isCollapsed ? 'w-20' : 'w-64'
+      }`}
+    >
+      {/* Collapse Toggle */}
+      <button
+        type="button"
+        onClick={() => setIsCollapsed((prev) => !prev)}
+        className="absolute -right-3 top-8 flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors hover:bg-gray-50"
+      >
+        <ChevronLeft
+          size={14}
+          className={`transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`}
+        />
+      </button>
+
       <div>
         {/* Logo */}
         <div className="mb-6">
           <h1 className="text-xl font-bold text-[#0F1117]">
-            Gamage<span className="text-[#10B981]">Pay</span>
+            {isCollapsed ? (
+              <span className="text-[#10B981]">GP</span>
+            ) : (
+              <>
+                Gamage<span className="text-[#10B981]">Pay</span>
+              </>
+            )}
           </h1>
 
-          <div className="mt-2 flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-[#10B981]" />
+          <div className={`mt-2 flex items-center gap-1.5 ${isCollapsed ? 'justify-center' : ''}`}>
+            <span className="h-2 w-2 shrink-0 rounded-full bg-[#10B981]" />
 
-            <span className="text-xs font-medium text-gray-500">
-              System Active
-            </span>
+            {!isCollapsed && (
+              <span className="text-xs font-medium text-gray-500">
+                System Active
+              </span>
+            )}
           </div>
         </div>
 
@@ -123,7 +148,10 @@ const Sidebar = () => {
                 type="button"
                 key={item.name}
                 onClick={() => handleNavigation(item)}
+                title={isCollapsed ? item.name : undefined}
                 className={`flex items-center gap-3 rounded-xl px-4 py-3.5 text-left transition-colors ${
+                  isCollapsed ? 'justify-center px-0' : ''
+                } ${
                   isActive
                     ? 'bg-[#10B981] text-white shadow-sm'
                     : 'bg-transparent text-gray-700 hover:bg-gray-50'
@@ -131,9 +159,11 @@ const Sidebar = () => {
               >
                 <Icon
                   size={18}
-                  className={isActive ? 'text-white' : 'text-[#8A8FA3]'}
+                  className={`shrink-0 ${isActive ? 'text-white' : 'text-[#8A8FA3]'}`}
                 />
-                <span className="text-sm font-semibold">{item.name}</span>
+                {!isCollapsed && (
+                  <span className="text-sm font-semibold">{item.name}</span>
+                )}
               </button>
             );
           })}
@@ -144,24 +174,25 @@ const Sidebar = () => {
       <button
         type="button"
         onClick={() => setShowLogoutModal(true)}
+        title={isCollapsed ? 'Logout' : undefined}
         className="flex items-center justify-center gap-2 rounded-xl bg-[#0F1117] py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
       >
         <LogOut size={16} />
-        Logout
+        {!isCollapsed && 'Logout'}
       </button>
 
       {/* Custom Logout Confirmation Modal */}
       {showLogoutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-              <LogOut size={22} className="text-[#8A192F]" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl sm:p-6">
+            <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-red-50 sm:h-12 sm:w-12">
+              <LogOut size={20} className="text-[#8A192F] sm:size-[22px]" />
             </div>
-            <h2 className="mb-1 text-lg font-bold text-[#0F1117]">Log out?</h2>
+            <h2 className="mb-1 text-base font-bold text-[#0F1117] sm:text-lg">Log out?</h2>
             <p className="mb-6 text-sm text-gray-500">
               Are you sure you want to log out of your account?
             </p>
-            <div className="flex gap-3">
+            <div className="flex flex-col-reverse gap-3 sm:flex-row">
               <button
                 type="button"
                 onClick={() => setShowLogoutModal(false)}
