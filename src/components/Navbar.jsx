@@ -104,16 +104,16 @@ const Navbar = () => {
   };
 
   return (
-    <div className="w-full bg-white border-b border-gray-200 px-2 py-2 min-[380px]:px-3 sm:px-6 sm:py-3 flex items-center justify-between gap-1 min-[380px]:gap-2 overflow-hidden">
+    <div className="w-full bg-white border-b border-gray-200 pl-16 pr-2 py-2 min-[380px]:pl-16 min-[380px]:pr-3 sm:pl-6 sm:pr-6 sm:py-3 flex items-center justify-between gap-1 min-[380px]:gap-2 overflow-hidden">
       {/* Left side - Date and Time */}
       <div className="flex items-center gap-1 min-[380px]:gap-1.5 sm:gap-2.5 min-w-0 overflow-hidden">
         {/* Date chip: hidden on the smallest screens, shown from xs up */}
-        <div className="hidden min-[380px]:flex items-center gap-1 sm:gap-1.5 bg-[#8A192F]/8 text-[#8A192F] px-1.5 py-1 sm:px-3 sm:py-1.5 rounded-lg shrink-0">
+        <div className="hidden min-[380px]:flex items-center gap-1 sm:gap-1.5 bg-[#8A192F]/8 text-[#8A192F] px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg shrink-0">
           <Calendar size={13} strokeWidth={2.25} className="shrink-0" />
           <span className="hidden text-sm font-semibold sm:inline">{formattedDate}</span>
           <span className="text-[11px] font-semibold whitespace-nowrap sm:hidden">{formattedDateShort}</span>
         </div>
-        <div className="flex items-center gap-1 sm:gap-1.5 bg-[#10B981]/10 text-[#0d9268] px-1.5 py-1 sm:px-3 sm:py-1.5 rounded-lg shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 bg-[#10B981]/10 text-[#0d9268] px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg shrink-0">
           <Clock size={13} strokeWidth={2.25} className="shrink-0" />
           <span className="hidden text-sm font-semibold font-mono tabular-nums sm:inline">
             {formattedTime}
