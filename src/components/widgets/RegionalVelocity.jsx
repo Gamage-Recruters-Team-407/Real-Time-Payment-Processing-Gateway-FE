@@ -48,24 +48,35 @@ export default function RegionalVelocity() {
          
          {/* Map nodes */}
          {regions.map((r, i) => {
-           // Approximate coordinates for demo country codes
-           const coords = {
-             'US': { top: '40%', left: '20%' },
-             'CA': { top: '25%', left: '25%' },
-             'RU': { top: '30%', left: '65%' },
-             'NG': { top: '60%', left: '50%' },
-             'GB': { top: '35%', left: '48%' },
-             'HK': { top: '45%', left: '80%' },
-             'East Asia': { top: '45%', left: '80%' },
-             'Eastern Europe': { top: '30%', left: '65%' },
-             'North America': { top: '40%', left: '20%' }
-           }[r.name] || { top: `${30 + (i * 10)}%`, left: `${30 + (i * 15)}%` };
+           let top = `${30 + (i * 10)}%`;
+           let left = `${30 + (i * 15)}%`;
+
+           if (r.lat !== undefined && r.lon !== undefined) {
+             // Convert GPS coordinates to percentage for equirectangular map projection
+             left = `${((r.lon + 180) / 360) * 100}%`;
+             top = `${((90 - r.lat) / 180) * 100}%`;
+           } else {
+             // Fallbacks if no real data is present
+             const fallbackCoords = {
+               'US': { top: '40%', left: '20%' },
+               'CA': { top: '25%', left: '25%' },
+               'RU': { top: '30%', left: '65%' },
+               'NG': { top: '60%', left: '50%' },
+               'GB': { top: '35%', left: '48%' },
+               'HK': { top: '45%', left: '80%' },
+               'East Asia': { top: '45%', left: '80%' },
+               'Eastern Europe': { top: '30%', left: '65%' },
+               'North America': { top: '40%', left: '20%' }
+             }[r.name] || { top: `${30 + (i * 10)}%`, left: `${30 + (i * 15)}%` };
+             top = fallbackCoords.top;
+             left = fallbackCoords.left;
+           }
 
            const color = r.riskLevel === 'CRITICAL' ? '#BE185D' : r.riskLevel === 'HIGH' ? '#E11D48' : r.riskLevel === 'MEDIUM' ? '#F59E0B' : '#10B981';
            const size = r.riskLevel === 'CRITICAL' ? '18px' : r.riskLevel === 'HIGH' ? '16px' : '12px';
 
            return (
-             <div key={r.name} style={{ position: 'absolute', top: coords.top, left: coords.left, width: size, height: size, backgroundColor: color, borderRadius: '50%', boxShadow: `0 0 10px ${color}80` }}></div>
+             <div key={r.name} style={{ position: 'absolute', top: top, left: left, width: size, height: size, backgroundColor: color, borderRadius: '50%', boxShadow: `0 0 10px ${color}80` }}></div>
            );
          })}
       </div>
