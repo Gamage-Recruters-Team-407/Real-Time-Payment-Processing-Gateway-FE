@@ -78,7 +78,14 @@ const Sidebar = () => {
   const location = useLocation();
   const { isAdmin, logout } = useAuth();
   const [activeItem, setActiveItem] = useState(() => getActiveItemFromPath(location.pathname));
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sidebar-collapsed');
+      return saved === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
@@ -105,17 +112,29 @@ const Sidebar = () => {
     setIsMobileOpen(false);
   };
 
+  const toggleCollapse = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('sidebar-collapsed', String(next));
+      } catch {
+        // ignore storage errors
+      }
+      return next;
+    });
+  };
+
   return (
     <>
       {/* Mobile Hamburger Toggle - only visible on small screens */}
       <button
         type="button"
         onClick={() => setIsMobileOpen(true)}
-        className={`fixed left-4 top-4 z-30 flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 shadow-sm md:hidden ${
+        className={`fixed left-2 top-2 z-30 flex h-9 w-9 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-600 shadow-md transition-all duration-200 hover:border-gray-300 hover:bg-gray-50 hover:shadow-lg active:scale-95 min-[380px]:left-3 min-[380px]:top-3 min-[380px]:h-10 min-[380px]:w-10 md:hidden ${
           isMobileOpen ? 'hidden' : 'flex'
         }`}
       >
-        <Menu size={20} />
+        <Menu size={18} strokeWidth={2.25} />
       </button>
 
       {/* Mobile Backdrop */}
@@ -143,7 +162,7 @@ const Sidebar = () => {
         {/* Collapse Toggle - desktop only */}
         <button
           type="button"
-          onClick={() => setIsCollapsed((prev) => !prev)}
+          onClick={toggleCollapse}
           className="absolute -right-3 top-8 hidden h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors hover:bg-gray-50 md:flex"
         >
           <ChevronLeft
