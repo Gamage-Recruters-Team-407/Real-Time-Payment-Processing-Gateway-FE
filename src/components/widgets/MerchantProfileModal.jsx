@@ -97,7 +97,7 @@ export default function MerchantProfileModal({ isOpen, onClose, merchantName }) 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div style={{ padding: '12px', border: '1px solid #E5E7EB', borderRadius: '8px' }}>
                   <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 'bold' }}>TOTAL VOLUME</div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>${stats.totalVolume.toFixed(2)}</div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>Rs. {stats.totalVolume.toFixed(2)}</div>
                 </div>
                 <div style={{ padding: '12px', border: '1px solid #E5E7EB', borderRadius: '8px' }}>
                   <div style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 'bold' }}>TRANSACTIONS</div>

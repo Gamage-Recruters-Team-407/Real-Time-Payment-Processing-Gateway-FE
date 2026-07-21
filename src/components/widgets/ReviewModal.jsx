@@ -100,7 +100,7 @@ export default function ReviewModal({ isOpen, onClose, targetId, onActionComplet
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#FCA5A5', letterSpacing: '1px', marginBottom: '4px' }}>AMOUNT</div>
-                  <div style={{ fontFamily: 'monospace', fontSize: '1.25rem', fontWeight: 700 }}>${data.transactionDetails?.amount?.toFixed(2) || '0.00'}</div>
+                  <div style={{ fontFamily: 'monospace', fontSize: '1.25rem', fontWeight: 700 }}>Rs. {data.transactionDetails?.amount?.toFixed(2) || '0.00'}</div>
                 </div>
 
                 <div>

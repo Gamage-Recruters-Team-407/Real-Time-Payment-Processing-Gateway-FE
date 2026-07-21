@@ -94,7 +94,7 @@ export default function LiveFeedDrawer({ isOpen, onClose, onInvestigateClick, on
                 <span className={`alert-badge badge-${type}`}>{Math.round(riskScore)}% RISK</span>
               </div>
               <div className="alert-account">{alert.accountId || 'Unknown Account'}</div>
-              <div className="alert-amount">$ {alert.amount?.toFixed(2) || '0.00'}</div>
+              <div className="alert-amount">Rs. {alert.amount?.toFixed(2) || '0.00'}</div>
               <div className="alert-merchant">Merchant: {alert.merchant || 'Unknown'}</div>
               <div className={`alert-reason text-${type}`}>{alert.alertReason || 'Suspicious activity detected'}</div>
               
