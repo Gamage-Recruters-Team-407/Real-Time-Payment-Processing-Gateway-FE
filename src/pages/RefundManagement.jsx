@@ -65,9 +65,9 @@ const RefundManagement = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-3 sm:p-6">
       
-      <h1 className="text-3xl font-bold mb-5">
+      <h1 className="text-xl sm:text-3xl font-bold mb-3 sm:mb-5">
         Refund Management
       </h1>
 
