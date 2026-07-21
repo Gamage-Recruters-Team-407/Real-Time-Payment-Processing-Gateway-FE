@@ -56,10 +56,10 @@ const OTPVerification = () => {
     const params = new URLSearchParams(location.search);
     const urlPurpose = params.get('purpose') || 'password_forgot';
     setPurpose(urlPurpose);
-    
+
     // Get userId and email, falling back to auth user or sessionStorage
-    const finalUserId = params.get('userId') || (urlPurpose === 'payment' ? user?._id : '') || sessionStorage.getItem(`otp_userId_${urlPurpose}`) || '';
-    const finalEmail = params.get('email') || (urlPurpose === 'password_forgot' ? user?.email : '') || sessionStorage.getItem(`otp_email_${urlPurpose}`) || '';
+    const finalUserId = params.get('userId') || (urlPurpose === 'payment' ? (user?._id || user?.id) : '') || sessionStorage.getItem(`otp_userId_${urlPurpose}`) || '';
+    const finalEmail = params.get('email') || user?.email || sessionStorage.getItem(`otp_email_${urlPurpose}`) || '';
 
     if (finalUserId) {
       setUserId(finalUserId);
@@ -209,8 +209,8 @@ const OTPVerification = () => {
         setTimeout(() => {
           // if (purpose === 'password_forgot') { 
           //   navigate('/forgot-password', { state: { email, verified: true } });
-          if (purpose === 'password_forgot') { 
-          navigate(`/new-password-setup?email=${encodeURIComponent(email)}`, { state: { email, verified: true } });
+          if (purpose === 'password_forgot') {
+            navigate(`/new-password-setup?email=${encodeURIComponent(email)}`, { state: { email, verified: true } });
           } else if (purpose === 'payment') {
             navigate('/card-payment', { state: { verified: true } });
           }
@@ -306,7 +306,7 @@ const OTPVerification = () => {
               <Shield className="w-6 h-6 text-white" />
             </div>
             <h1 className="text-2xl font-bold mb-2 text-[#0F1117]">
-                Gamage<span className="text-[#10B981]">Pay</span></h1>
+              Gamage<span className="text-[#10B981]">Pay</span></h1>
             <p className="text-sm text-slate-500">
               Enterprise-grade payment orchestration for secure transactions.
             </p>
@@ -446,7 +446,10 @@ const OTPVerification = () => {
                 sessionStorage.removeItem(`otp_email_${purpose}`);
                 sessionStorage.removeItem(`otp_userId_${purpose}`);
                 sessionStorage.removeItem(`otp_timer_start_${purpose}`);
-                navigate(purpose === 'payment' ? '/card-payment' : '/login');
+                navigate(
+                  purpose === 'payment' ? '/card-payment' : '/login',
+                  purpose === 'payment' ? { state: { verified: false } } : {}
+                );
               }}
               className="text-sm text-slate-500 hover:text-slate-700 font-medium flex items-center justify-center gap-1"
             >

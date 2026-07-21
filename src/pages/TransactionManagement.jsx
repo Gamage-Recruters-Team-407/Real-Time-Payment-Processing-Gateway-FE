@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   Download,
   Filter,
@@ -10,6 +12,7 @@ import {
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import TransactionTable from "../components/TransactionTable";
+import { getAllRefunds } from "../services/refundService";
 import {
   getTransactionById,
   getTransactions,
@@ -54,14 +57,6 @@ const formatAmount = (amount, currency) => {
   })}`;
 };
 
-const escapeHtml = (value) =>
-  String(value ?? "-")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-
 const buildAppliedFilters = (filters) => {
   const selectedDate = filters.date?.trim();
 
@@ -75,229 +70,101 @@ const buildAppliedFilters = (filters) => {
 };
 
 const openTransactionPdfReport = ({ merchantName, filters, transactions }) => {
-  const reportWindow = window.open("", "_blank", "width=1280,height=900");
-
-  if (!reportWindow) {
-    throw new Error("Popup blocked. Please allow popups to generate the PDF report.");
-  }
-
+  const document = new jsPDF("landscape");
   const generatedAt = new Date().toLocaleString();
-  const filterSummary = [
-    filters.status ? `Status: ${filters.status}` : "Status: All",
-    filters.minAmount ? `Min amount: ${filters.minAmount}` : null,
-    filters.maxAmount ? `Max amount: ${filters.maxAmount}` : null,
-    filters.date ? `Date: ${filters.date}` : null,
-  ]
-    .filter(Boolean)
-    .join(" | ");
+  const filterSummary =
+    [
+      filters.status ? `Status: ${filters.status}` : "Status: All",
+      filters.minAmount ? `Min amount: ${filters.minAmount}` : null,
+      filters.maxAmount ? `Max amount: ${filters.maxAmount}` : null,
+      filters.date ? `Date: ${filters.date}` : null,
+    ]
+      .filter(Boolean)
+      .join(" | ") || "None";
 
-  const rowsMarkup =
+  const tableRows =
     transactions.length > 0
-      ? transactions
-          .map(
-            (transaction, index) => `
-              <tr>
-                <td>${index + 1}</td>
-                <td>${escapeHtml(transaction.transactionId)}</td>
-                <td>${escapeHtml(formatDateTime(transaction.createdAt))}</td>
-                <td>${escapeHtml(transaction.customerName || "-")}</td>
-                <td>${escapeHtml(transaction.customerEmail || "-")}</td>
-                <td>${escapeHtml(formatAmount(transaction.amount, transaction.currency))}</td>
-                <td>${escapeHtml(transaction.paymentMethod || "-")}</td>
-                <td>${escapeHtml(transaction.status || "-")}</td>
-                <td>${escapeHtml(transaction.paymentReference || "-")}</td>
-              </tr>
-            `
-          )
-          .join("")
-      : `
-          <tr>
-            <td colspan="9" class="empty">No transactions found for the selected filters.</td>
-          </tr>
-        `;
+      ? transactions.map((transaction, index) => [
+          index + 1,
+          transaction.transactionId || "-",
+          formatDateTime(transaction.createdAt),
+          transaction.customerName || "-",
+          formatAmount(transaction.amount, transaction.currency),
+          transaction.paymentMethod || "-",
+          transaction.status || "-",
+          transaction.paymentReference || "-",
+        ])
+      : [["-", "-", "-", "-", "-", "-", "-", "No transactions found for the selected filters."]];
 
-  const reportMarkup = `
-    <!doctype html>
-    <html>
-      <head>
-        <meta charset="utf-8" />
-        <title>Transaction Report</title>
-        <style>
-          :root {
-            color-scheme: light;
-            --ink: #0f172a;
-            --muted: #475569;
-            --line: #dbe3ef;
-            --soft: #f8fafc;
-            --accent: #059669;
-            --accent-soft: #ecfdf5;
-          }
-          * { box-sizing: border-box; }
-          body {
-            margin: 0;
-            padding: 32px;
-            font-family: "Segoe UI", Tahoma, sans-serif;
-            color: var(--ink);
-            background: white;
-          }
-          .sheet {
-            border: 1px solid var(--line);
-            border-radius: 24px;
-            overflow: hidden;
-          }
-          .header {
-            padding: 28px 32px 20px;
-            background: linear-gradient(135deg, #f0fdf4, #eff6ff);
-            border-bottom: 1px solid var(--line);
-          }
-          .eyebrow {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 999px;
-            background: var(--accent-soft);
-            color: var(--accent);
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-          }
-          h1 {
-            margin: 14px 0 8px;
-            font-size: 28px;
-          }
-          .meta, .summary {
-            color: var(--muted);
-            font-size: 14px;
-          }
-          .summary {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 12px;
-            padding: 20px 32px 0;
-          }
-          .card {
-            border: 1px solid var(--line);
-            border-radius: 18px;
-            padding: 16px;
-            background: var(--soft);
-          }
-          .card strong {
-            display: block;
-            font-size: 22px;
-            color: var(--ink);
-            margin-top: 6px;
-          }
-          .filters {
-            padding: 20px 32px 8px;
-            font-size: 13px;
-            color: var(--muted);
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 12px;
-          }
-          thead {
-            background: #f8fafc;
-          }
-          th, td {
-            padding: 12px 14px;
-            border-top: 1px solid var(--line);
-            text-align: left;
-            vertical-align: top;
-            font-size: 13px;
-          }
-          th {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--muted);
-          }
-          tbody tr:nth-child(even) {
-            background: #fcfdff;
-          }
-          .table-wrap {
-            padding: 0 32px 28px;
-          }
-          .empty {
-            text-align: center;
-            color: var(--muted);
-            padding: 28px;
-          }
-          @media print {
-            body {
-              padding: 0;
-            }
-            .sheet {
-              border: 0;
-              border-radius: 0;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <section class="sheet">
-          <div class="header">
-            <span class="eyebrow">Transaction PDF Report</span>
-            <h1>${escapeHtml(merchantName)} Transactions</h1>
-            <div class="meta">Generated on ${escapeHtml(generatedAt)}</div>
-          </div>
+  document.setFont("helvetica", "bold");
+  document.setFontSize(18);
+  document.text("Transactions", 14, 18);
 
-          <div class="summary">
-            <div class="card">
-              <span>Total records</span>
-              <strong>${transactions.length}</strong>
-            </div>
-            <div class="card">
-              <span>Successful payments</span>
-              <strong>${transactions.filter((item) => item.status === "Successful").length}</strong>
-            </div>
-            <div class="card">
-              <span>Failed payments</span>
-              <strong>${transactions.filter((item) => item.status === "Failed").length}</strong>
-            </div>
-          </div>
+  document.setFont("helvetica", "normal");
+  document.setFontSize(10);
+  document.text(`Generated on ${generatedAt}`, 14, 26);
+  document.text(`Applied filters: ${filterSummary}`, 14, 32);
 
-          <div class="filters">
-            <strong>Applied filters:</strong> ${escapeHtml(filterSummary || "None")}
-          </div>
+  document.setFontSize(11);
+  document.text(`Total records: ${transactions.length}`, 14, 40);
+  document.text(
+    `Successful payments: ${transactions.filter((item) => item.status === "Successful").length}`,
+    78,
+    40
+  );
+  document.text(
+    `Failed payments: ${transactions.filter((item) => item.status === "Failed").length}`,
+    165,
+    40
+  );
 
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Transaction ID</th>
-                  <th>Date</th>
-                  <th>Customer</th>
-                  <th>Email</th>
-                  <th>Amount</th>
-                  <th>Method</th>
-                  <th>Status</th>
-                  <th>Reference</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rowsMarkup}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </body>
-    </html>
-  `;
+  autoTable(document, {
+    startY: 48,
+    head: [[
+      "#",
+      "Transaction ID",
+      "Date",
+      "Customer",
+      "Amount",
+      "Method",
+      "Status",
+      "Reference",
+    ]],
+    body: tableRows,
+    styles: {
+      fontSize: 9,
+      cellPadding: 3,
+      overflow: "linebreak",
+      valign: "middle",
+    },
+    headStyles: {
+      fillColor: [15, 23, 42],
+      textColor: [255, 255, 255],
+      fontStyle: "bold",
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252],
+    },
+    margin: {
+      top: 14,
+      left: 14,
+      right: 14,
+      bottom: 16,
+    },
+    didDrawPage: () => {
+      const pageWidth = document.internal.pageSize.getWidth();
+      const pageHeight = document.internal.pageSize.getHeight();
+      const pageNumber = document.internal.getCurrentPageInfo().pageNumber;
 
-  reportWindow.document.open();
-  reportWindow.document.write(reportMarkup);
-  reportWindow.document.close();
-  reportWindow.focus();
+      document.setFont("helvetica", "normal");
+      document.setFontSize(9);
+      document.text("Real-Time Payment Processing Gateway", 14, pageHeight - 8);
+      document.text(`Page ${pageNumber}`, pageWidth - 26, pageHeight - 8);
+    },
+  });
 
-  reportWindow.onload = () => {
-    reportWindow.setTimeout(() => {
-      reportWindow.focus();
-      reportWindow.print();
-    }, 300);
-  };
+  const reportDate = new Date().toISOString().split("T")[0];
+  document.save(`transaction_report_${reportDate}.pdf`);
 };
 
 const getErrorMessage = (error) => {
@@ -306,6 +173,12 @@ const getErrorMessage = (error) => {
     error?.message ||
     "Unable to load transactions"
   );
+};
+
+const getLatestRefundForTransaction = (refunds, transactionId) => {
+  return refunds
+    .filter((refund) => refund.transactionId === transactionId)
+    .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt))[0] || null;
 };
 
 function DetailRow({ label, value }) {
@@ -434,7 +307,8 @@ export default function TransactionManagement() {
     });
   };
 
-  const handleClearFilters = () => {
+  const handleRefresh = () => {
+    setError("");
     setSearchInput("");
     setDraftFilters(EMPTY_FILTERS);
     setCurrentPage(1);
@@ -442,10 +316,6 @@ export default function TransactionManagement() {
       search: "",
       filters: EMPTY_FILTERS,
     });
-  };
-
-  const handleRefresh = () => {
-    setError("");
     setRefreshToken((value) => value + 1);
   };
 
@@ -470,7 +340,21 @@ export default function TransactionManagement() {
   const handleViewDetails = async (transaction) => {
     try {
       const data = await getTransactionById(transaction._id);
-      setDetailsTransaction(data);
+      let refundDetails = null;
+
+      if (data.refundSummary?.hasRefundRequest && data.transactionId) {
+        const refundResponse = await getAllRefunds();
+        const refunds = Array.isArray(refundResponse?.data)
+          ? refundResponse.data
+          : refundResponse?.data?.data || [];
+
+        refundDetails = getLatestRefundForTransaction(refunds, data.transactionId);
+      }
+
+      setDetailsTransaction({
+        ...data,
+        refundDetails,
+      });
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     }
@@ -531,12 +415,9 @@ export default function TransactionManagement() {
                 <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
                   Transaction Management
                 </h1>
-                <p className="mt-2 max-w-2xl text-sm text-slate-600">
-                  Track, inspect, and export payment transactions for your shop directly from MongoDB.
-                </p>
               </div>
 
-              <form onSubmit={handleSearch} className="grid gap-3 lg:grid-cols-[1fr_auto_auto_auto_auto]">
+              <form onSubmit={handleSearch} className="grid gap-3 lg:grid-cols-[1fr_auto_auto_auto]">
                 <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                   <Search size={18} className="text-slate-400" />
                   <input
@@ -553,13 +434,6 @@ export default function TransactionManagement() {
                 >
                   <Search size={16} />
                   Search
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClearFilters}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                  Clear Filters
                 </button>
                 <button
                   type="button"
@@ -680,6 +554,16 @@ export default function TransactionManagement() {
               <DetailRow label="Description" value={detailsTransaction.description} />
               <DetailRow label="Created date" value={formatDateTime(detailsTransaction.createdAt)} />
               <DetailRow label="Updated date" value={formatDateTime(detailsTransaction.updatedAt)} />
+              {detailsTransaction.refundDetails ? (
+                <>
+                  <DetailRow label="Refund ID" value={detailsTransaction.refundDetails.refundId} />
+                  <DetailRow label="Refund amount" value={formatAmount(detailsTransaction.refundDetails.amount, detailsTransaction.currency)} />
+                  <DetailRow label="Refund reason" value={detailsTransaction.refundDetails.reason} />
+                  <DetailRow label="Refund requested date" value={formatDateTime(detailsTransaction.refundDetails.createdAt)} />
+                  <DetailRow label="Refund approved date" value={formatDateTime(detailsTransaction.refundDetails.approvedDate)} />
+                  <DetailRow label="Refunded date" value={formatDateTime(detailsTransaction.refundDetails.refundedDate)} />
+                </>
+              ) : null}
             </div>
 
             <div className="space-y-4">
