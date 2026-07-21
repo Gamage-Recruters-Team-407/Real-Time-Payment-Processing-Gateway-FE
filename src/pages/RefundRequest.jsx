@@ -145,13 +145,13 @@ export default function RefundRequest() {
         <Navbar />
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-8 space-y-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 space-y-6">
 
             {/* Header / Breadcrumb */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4 pt-10 md:pt-0">
               <button
                 onClick={() => navigate(-1)}
-                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50 transition-colors"
+                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50 transition-colors shrink-0"
                 title="Go back"
               >
                 <ArrowLeft size={18} />
@@ -160,21 +160,21 @@ export default function RefundRequest() {
                 <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">
                   Transactions
                 </p>
-                <h1 className="text-2xl font-bold text-slate-900 mt-0.5">
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mt-0.5">
                   Refund items form
                 </h1>
-                <p className="text-sm text-slate-500">
+                <p className="text-xs sm:text-sm text-slate-500">
                   Request a refund for your transaction.
                 </p>
               </div>
             </div>
 
-            <div className="max-w-2xl mx-auto">
-              <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
+            <div className="max-w-2xl mx-auto w-full">
+              <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 md:p-8 shadow-sm">
 
                 {success ? (
                   // Success State
-                  <div className="flex flex-col items-center text-center py-8">
+                  <div className="flex flex-col items-center text-center py-6 sm:py-8 px-2">
                     <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
                       <CheckCircle2 size={36} />
                     </div>
@@ -185,36 +185,30 @@ export default function RefundRequest() {
                       Your request has been successfully submitted to the refund-management team. We will review it shortly.
                     </p>
 
-                    <div className="mt-8 flex gap-3 w-full max-w-xs">
-                      <button
-                        onClick={() => navigate("/payment-history")}
-                        className="flex-1 rounded-lg border border-slate-200 bg-white py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-                      >
-                        Payment history
-                      </button>
+                    <div className="mt-8 w-full max-w-xs">
                       <button
                         onClick={() => navigate("/dashboard")}
-                        className="flex-1 rounded-lg bg-[#0F1117] py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors"
+                        className="w-full rounded-lg bg-[#0F1117] py-3 text-sm font-semibold text-white hover:bg-slate-800 transition-colors shadow-sm"
                       >
-                        Dashboard
+                        Back to Dashboard
                       </button>
                     </div>
                   </div>
                 ) : (
                   // Form State
-                  <form onSubmit={handleSubmit} className="space-y-6">
+                  <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
 
                     {error && (
-                      <div className="flex items-center gap-2.5 rounded-lg bg-rose-50 border border-rose-100 p-4 text-sm text-rose-600">
+                      <div className="flex items-center gap-2.5 rounded-lg bg-rose-50 border border-rose-100 p-3.5 sm:p-4 text-xs sm:text-sm text-rose-600">
                         <AlertCircle size={18} className="shrink-0" />
                         <p>{error}</p>
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                       {/* Name */}
-                      <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-700 block">
+                      <div className="space-y-1.5 sm:space-y-2">
+                        <label className="text-xs sm:text-sm font-semibold text-slate-700 block">
                           Full Name
                         </label>
                         <input
@@ -223,13 +217,13 @@ export default function RefundRequest() {
                           onChange={(e) => setName(e.target.value)}
                           placeholder="e.g. John Doe"
                           required
-                          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all"
+                          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 sm:px-4 py-2 sm:py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all"
                         />
                       </div>
 
                       {/* Transaction ID */}
-                      <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-700 block">
+                      <div className="space-y-1.5 sm:space-y-2">
+                        <label className="text-xs sm:text-sm font-semibold text-slate-700 block">
                           Transaction ID
                         </label>
                         <input
@@ -246,7 +240,7 @@ export default function RefundRequest() {
                           placeholder="e.g. TXN_98214300 (12 characters)"
                           required
                           maxLength={12}
-                          className={`w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 transition-all ${
+                          className={`w-full rounded-lg border border-slate-200 px-3.5 sm:px-4 py-2 sm:py-2.5 text-sm text-slate-700 placeholder:text-slate-400 transition-all ${
                             isLinkedTransaction
                               ? "bg-slate-100 cursor-not-allowed text-slate-500"
                               : "bg-slate-50 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
@@ -255,10 +249,10 @@ export default function RefundRequest() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                       {/* Phone Number */}
-                      <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-700 block">
+                      <div className="space-y-1.5 sm:space-y-2">
+                        <label className="text-xs sm:text-sm font-semibold text-slate-700 block">
                           Phone Number
                         </label>
                         <input
@@ -272,13 +266,13 @@ export default function RefundRequest() {
                           }}
                           placeholder="e.g. 0771234567 (10 digits)"
                           required
-                          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all"
+                          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 sm:px-4 py-2 sm:py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all"
                         />
                       </div>
 
                       {/* Refund Amount */}
-                      <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-700 block">
+                      <div className="space-y-1.5 sm:space-y-2">
+                        <label className="text-xs sm:text-sm font-semibold text-slate-700 block">
                           Refund Amount (Rs)
                         </label>
                         <div className="relative">
@@ -295,7 +289,7 @@ export default function RefundRequest() {
                             readOnly={isLinkedTransaction}
                             placeholder="e.g. 50.00"
                             required
-                            className={`w-full rounded-lg border border-slate-200 pl-10 pr-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 transition-all ${
+                            className={`w-full rounded-lg border border-slate-200 pl-10 pr-4 py-2 sm:py-2.5 text-sm text-slate-700 placeholder:text-slate-400 transition-all ${
                               isLinkedTransaction
                                 ? "bg-slate-100 cursor-not-allowed text-slate-500"
                                 : "bg-slate-50 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
@@ -306,8 +300,8 @@ export default function RefundRequest() {
                     </div>
 
                     {/* Reason for Refund */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 block">
+                    <div className="space-y-1.5 sm:space-y-2">
+                      <label className="text-xs sm:text-sm font-semibold text-slate-700 block">
                         Reason for Refund
                       </label>
                       <textarea
@@ -316,13 +310,13 @@ export default function RefundRequest() {
                         placeholder="Please describe the issue with the item..."
                         rows={4}
                         required
-                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all resize-none"
+                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 sm:px-4 py-2 sm:py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all resize-none"
                       />
                     </div>
 
                     {/* Photo Upload */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 block">
+                    <div className="space-y-1.5 sm:space-y-2">
+                      <label className="text-xs sm:text-sm font-semibold text-slate-700 block">
                         Photo of the Item <span className="text-rose-500">*</span>
                       </label>
 
@@ -337,7 +331,7 @@ export default function RefundRequest() {
                       {!photoFile ? (
                         <div
                           onClick={() => fileInputRef.current?.click()}
-                          className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center cursor-pointer hover:border-emerald-400 transition-colors bg-slate-50 flex flex-col items-center justify-center space-y-2 group"
+                          className="border-2 border-dashed border-slate-200 rounded-xl p-6 sm:p-8 text-center cursor-pointer hover:border-emerald-400 transition-colors bg-slate-50 flex flex-col items-center justify-center space-y-2 group"
                         >
                           <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-emerald-50 group-hover:text-emerald-500 transition-colors">
                             <Upload size={18} />
@@ -352,14 +346,14 @@ export default function RefundRequest() {
                           </div>
                         </div>
                       ) : (
-                        <div className="relative border border-slate-200 rounded-xl overflow-hidden bg-slate-50 p-4 flex flex-col items-center md:flex-row md:items-center md:gap-4">
+                        <div className="relative border border-slate-200 rounded-xl overflow-hidden bg-slate-50 p-3 sm:p-4 flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
                           <img
                             src={photoPreview}
                             alt="Preview"
-                            className="h-24 w-24 object-cover rounded-lg border border-slate-100 bg-white"
+                            className="h-20 w-20 sm:h-24 sm:w-24 object-cover rounded-lg border border-slate-100 bg-white shrink-0"
                           />
-                          <div className="flex-1 mt-3 md:mt-0 text-center md:text-left min-w-0 w-full">
-                            <p className="text-sm font-medium text-slate-700 truncate">
+                          <div className="flex-1 text-center sm:text-left min-w-0 w-full">
+                            <p className="text-xs sm:text-sm font-medium text-slate-700 truncate">
                               {photoName}
                             </p>
                             {/* Upload progress bar (shown during submission) */}
@@ -386,7 +380,7 @@ export default function RefundRequest() {
                             type="button"
                             onClick={removePhoto}
                             disabled={uploading}
-                            className="absolute top-2 right-2 md:relative md:top-auto md:right-auto rounded-full bg-slate-100 p-2 text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="absolute top-2 right-2 sm:relative sm:top-auto sm:right-auto rounded-full bg-slate-100 p-2 text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                             title="Remove photo"
                           >
                             <X size={16} />

@@ -9,6 +9,21 @@ import {
 import masterCardLogo from '../assets/logos/master-card.svg';
 import CardForm from '../components/CardForm';
 
+// Helper to generate a UUID for Device Fingerprinting
+function generateDeviceId() {
+    return 'DEV-' + Math.random().toString(36).substring(2, 10) + '-' + Date.now().toString(36);
+}
+
+// Ensure persistent device ID on client
+const getDeviceId = () => {
+    let deviceId = localStorage.getItem('device_id');
+    if (!deviceId) {
+        deviceId = generateDeviceId();
+        localStorage.setItem('device_id', deviceId);
+    }
+    return deviceId;
+};
+
 export default function CardPayment() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -42,9 +57,37 @@ export default function CardPayment() {
     // Form errors
     const [errors, setErrors] = useState({});
 
-    // Handle personal details inputs
+    // Live validation to clear agreeTerms error when user checks the box
+    useEffect(() => {
+        if (agreeTerms) {
+            setErrors(prev => {
+                const next = { ...prev };
+                delete next.agreeTerms;
+                return next;
+            });
+        }
+    }, [agreeTerms]);
+
+    // Handle personal details inputs with live validations
     const handlePersonalChange = (e) => {
         const { name, value } = e.target;
+
+        if (value.trim()) {
+            setErrors(prev => {
+                const next = { ...prev };
+                delete next[name];
+                return next;
+            });
+        } else {
+            setErrors(prev => ({
+                ...prev,
+                [name]: name === 'addressLine' ? 'Address is required' :
+                    name === 'city' ? 'City is required' :
+                        name === 'state' ? 'District is required' :
+                            name === 'postalCode' ? 'Postal code is required' : ''
+            }));
+        }
+
         setPersonalDetails(prev => ({
             ...prev,
             [name]: value
@@ -85,7 +128,7 @@ export default function CardPayment() {
 
         if (name === 'cardNumber') {
             formattedValue = formatCardNumber(value).slice(0, 22); // 16 digits + 6 spaces
-            
+
             const cleanCard = formattedValue.replace(/\s+/g, '');
             if (cleanCard.length === 16) {
                 if (validateLuhn(cleanCard)) {
@@ -114,7 +157,7 @@ export default function CardPayment() {
             }
         } else if (name === 'expiry') {
             formattedValue = formatExpiry(value).slice(0, 5); // MM/YY
-            
+
             if (formattedValue.length === 5) {
                 if (validateExpiry(formattedValue)) {
                     setErrors(prev => {
@@ -142,7 +185,7 @@ export default function CardPayment() {
             }
         } else if (name === 'cvc') {
             formattedValue = value.replace(/[^0-9]/g, '').slice(0, 4);
-            
+
             if (formattedValue.length === 3 || formattedValue.length === 4) {
                 setErrors(prev => {
                     const next = { ...prev };
@@ -274,7 +317,7 @@ export default function CardPayment() {
             try {
                 const pending = JSON.parse(pendingStr);
                 if (pending.totalAmount !== undefined) return pending.totalAmount;
-            } catch (e) {}
+            } catch (e) { }
         }
         return undefined;
     };
@@ -317,65 +360,17 @@ export default function CardPayment() {
         maximumFractionDigits: 2
     });
 
-    const executePayment = async (paymentData) => {
+    const executePayment = async (paymentData, isVerified) => {
         setIsProcessing(true);
         setErrors({});
 
-        const { cardDetails: details, paymentId, transactionId } = paymentData;
+        const { cardDetails: details, deviceId, ipAddress } = paymentData;
         const cleanCardNumber = details.cardNumber.replace(/\s+/g, '');
-        const lastFour = cleanCardNumber.slice(-4);
 
         try {
             const token = localStorage.getItem("token");
 
-            const response = await fetch(`http://localhost:5000/api/payments/${paymentId}/status`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                },
-                body: JSON.stringify({
-                    status: 'COMPLETED',
-                    transactionId: transactionId,
-                    cardLastFourDigits: lastFour
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success && data.data) {
-                sessionStorage.removeItem('pending_payment');
-                sessionStorage.removeItem('payment_initiated');
-                
-                // Navigate to /payment-success passing paymentId in query parameters
-                navigate(`/payment-success?paymentId=${data.data.paymentId}`);
-            } else {
-                if (data.errors) {
-                    setErrors(data.errors);
-                } else {
-                    setErrors({ submit: data.message || 'Payment completion failed.' });
-                }
-            }
-        } catch (err) {
-            console.error('Backend payment status update failed:', err.message);
-            setErrors({ submit: 'Unable to complete the payment on the server. Please contact out support team.' });
-        }
-
-        setIsProcessing(false);
-    };
-
-    // Handle Pay Action with Backend Integration
-    const handlePayment = async (e) => {
-        if (e) e.preventDefault();
-        if (!validateForm()) return;
-
-        setIsProcessing(true);
-        setErrors({});
-
-        try {
-            // 1. Create a PENDING payment in the backend
-            const token = localStorage.getItem("token");
-            const cleanCardNumber = cardDetails.cardNumber.replace(/\s+/g, '');
+            // Create the payment directly as COMPLETED or FAILED based on OTP verification result
             const response = await fetch('http://localhost:5000/api/payments', {
                 method: 'POST',
                 headers: {
@@ -387,24 +382,63 @@ export default function CardPayment() {
                     currency: passedCurrency,
                     description: passedDescription,
                     paymentMethod: passedPaymentMethod,
+                    status: isVerified ? 'COMPLETED' : 'FAILED',
                     cardDetails: {
-                        cardholderName: cardDetails.cardholderName,
+                        cardholderName: details.cardholderName,
                         cardNumber: cleanCardNumber,
-                        expiry: cardDetails.expiry,
-                        cvc: cardDetails.cvc
-                    }
+                        expiry: details.expiry,
+                        cvc: details.cvc
+                    },
+                    deviceId,
+                    ipAddress
                 })
             });
 
             const data = await response.json();
-            if (!response.ok || !data.success || !data.data) {
-                throw new Error(data.message || 'Failed to initialize payment on server');
+
+            if (data.success && data.data) {
+                if (isVerified) {
+                    // Navigate to /payment-success passing paymentId in query parameters
+                    navigate(`/payment-success?paymentId=${data.data.paymentId}`);
+                } else {
+                    setErrors({ submit: 'Payment was recorded as FAILED because OTP verification was not completed.' });
+                }
+            } else {
+                if (data.errors) {
+                    setErrors(data.errors);
+                } else {
+                    setErrors({ submit: data.message || 'Payment processing failed.' });
+                }
+            }
+        } catch (err) {
+            console.error('Backend payment creation failed:', err.message);
+            setErrors({ submit: 'Unable to connect to the payment server. Please ensure the backend is running and try again.' });
+        }
+
+        setIsProcessing(false);
+    };
+
+    // Handle Pay Action — saves state locally then navigates to OTP (no backend call yet)
+    const handlePayment = async (e) => {
+        if (e) e.preventDefault();
+        if (!validateForm()) return;
+
+        setIsProcessing(true);
+        setErrors({});
+
+        try {
+            // 0. Capture Real-World Metrics (Device ID and Public IP)
+            const deviceId = getDeviceId();
+            let ipAddress = '127.0.0.1'; // fallback
+            try {
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                ipAddress = ipData.ip;
+            } catch (ipErr) {
+                console.warn("Failed to fetch public IP, using fallback", ipErr);
             }
 
-            const paymentId = data.data.paymentId;
-            const transactionId = data.data.transactionId;
-
-            // 2. Save current form state, paymentId, and transactionId to sessionStorage
+            // 1. Save current form state and metrics to sessionStorage (no backend call yet)
             const pendingPayment = {
                 personalDetails,
                 cardDetails,
@@ -412,18 +446,18 @@ export default function CardPayment() {
                 saveCard,
                 selectedMethod,
                 totalAmount,
-                paymentId,
-                transactionId,
                 description: passedDescription,
                 currency: passedCurrency,
-                paymentMethod: passedPaymentMethod
+                paymentMethod: passedPaymentMethod,
+                deviceId,
+                ipAddress
             };
             sessionStorage.setItem('pending_payment', JSON.stringify(pendingPayment));
             sessionStorage.setItem('payment_initiated', 'true');
 
             setIsProcessing(false);
 
-            // 3. Get user info from localStorage to pass as query params for reliability
+            // 2. Get user info from localStorage to pass as query params for reliability
             const userStr = localStorage.getItem("user");
             let userId = "";
             let email = "";
@@ -432,24 +466,33 @@ export default function CardPayment() {
                     const u = JSON.parse(userStr);
                     userId = u.id || u._id || "";
                     email = u.email || "";
-                } catch (e) {}
+                } catch (e) { }
             }
 
-            // 4. Redirect to OTP verification page
+            // 3. Redirect to OTP verification page
             navigate(`/otp-verification?purpose=payment&userId=${userId}&email=${email}`);
 
         } catch (err) {
-            console.error('Failed to create pending payment:', err.message);
-            setErrors({ submit: 'Unable to connect to the payment server. Please ensure the backend is running and try again.' });
+            console.error('Failed to prepare payment state:', err.message);
+            setErrors({ submit: 'An error occurred while initiating the payment. Please try again.' });
             setIsProcessing(false);
         }
     };
 
-    // Effect to check if we just returned from successful OTP verification
+    // Effect to check if we just returned from OTP verification (verified = true or false)
     useEffect(() => {
-        if (location.state?.verified) {
+        if (location.state?.verified !== undefined) {
+            const isVerified = location.state.verified;
+            // Clear the location state to prevent re-triggering on refresh
+            navigate(location.pathname, { replace: true, state: {} });
+
+            // ⚠️ Remove pending_payment BEFORE any async work to act as a mutex.
+            // React StrictMode (and fast re-renders) can fire this effect twice.
+            // Removing the key first ensures executePayment is only called once.
             const pendingStr = sessionStorage.getItem('pending_payment');
             if (pendingStr) {
+                sessionStorage.removeItem('pending_payment');
+                sessionStorage.removeItem('payment_initiated');
                 try {
                     const pending = JSON.parse(pendingStr);
                     setPersonalDetails(pending.personalDetails);
@@ -458,8 +501,8 @@ export default function CardPayment() {
                     setSaveCard(pending.saveCard);
                     setSelectedMethod(pending.selectedMethod);
 
-                    // Execute payment submission automatically
-                    executePayment(pending);
+                    // Create the payment record now, as COMPLETED or FAILED
+                    executePayment(pending, isVerified);
                 } catch (e) {
                     console.error('Failed to parse pending payment data', e);
                 }
@@ -471,7 +514,7 @@ export default function CardPayment() {
         <div className="min-h-screen antialiased pb-12" style={{ backgroundColor: '#F8FAFC', color: '#0A192F', fontFamily: 'Inter, sans-serif' }}>
             {/* Main Container */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-                
+
                 {/* Back Button */}
                 <button
                     onClick={() => navigate('/payment')}
@@ -504,7 +547,7 @@ export default function CardPayment() {
                     <div className="lg:col-span-5 space-y-8 lg:sticky lg:top-24">
 
                         {/* Card visual wrapper */}
-                        <div 
+                        <div
                             className="hidden sm:flex relative aspect-[1.586/1] w-full rounded-2xl shadow-xl p-6 flex-col justify-between text-white overflow-hidden group hover:scale-[1.01] hover:shadow-2xl transition-all duration-300"
                             style={{ background: 'linear-gradient(135deg, #024e3b 0%, #115e59 50%, #042f2e 100%)' }}
                         >
@@ -562,19 +605,8 @@ export default function CardPayment() {
                         {/* Order Summary details */}
                         <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-6 md:p-8 border border-gray-100/50 space-y-4">
                             <h3 className="text-base font-bold pb-2 border-b border-slate-100" style={{ color: '#0A192F' }}>Order Summary</h3>
-                            
-                            <div className="space-y-2.5">
-                                <div className="flex justify-between text-xs font-medium" style={{ color: '#64748B' }}>
-                                    <span>Subtotal</span>
-                                    <span className="font-mono text-slate-800">LKR {subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                                </div>
-                                <div className="flex justify-between text-xs font-medium" style={{ color: '#64748B' }}>
-                                    <span>Platform Fee</span>
-                                    <span className="font-mono text-slate-800">LKR {platformFee.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                                </div>
-                            </div>
 
-                            <div className="border-t border-dashed border-slate-200 pt-4 flex flex-col gap-1">
+                            <div className="pt-2 flex flex-col gap-1">
                                 <div className="flex justify-between items-end pt-1 font-sans">
                                     <span className="text-base font-bold" style={{ color: '#0A192F' }}>Total Amount</span>
                                     <span className="text-2xl font-black font-mono" style={{ color: '#0A192F' }}>Rs.{totalAmount}</span>

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAlerts } from '../../redux/slices/alertsSlice';
 
-export default function LiveFeedDrawer({ isOpen, onClose, onInvestigateClick, onReviewClick }) {
+export default function LiveFeedDrawer({ isOpen, onClose, onInvestigateClick, onReviewClick, onCardClick }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { items: alerts, loading } = useSelector(state => state.alerts);
@@ -43,7 +43,7 @@ export default function LiveFeedDrawer({ isOpen, onClose, onInvestigateClick, on
     const a = document.createElement('a');
     a.setAttribute('hidden', '');
     a.setAttribute('href', url);
-    a.setAttribute('download', `alerts_export_${Date.now()}.csv`);
+    a.setAttribute('download', 'unprocessed transaction.csv');
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -80,7 +80,15 @@ export default function LiveFeedDrawer({ isOpen, onClose, onInvestigateClick, on
             const type = riskScore >= 80 ? 'danger' : riskScore >= 50 ? 'warning' : 'yellow';
             
             return (
-            <div key={alert.id || alert.transactionId} className={`alert-card border-${type}`}>
+            <div 
+              key={alert.id || alert.transactionId} 
+              className={`alert-card border-${type}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => {
+                if (onCardClick) onCardClick(alert);
+                if (onClose) onClose();
+              }}
+            >
               <div className="alert-top">
                 <span className="alert-time">{alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString() : 'Just now'}</span>
                 <span className={`alert-badge badge-${type}`}>{Math.round(riskScore)}% RISK</span>
@@ -90,23 +98,23 @@ export default function LiveFeedDrawer({ isOpen, onClose, onInvestigateClick, on
               <div className="alert-merchant">Merchant: {alert.merchant || 'Unknown'}</div>
               <div className={`alert-reason text-${type}`}>{alert.alertReason || 'Suspicious activity detected'}</div>
               
-              <div className="alert-actions">
+              <div className="alert-actions" onClick={(e) => e.stopPropagation()}>
                 {type === 'danger' && (
                   <>
-                    <button className="alert-btn btn-dark-red" onClick={() => onInvestigateClick(alert.id)}>INVESTIGATE</button>
-                    <button className="alert-btn btn-outline-red" onClick={() => onReviewClick(alert.id)}>REVIEW</button>
+                    <button className="alert-btn btn-dark-red" onClick={(e) => { e.stopPropagation(); onInvestigateClick(alert.id); }}>INVESTIGATE</button>
+                    <button className="alert-btn btn-outline-red" onClick={(e) => { e.stopPropagation(); onReviewClick(alert.id); }}>REVIEW</button>
                   </>
                 )}
                 {type === 'warning' && (
                   <>
-                    <button className="alert-btn btn-dark-orange" onClick={() => onInvestigateClick(alert.id)}>INVESTIGATE</button>
-                    <button className="alert-btn btn-outline-orange" onClick={() => onReviewClick(alert.id)}>REVIEW</button>
+                    <button className="alert-btn btn-dark-orange" onClick={(e) => { e.stopPropagation(); onInvestigateClick(alert.id); }}>INVESTIGATE</button>
+                    <button className="alert-btn btn-outline-orange" onClick={(e) => { e.stopPropagation(); onReviewClick(alert.id); }}>REVIEW</button>
                   </>
                 )}
                 {type === 'yellow' && (
                   <>
-                    <button className="alert-btn btn-dark-yellow" onClick={() => onInvestigateClick(alert.id)}>INVESTIGATE</button>
-                    <button className="alert-btn btn-outline-yellow" onClick={() => onReviewClick(alert.id)}>REVIEW</button>
+                    <button className="alert-btn btn-dark-yellow" onClick={(e) => { e.stopPropagation(); onInvestigateClick(alert.id); }}>INVESTIGATE</button>
+                    <button className="alert-btn btn-outline-yellow" onClick={(e) => { e.stopPropagation(); onReviewClick(alert.id); }}>REVIEW</button>
                   </>
                 )}
               </div>
