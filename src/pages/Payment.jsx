@@ -59,9 +59,9 @@ function Payment() {
           </div>
         </header> */}
 
-        <section className="grid overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)] lg:grid-cols-[1.15fr_0.85fr]">
+        <section className="grid grid-cols-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)] xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
 
-          <div className="p-6 sm:p-8 lg:p-10">
+          <div className="min-w-0 p-5 sm:p-8 xl:p-10">
             <div className="mb-8 max-w-xl">
 
               <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-[#10B981]">
@@ -148,7 +148,7 @@ function Payment() {
             )}
           </div>
 
-          <aside className="relative overflow-hidden bg-[#0A192F] p-6 text-white sm:p-8 lg:p-10">
+          <aside className="relative min-w-0 w-full overflow-hidden bg-[#0A192F] p-5 text-white sm:p-8 xl:p-10">
 
             <div className="relative">
 
@@ -156,7 +156,7 @@ function Payment() {
                 Payment flow
               </p>
 
-              <h2 className="mt-3 text-2xl font-bold">
+              <h2 className="mt-3 text-xl font-bold leading-tight sm:text-2xl">
                 One clean request. Clear next steps.
               </h2>
 
@@ -166,7 +166,7 @@ function Payment() {
                 transaction result continue in their own modules.
               </p>
 
-              <div className="mt-8 space-y-5">
+              <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-1">
 
                 <div className="flex gap-4">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-emerald-300/40 bg-emerald-300/10 text-xs font-bold text-emerald-300">
