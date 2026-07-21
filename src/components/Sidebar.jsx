@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import logo from '../assets/logo.png';
 
 const adminMenuItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
@@ -174,22 +175,13 @@ const Sidebar = () => {
         <div>
           {/* Logo */}
           <div className="mb-6">
-            <h1 className="text-xl font-bold text-[#0F1117]">
-              {isCollapsed ? (
-                <span className="hidden text-[#10B981] md:inline">GP</span>
-              ) : (
-                <>
-                  <span className="md:hidden">
-                    Gamage<span className="text-[#10B981]">Pay</span>
-                  </span>
-                </>
-              )}
-              {!isCollapsed && (
-                <span className="hidden md:inline">
-                  Gamage<span className="text-[#10B981]">Pay</span>
-                </span>
-              )}
-            </h1>
+            <img
+              src={logo}
+              alt="GamagePay"
+              className={`transition-all duration-300 ${
+                isCollapsed ? 'hidden h-10 w-15 object-contain md:block' : 'h-90w-auto max-w-full object-contain'
+              }`}
+            />
 
             <div className={`mt-2 flex items-center gap-1.5 ${isCollapsed ? 'md:justify-center' : ''}`}>
               <span className="h-2 w-2 shrink-0 rounded-full bg-[#10B981]" />
