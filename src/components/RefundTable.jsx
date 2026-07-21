@@ -125,20 +125,20 @@ const getStatusBadge = (status) => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
       <div className="overflow-x-auto overflow-y-auto max-h-[500px]">
-        <table className="w-full text-sm text-left border-collapse">
+        <table className="w-full text-xs sm:text-sm text-left border-collapse">
           <thead className="bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
             <tr>
-              <th className="p-4 text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Refund ID</th>
-              <th className="p-4 text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Transaction ID</th>
-              <th className="p-4 text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Customer Name</th>
-              <th className="p-4 text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Amount</th>
-              <th className="p-4 text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Reason</th>
-              <th className="p-4 text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Proof</th>
-              <th className="p-4 text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Status</th>
-              <th className="p-4 text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Request Date</th>
-              <th className="p-4 text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Approved Date</th>
-              <th className="p-4 text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Refunded Date</th>
-              <th className="p-4 text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Actions</th>
+              <th className="p-2 sm:p-4 text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Refund ID</th>
+              <th className="p-2 sm:p-4 text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Transaction ID</th>
+              <th className="p-2 sm:p-4 text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Customer Name</th>
+              <th className="p-2 sm:p-4 text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Amount</th>
+              <th className="p-2 sm:p-4 text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Reason</th>
+              <th className="p-2 sm:p-4 text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Proof</th>
+              <th className="p-2 sm:p-4 text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Status</th>
+              <th className="p-2 sm:p-4 text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Request Date</th>
+              <th className="p-2 sm:p-4 text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Approved Date</th>
+              <th className="p-2 sm:p-4 text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Refunded Date</th>
+              <th className="p-2 sm:p-4 text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">Actions</th>
             </tr>
           </thead>
 
@@ -155,43 +155,43 @@ const getStatusBadge = (status) => {
                   key={refund._id}
                   className="hover:bg-gray-50/70 transition-colors"
                 >
-                  <td className="p-4 font-medium text-gray-700 whitespace-nowrap">{refund.refundId}</td>
+                  <td className="p-2 sm:p-4 font-medium text-gray-700 whitespace-nowrap">{refund.refundId}</td>
 
-                  <td className="p-4 text-gray-600 whitespace-nowrap">
+                  <td className="p-2 sm:p-4 text-gray-600 whitespace-nowrap">
                     {refund.transactionId}
                   </td>
 
-                  <td className="p-4 whitespace-nowrap">
+                  <td className="p-2 sm:p-4 whitespace-nowrap">
                     <div>
                       <p className="font-semibold text-gray-800">
                         {refund.name}
                       </p>
-                      <p className="text-gray-400 text-xs">
+                      <p className="text-gray-400 text-[10px] sm:text-xs">
                         {refund.phone}
                       </p>
                     </div>
                   </td>
 
-                  <td className="p-4 font-medium text-gray-700 whitespace-nowrap">
+                  <td className="p-2 sm:p-4 font-medium text-gray-700 whitespace-nowrap">
                     Rs. {refund.amount}
                   </td>
 
-                  <td className="p-4 text-gray-600 whitespace-nowrap">
+                  <td className="p-2 sm:p-4 text-gray-600 whitespace-nowrap">
                     {refund.reason}
                   </td>
 
-                  <td className="p-4 whitespace-nowrap">
+                  <td className="p-2 sm:p-4 whitespace-nowrap">
                     <img
                       src={refund.itemPhoto}
                       alt="Proof"
                       onClick={() => setPreviewImage(refund.itemPhoto)}
-                      className="w-12 h-12 rounded-lg object-cover border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                      className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg object-cover border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
                     />
                   </td>
 
-                  <td className="p-4 whitespace-nowrap">
+                  <td className="p-2 sm:p-4 whitespace-nowrap">
                  <span
-  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadge(
+  className={`inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${getStatusBadge(
     refund.status
   )}`}
 >
@@ -199,19 +199,19 @@ const getStatusBadge = (status) => {
 </span>
                   </td>
 
-                  <td className="p-4 text-gray-600 whitespace-nowrap">
+                  <td className="p-2 sm:p-4 text-gray-600 whitespace-nowrap">
                     {new Date(
                       refund.createdAt
                     ).toLocaleDateString()}
                   </td>
 
-                  <td className="p-4 text-gray-600 whitespace-nowrap">
+                  <td className="p-2 sm:p-4 text-gray-600 whitespace-nowrap">
                     {refund.approvedDate
                       ? new Date(refund.approvedDate).toLocaleDateString()
                       : "-"}
                   </td>
 
-                  <td className="p-4 whitespace-nowrap">
+                  <td className="p-2 sm:p-4 whitespace-nowrap">
                     <input
                       type="date"
                       max={today}
@@ -225,7 +225,7 @@ const getStatusBadge = (status) => {
                           e.target.value
                         )
                       }
-                      className={`border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 ${
+                      className={`border rounded-lg px-1.5 sm:px-2 py-1 sm:py-1.5 text-xs sm:text-sm focus:outline-none focus:ring-2 ${
                         !canAddRefundedDate
                           ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
                           : "border-gray-200 text-gray-600 focus:ring-emerald-500/30 focus:border-emerald-400"
@@ -233,21 +233,21 @@ const getStatusBadge = (status) => {
                     />
                     
                     {!isRejected && !isApproved && (
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-[10px] sm:text-xs text-gray-400 mt-1">
                         Approve first
                       </p>
                     )}
                     {dateErrors[refund._id] && (
-                      <p className="text-xs text-red-500 mt-1">
+                      <p className="text-[10px] sm:text-xs text-red-500 mt-1">
                         {dateErrors[refund._id]}
                       </p>
                     )}
                   </td>
 
-                  <td className="p-4 whitespace-nowrap">
-                    <div className="flex gap-2">
+                  <td className="p-2 sm:p-4 whitespace-nowrap">
+                    <div className="flex gap-1 sm:gap-2">
                       <button
-                        className="bg-blue-500 hover:bg-blue-600 transition-colors text-white text-xs font-medium px-3 py-1.5 rounded-lg"
+                        className="bg-blue-500 hover:bg-blue-600 transition-colors text-white text-[10px] sm:text-xs font-medium px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg"
                         onClick={() =>
                           setConfirmAction({ type: "approve", id: refund._id })
                         }
@@ -256,7 +256,7 @@ const getStatusBadge = (status) => {
                       </button>
 
                       <button
-                        className="bg-red-500 hover:bg-red-600 transition-colors text-white text-xs font-medium px-3 py-1.5 rounded-lg"
+                        className="bg-red-500 hover:bg-red-600 transition-colors text-white text-[10px] sm:text-xs font-medium px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg"
                         onClick={() =>
                           setConfirmAction({ type: "reject", id: refund._id })
                         }
@@ -265,7 +265,7 @@ const getStatusBadge = (status) => {
                       </button>
 
                       <button
-                        className="bg-gray-500 hover:bg-gray-600 transition-colors text-white text-xs font-medium px-3 py-1.5 rounded-lg"
+                        className="bg-gray-500 hover:bg-gray-600 transition-colors text-white text-[10px] sm:text-xs font-medium px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg"
                         onClick={() =>
                           setConfirmAction({ type: "delete", id: refund._id })
                         }
@@ -280,7 +280,7 @@ const getStatusBadge = (status) => {
               <tr>
                 <td
                   colSpan="11"
-                  className="text-center p-8 text-gray-400"
+                  className="text-center p-4 sm:p-8 text-gray-400"
                 >
                   No Refund Requests Found
                 </td>
@@ -302,11 +302,11 @@ const getStatusBadge = (status) => {
 
       {previewImage && (
         <div
-          className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-6"
+          className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 sm:p-6"
           onClick={() => setPreviewImage(null)}
         >
           <div
-            className="relative max-w-3xl max-h-[85vh]"
+            className="relative max-w-[90vw] sm:max-w-3xl max-h-[85vh]"
             onClick={(e) => e.stopPropagation()}
           >
             <button
