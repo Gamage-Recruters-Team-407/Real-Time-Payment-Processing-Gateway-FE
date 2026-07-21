@@ -54,7 +54,7 @@ export default function TransactionHistoryModal({ isOpen, onClose, userId }) {
                     <td style={{ padding: '8px' }}>{new Date(tx.createdAt).toLocaleString()}</td>
                     <td style={{ padding: '8px' }}>{tx.transactionId}</td>
                     <td style={{ padding: '8px' }}>{tx.merchant}</td>
-                    <td style={{ padding: '8px' }}>${tx.amount?.toFixed(2)}</td>
+                    <td style={{ padding: '8px' }}>Rs. {tx.amount?.toFixed(2)}</td>
                     <td style={{ padding: '8px' }}>
                       <span className={`badge ${tx.status === 'CLEARED' ? 'badge-success' : tx.status === 'BLOCKED' ? 'badge-danger' : 'badge-warning'}`}>
                         {tx.status}
