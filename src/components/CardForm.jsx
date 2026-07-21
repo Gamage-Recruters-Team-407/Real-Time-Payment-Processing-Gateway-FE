@@ -229,18 +229,7 @@ export default function CardForm({
                 </label>
                 {errors.agreeTerms && <p className="text-red-500 text-[10px] font-semibold font-mono pl-7">{errors.agreeTerms}</p>}
 
-                <label className="flex items-start gap-3 cursor-pointer group">
-                    <input
-                        type="checkbox"
-                        checked={saveCard}
-                        onChange={(e) => setSaveCard(e.target.checked)}
-                        className="mt-1 w-4 h-4 border-gray-300 rounded cursor-pointer"
-                        style={{ accentColor: '#10B981' }}
-                    />
-                    <span className="text-xs leading-normal select-none" style={{ color: '#64748B' }}>
-                        Save card details
-                    </span>
-                </label>
+
 
                 {errors.submit && (
                     <div className="p-3 bg-red-50 text-red-700 rounded-lg text-xs font-semibold font-mono border border-red-200 mt-2">

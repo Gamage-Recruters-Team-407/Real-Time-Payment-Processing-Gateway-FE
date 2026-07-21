@@ -42,9 +42,37 @@ export default function CardPayment() {
     // Form errors
     const [errors, setErrors] = useState({});
 
-    // Handle personal details inputs
+    // Live validation to clear agreeTerms error when user checks the box
+    useEffect(() => {
+        if (agreeTerms) {
+            setErrors(prev => {
+                const next = { ...prev };
+                delete next.agreeTerms;
+                return next;
+            });
+        }
+    }, [agreeTerms]);
+
+    // Handle personal details inputs with live validations
     const handlePersonalChange = (e) => {
         const { name, value } = e.target;
+
+        if (value.trim()) {
+            setErrors(prev => {
+                const next = { ...prev };
+                delete next[name];
+                return next;
+            });
+        } else {
+            setErrors(prev => ({
+                ...prev,
+                [name]: name === 'addressLine' ? 'Address is required' :
+                        name === 'city' ? 'City is required' :
+                        name === 'state' ? 'District is required' :
+                        name === 'postalCode' ? 'Postal code is required' : ''
+            }));
+        }
+
         setPersonalDetails(prev => ({
             ...prev,
             [name]: value
@@ -563,18 +591,7 @@ export default function CardPayment() {
                         <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-6 md:p-8 border border-gray-100/50 space-y-4">
                             <h3 className="text-base font-bold pb-2 border-b border-slate-100" style={{ color: '#0A192F' }}>Order Summary</h3>
                             
-                            <div className="space-y-2.5">
-                                <div className="flex justify-between text-xs font-medium" style={{ color: '#64748B' }}>
-                                    <span>Subtotal</span>
-                                    <span className="font-mono text-slate-800">LKR {subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                                </div>
-                                <div className="flex justify-between text-xs font-medium" style={{ color: '#64748B' }}>
-                                    <span>Platform Fee</span>
-                                    <span className="font-mono text-slate-800">LKR {platformFee.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                                </div>
-                            </div>
-
-                            <div className="border-t border-dashed border-slate-200 pt-4 flex flex-col gap-1">
+                            <div className="pt-2 flex flex-col gap-1">
                                 <div className="flex justify-between items-end pt-1 font-sans">
                                     <span className="text-base font-bold" style={{ color: '#0A192F' }}>Total Amount</span>
                                     <span className="text-2xl font-black font-mono" style={{ color: '#0A192F' }}>Rs.{totalAmount}</span>
