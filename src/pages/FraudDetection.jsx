@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchMetrics } from '../redux/slices/metricsSlice';
 import { fetchAlerts } from '../redux/slices/alertsSlice';
-import { getTransactions } from '../services/fraudApi';
+import { getTransactions, deleteTransaction } from '../services/fraudApi';
 import StatCard from '../components/widgets/StatCard';
 import EntityLinkAnalysis from '../components/widgets/EntityLinkAnalysis';
 import RegionalVelocity from '../components/widgets/RegionalVelocity';
@@ -26,6 +26,7 @@ export default function FraudDetection() {
 
   const dispatch = useDispatch();
   const { data: metrics } = useSelector(state => state.metrics);
+  const { items: alerts } = useSelector(state => state.alerts);
   const [transactions, setTransactions] = useState([]);
 
   const loadData = async () => {
@@ -34,9 +35,9 @@ export default function FraudDetection() {
     try {
       const res = await getTransactions({ limit: 50 });
       if (res && res.data) {
-        // Remove the restrictive filter so the Real-Time Event Stream shows all 
-        // transactions (LOW_RISK, MEDIUM_RISK, HIGH_RISK, etc.) as the component logic intends.
-        setTransactions(res.data.slice(0, 10)); // keep top 10
+        // Filter to only show transactions that have been reviewed/investigated
+        const processedTransactions = res.data.filter(tx => (tx.actions && tx.actions.length > 0) || tx.whitelisted);
+        setTransactions(processedTransactions.slice(0, 10)); // keep top 10
       }
     } catch (err) {
       console.error("Failed to load transactions", err);
@@ -74,6 +75,15 @@ export default function FraudDetection() {
     }
   };
 
+  const handleDelete = async (id) => {
+    try {
+      await deleteTransaction(id);
+      loadData(); // instantly refresh UI
+    } catch (err) {
+      console.error(`Failed to delete transaction`, err);
+    }
+  };
+
   return (
     <div className="dashboard-grid">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -95,14 +105,14 @@ export default function FraudDetection() {
         />
         <StatCard 
           title="Suspicious Patterns" 
-          value={metrics.suspiciousPatterns?.value?.toLocaleString() || "0"} 
+          value={alerts ? alerts.length.toString() : "0"} 
           trend="neutral" 
           trendValue="Real-time AI monitoring active" 
           icon={<ActivitySquare size={24} />} 
         />
         <StatCard 
           title="High Risk Entities" 
-          value={metrics.highRiskEntities?.value?.toLocaleString() || "0"} 
+          value={alerts ? alerts.filter(a => a.riskScore >= 80).length.toString() : "0"} 
           trend="danger" 
           trendValue="●●●" 
           icon={<AlertTriangle size={24} />}
@@ -133,6 +143,7 @@ export default function FraudDetection() {
         onReviewClick={(id) => setReviewTarget(id)}
         onFreezeClick={(id) => handleAction(id, 'FREEZE')}
         onReleaseClick={(id) => handleAction(id, 'RELEASE')}
+        onDeleteClick={handleDelete}
         onTransactionSelect={(tx) => setSelectedGraphTx(tx)}
       />
 
@@ -141,6 +152,7 @@ export default function FraudDetection() {
         onClose={() => setIsLiveFeedOpen(false)} 
         onInvestigateClick={(id) => { setIsLiveFeedOpen(false); setInvestigationTarget(id); }}
         onReviewClick={(id) => { setIsLiveFeedOpen(false); setReviewTarget(id); }}
+        onCardClick={(tx) => setSelectedGraphTx(tx)}
       />
       <InvestigationDrawer 
         isOpen={!!investigationTarget} 

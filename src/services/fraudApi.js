@@ -20,6 +20,11 @@ export const getTransactions = async (params) => {
   return response.data;
 };
 
+export const deleteTransaction = async (id) => {
+  const response = await api.delete(`/fraud/transactions/${id}`);
+  return response.data;
+};
+
 export const getEntityLinkData = async (id) => {
   const response = await api.get(`/fraud/entity-link/${id}`);
   return response.data;
@@ -46,3 +51,9 @@ export const runLivePrediction = async (id) => {
   const response = await api.get(`/fraud/predict/${id}`);
   return response.data;
 };
+
+export const getMerchantProfile = async (name) => {
+  const response = await api.get(`/fraud/merchant/${name}`);
+  return response.data;
+};
+

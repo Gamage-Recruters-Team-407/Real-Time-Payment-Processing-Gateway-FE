@@ -179,7 +179,6 @@ export default function TransactionTable({
       <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Transaction Records</h2>
-          <p className="text-sm text-slate-500">{merchantName} transaction history from MongoDB</p>
         </div>
         <p className="text-sm text-slate-500">{total} total records</p>
       </div>
