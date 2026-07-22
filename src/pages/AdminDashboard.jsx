@@ -17,6 +17,8 @@ import {
   XAxis,
   Tooltip,
   Cell,
+  YAxis,
+  LabelList,
 } from "recharts";
 import api from "../services/api";
 import DashboardLayout from "../layouts/DashboardLayout";
@@ -217,6 +219,16 @@ export default function AdminDashboard() {
                       tickLine={false}
                       tick={{ fontSize: 10, fill: "#94a3b8" }}
                     />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 10, fill: "#94a3b8" }}
+                      tickFormatter={(value) => {
+                        if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+                        if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
+                        return value;
+                      }}
+                    />
                     <Tooltip
                       cursor={{ fill: "rgba(16,185,129,0.08)" }}
                       formatter={(value) => {
@@ -233,7 +245,7 @@ export default function AdminDashboard() {
                         return `Date: ${item?.date || label}`;
                       }}
                     />
-                    <Bar dataKey="totalAmount" radius={[4, 4, 0, 0]}>
+                    <Bar dataKey="totalAmount" radius={[4, 4, 0, 0]} minPointSize={4}>
                       {trendWithLabels.map((entry, index) => {
                         const isToday = entry.isToday;
                         const value = entry.totalAmount || 0;
@@ -262,6 +274,22 @@ export default function AdminDashboard() {
                           />
                         );
                       })}
+                      <LabelList
+                        dataKey="totalAmount"
+                        position="top"
+                        offset={8}
+                        formatter={(value) => {
+                          if (value === 0) return '';
+                          if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+                          if (value >= 10000) return `${Math.round(value / 1000)}K`;
+                          return Math.round(value);
+                        }}
+                        style={{
+                          fontSize: '10px',
+                          fill: '#475569',
+                          fontWeight: 500,
+                        }}
+                      />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
