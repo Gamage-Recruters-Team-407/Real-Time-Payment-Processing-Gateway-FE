@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { otpService } from "../services/otpService";
 import { Shield, Mail, Lock, CheckCircle, AlertCircle, ArrowRight } from "lucide-react";
+import api from "../services/api";
 
 // Keep track of recent OTP generation calls to prevent duplicates (e.g. from React.StrictMode or fast renders)
 const autoSentTracker = new Map();
@@ -205,16 +206,65 @@ const OTPVerification = () => {
         sessionStorage.removeItem(`otp_userId_${purpose}`);
         sessionStorage.removeItem(`otp_timer_start_${purpose}`);
 
-        setMessage("Verification successful!");
-        setTimeout(() => {
-          // if (purpose === 'password_forgot') { 
-          //   navigate('/forgot-password', { state: { email, verified: true } });
-          if (purpose === 'password_forgot') {
+        if (purpose === 'password_forgot') {
+          setMessage("Verification successful!");
+          setTimeout(() => {
             navigate(`/new-password-setup?email=${encodeURIComponent(email)}`, { state: { email, verified: true } });
-          } else if (purpose === 'payment') {
-            navigate('/card-payment', { state: { verified: true } });
+          }, 1000);
+        } else if (purpose === 'payment') {
+          setMessage("OTP Verified! Processing transaction...");
+          try {
+            const pendingStr = sessionStorage.getItem('pending_payment');
+            if (!pendingStr) {
+              throw new Error("No pending payment details found. Please try again.");
+            }
+            
+            const pending = JSON.parse(pendingStr);
+            const cleanCardNumber = pending.cardDetails.cardNumber.replace(/\s+/g, '');
+            
+            const response = await api.post('/payments', {
+              amount: pending.totalAmount,
+              currency: pending.currency || 'LKR',
+              description: pending.description || 'Card payment via Gamage-Pay',
+              paymentMethod: pending.paymentMethod || 'CARD',
+              status: 'COMPLETED',
+              cardDetails: {
+                cardholderName: pending.cardDetails.cardholderName,
+                cardNumber: cleanCardNumber,
+                expiry: pending.cardDetails.expiry,
+                cvc: pending.cardDetails.cvc
+              },
+              deviceId: pending.deviceId,
+              ipAddress: pending.ipAddress
+            });
+
+            const data = response.data;
+            if (data.success && data.data) {
+              // Clear pending payment data from session
+              sessionStorage.removeItem('pending_payment');
+              sessionStorage.removeItem('payment_initiated');
+              setMessage("Payment completed successfully!");
+              setTimeout(() => {
+                navigate(`/payment-success?paymentId=${data.data.paymentId}`);
+              }, 1000);
+            } else {
+              throw new Error(data.message || "Payment processing failed");
+            }
+          } catch (payErr) {
+            console.error("Failed to submit payment from OTP page:", payErr);
+            const errData = payErr.response?.data;
+            if (errData && errData.fraudStatus === 'BLOCKED' && errData.data?.paymentId) {
+              sessionStorage.removeItem('pending_payment');
+              sessionStorage.removeItem('payment_initiated');
+              setError("Transaction blocked by fraud engine due to high risk. Redirecting to payment status...");
+              setTimeout(() => {
+                navigate(`/payment-success?paymentId=${errData.data.paymentId}`);
+              }, 2000);
+            } else {
+              setError(payErr.response?.data?.message || payErr.message || "Payment processing failed. Please try again.");
+            }
           }
-        }, 1000);
+        }
       }
     } catch (err) {
       setError(err.message || "Invalid verification code");

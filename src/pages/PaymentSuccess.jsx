@@ -17,7 +17,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2, XCircle, Clock } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import {
@@ -46,56 +46,92 @@ function formatDateTime(iso) {
   });
 }
 
+const STATUS_CONFIGS = {
+  Completed: {
+    icon: CheckCircle2,
+    iconBg: "bg-emerald-500",
+    textColor: "text-emerald-600",
+    title: "Payment successful",
+  },
+  Failed: {
+    icon: XCircle,
+    iconBg: "bg-red-500",
+    textColor: "text-red-600",
+    title: "Payment failed",
+  },
+  Pending: {
+    icon: Clock,
+    iconBg: "bg-amber-500",
+    textColor: "text-amber-600",
+    title: "Payment pending",
+  },
+  Processing: {
+    icon: Loader2,
+    iconBg: "bg-amber-500",
+    textColor: "text-amber-600",
+    title: "Payment processing",
+  },
+  Cancelled: {
+    icon: XCircle,
+    iconBg: "bg-slate-500",
+    textColor: "text-slate-600",
+    title: "Payment cancelled",
+  },
+};
+
 export default function PaymentSuccess() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [transaction, setTransaction] = useState(
-    location.state?.transaction ?? null
-  );
-  const [loading, setLoading] = useState(!location.state?.transaction);
+  const [transaction, setTransaction] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState(null);
 
   useEffect(() => {
-    if (transaction) return;
-
     let cancelled = false;
     setLoading(true);
     setLoadError(null);
 
     const params = new URLSearchParams(location.search);
     const paymentId = params.get('paymentId');
+    console.log("PaymentSuccess: Extracted paymentId from URL query:", paymentId);
 
     if (!paymentId) {
+      console.warn("PaymentSuccess: No paymentId query parameter found in URL");
       setLoadError("No payment ID provided.");
       setLoading(false);
       return;
     }
 
+    console.log(`PaymentSuccess: Dispatching GET request for /api/payments/${paymentId}`);
     api.get(`/payments/${paymentId}`)
       .then((response) => {
+        console.log("PaymentSuccess: Received API response:", response.data);
         const data = response.data?.data;
-        if (!data) throw new Error("No data returned");
+        if (!data) throw new Error("No data returned from backend API");
         
         const formatted = {
           transactionId: data.transactionId || data.paymentId,
           amount: data.amount,
           currency: data.currency,
           dateTime: data.createdAt,
-          method: data.paymentMethod + (data.cardLastFourDigits ? ` •••• ${data.cardLastFourDigits}` : ""),
-          status: data.status.charAt(0) + data.status.slice(1).toLowerCase(),
+          method: (data.paymentMethod || "CARD") + (data.cardLastFourDigits ? ` •••• ${data.cardLastFourDigits}` : ""),
+          status: data.status ? (data.status.charAt(0) + data.status.slice(1).toLowerCase()) : "Pending",
         };
+        
+        console.log("PaymentSuccess: Formatted transaction data for UI:", formatted);
 
         if (!cancelled) setTransaction(formatted);
       })
       .catch((err) => {
+        console.error("PaymentSuccess: Error loading transaction from backend:", err);
         if (!cancelled) {
           setLoadError(
             err.response?.status === 401
               ? "You need to be signed in to view this."
-              : "Couldn't load your transaction. Please try again."
+              : `Couldn't load your transaction. Error: ${err.response?.data?.message || err.message}`
           );
         }
       })
@@ -106,7 +142,7 @@ export default function PaymentSuccess() {
     return () => {
       cancelled = true;
     };
-  }, [transaction, location.search]);
+  }, [location.search]);
 
   const handleDownloadReceipt = async () => {
     setDownloading(true);
@@ -124,6 +160,10 @@ export default function PaymentSuccess() {
     navigate("/dashboard");
   };
 
+  // Safe fallback to prevent rendering errors if transaction is null or status is unrecognized
+  const statusConfig = (transaction && STATUS_CONFIGS[transaction.status]) || STATUS_CONFIGS.Pending;
+  const StatusIcon = statusConfig.icon;
+
   return (
     <div className="min-h-screen bg-[#f1f5f9] flex flex-col font-sans">
       <Navbar />
@@ -140,12 +180,15 @@ export default function PaymentSuccess() {
             ) : (
               <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-8">
                 <div className="flex flex-col items-center text-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500">
-                    <CheckCircle2 className="h-8 w-8 text-white" strokeWidth={2.5} />
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-full ${statusConfig.iconBg}`}>
+                    <StatusIcon 
+                      className={`h-8 w-8 text-white ${transaction.status === "Processing" ? "animate-spin" : ""}`} 
+                      strokeWidth={2.5} 
+                    />
                   </div>
 
-                  <p className="mt-4 text-sm font-medium text-emerald-600">
-                    Payment successful
+                  <p className={`mt-4 text-sm font-medium ${statusConfig.textColor}`}>
+                    {statusConfig.title}
                   </p>
                   <p className="mt-2 text-3xl font-bold text-slate-900">
                     {formatAmount(transaction.amount, transaction.currency)}
