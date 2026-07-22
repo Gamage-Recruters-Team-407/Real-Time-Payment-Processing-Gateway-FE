@@ -3,10 +3,26 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
     MoreHorizontal,
     CheckCircle,
-    Loader2
+    Loader2,
+    ArrowLeft
 } from 'lucide-react';
 import masterCardLogo from '../assets/logos/master-card.svg';
 import CardForm from '../components/CardForm';
+
+// Helper to generate a UUID for Device Fingerprinting
+function generateDeviceId() {
+    return 'DEV-' + Math.random().toString(36).substring(2, 10) + '-' + Date.now().toString(36);
+}
+
+// Ensure persistent device ID on client
+const getDeviceId = () => {
+    let deviceId = localStorage.getItem('device_id');
+    if (!deviceId) {
+        deviceId = generateDeviceId();
+        localStorage.setItem('device_id', deviceId);
+    }
+    return deviceId;
+};
 
 export default function CardPayment() {
     const navigate = useNavigate();
@@ -37,15 +53,41 @@ export default function CardPayment() {
 
     // Submit states
     const [isProcessing, setIsProcessing] = useState(false);
-    const [paymentSuccess, setPaymentSuccess] = useState(false);
-    const [paymentResponse, setPaymentResponse] = useState(null);
 
     // Form errors
     const [errors, setErrors] = useState({});
 
-    // Handle personal details inputs
+    // Live validation to clear agreeTerms error when user checks the box
+    useEffect(() => {
+        if (agreeTerms) {
+            setErrors(prev => {
+                const next = { ...prev };
+                delete next.agreeTerms;
+                return next;
+            });
+        }
+    }, [agreeTerms]);
+
+    // Handle personal details inputs with live validations
     const handlePersonalChange = (e) => {
         const { name, value } = e.target;
+
+        if (value.trim()) {
+            setErrors(prev => {
+                const next = { ...prev };
+                delete next[name];
+                return next;
+            });
+        } else {
+            setErrors(prev => ({
+                ...prev,
+                [name]: name === 'addressLine' ? 'Address is required' :
+                    name === 'city' ? 'City is required' :
+                        name === 'state' ? 'District is required' :
+                            name === 'postalCode' ? 'Postal code is required' : ''
+            }));
+        }
+
         setPersonalDetails(prev => ({
             ...prev,
             [name]: value
@@ -86,7 +128,7 @@ export default function CardPayment() {
 
         if (name === 'cardNumber') {
             formattedValue = formatCardNumber(value).slice(0, 22); // 16 digits + 6 spaces
-            
+
             const cleanCard = formattedValue.replace(/\s+/g, '');
             if (cleanCard.length === 16) {
                 if (validateLuhn(cleanCard)) {
@@ -115,7 +157,7 @@ export default function CardPayment() {
             }
         } else if (name === 'expiry') {
             formattedValue = formatExpiry(value).slice(0, 5); // MM/YY
-            
+
             if (formattedValue.length === 5) {
                 if (validateExpiry(formattedValue)) {
                     setErrors(prev => {
@@ -143,7 +185,7 @@ export default function CardPayment() {
             }
         } else if (name === 'cvc') {
             formattedValue = value.replace(/[^0-9]/g, '').slice(0, 4);
-            
+
             if (formattedValue.length === 3 || formattedValue.length === 4) {
                 setErrors(prev => {
                     const next = { ...prev };
@@ -238,7 +280,7 @@ export default function CardPayment() {
         const newErrors = {};
         if (!personalDetails.addressLine.trim()) newErrors.addressLine = 'Address is required';
         if (!personalDetails.city.trim()) newErrors.city = 'City is required';
-        if (!personalDetails.state.trim()) newErrors.state = 'State is required';
+        if (!personalDetails.state.trim()) newErrors.state = 'District is required';
         if (!personalDetails.postalCode.trim()) newErrors.postalCode = 'Postal code is required';
 
         if (!cardDetails.cardholderName.trim()) newErrors.cardholderName = 'Cardholder name is required';
@@ -268,16 +310,67 @@ export default function CardPayment() {
         return Object.keys(newErrors).length === 0;
     };
 
-    const executePayment = async (paymentData) => {
+    const getInitialAmount = () => {
+        if (location.state?.amount !== undefined) return location.state.amount;
+        const pendingStr = sessionStorage.getItem('pending_payment');
+        if (pendingStr) {
+            try {
+                const pending = JSON.parse(pendingStr);
+                if (pending.totalAmount !== undefined) return pending.totalAmount;
+            } catch (e) { }
+        }
+        return undefined;
+    };
+
+    const passedAmount = getInitialAmount();
+    const passedCurrency = location.state?.currency || 'LKR';
+    const passedPaymentMethod = location.state?.paymentMethod || 'CARD';
+    const passedDescription = location.state?.description || 'Card payment via Gamage-Pay';
+
+    if (passedAmount === undefined) {
+        return (
+            <div className="min-h-screen antialiased pb-12 flex items-center justify-center bg-[#F8FAFC]">
+                <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full border border-gray-100 text-center">
+                    <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500">
+                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <h2 className="text-xl font-bold text-[#0A192F] mb-2">Invalid Checkout Session</h2>
+                    <p className="text-sm text-slate-500 mb-6">
+                        No active payment details or amount was specified. Please start your payment from the payment request page.
+                    </p>
+                    <button
+                        onClick={() => navigate('/payment')}
+                        className="w-full text-white font-semibold py-3 px-6 rounded-xl hover:opacity-90 transition-opacity bg-[#0A192F] text-sm"
+                    >
+                        Go to Payment Page
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    const subtotal = passedAmount;
+    const platformFee = 0;
+    const totalAmount = subtotal + platformFee;
+
+    const formattedTotalAmount = totalAmount.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+
+    const executePayment = async (paymentData, isVerified) => {
         setIsProcessing(true);
         setErrors({});
 
-        const { cardDetails: details, totalAmount: amountValue } = paymentData;
+        const { cardDetails: details, deviceId, ipAddress } = paymentData;
         const cleanCardNumber = details.cardNumber.replace(/\s+/g, '');
 
         try {
-            // Initiate backend payment processing using the correct route
             const token = localStorage.getItem("token");
+
+            // Create the payment directly as COMPLETED or FAILED based on OTP verification result
             const response = await fetch('http://localhost:5000/api/payments', {
                 method: 'POST',
                 headers: {
@@ -285,25 +378,31 @@ export default function CardPayment() {
                     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
                 body: JSON.stringify({
-                    amount: amountValue,
-                    currency: "LKR",
-                    description: `Card payment by ${details.cardholderName}`
+                    amount: totalAmount,
+                    currency: passedCurrency,
+                    description: passedDescription,
+                    paymentMethod: passedPaymentMethod,
+                    status: isVerified ? 'COMPLETED' : 'FAILED',
+                    cardDetails: {
+                        cardholderName: details.cardholderName,
+                        cardNumber: cleanCardNumber,
+                        expiry: details.expiry,
+                        cvc: details.cvc
+                    },
+                    deviceId,
+                    ipAddress
                 })
             });
 
             const data = await response.json();
 
             if (data.success && data.data) {
-                // Map the backend payment document fields to the shape expected by the success UI
-                setPaymentResponse({
-                    success: true,
-                    transactionId: data.data.paymentId || data.data._id,
-                    referenceNo: data.data.paymentId,
-                    amount: data.data.amount
-                });
-                setPaymentSuccess(true);
-                sessionStorage.removeItem('pending_payment');
-                sessionStorage.removeItem('payment_initiated');
+                if (isVerified) {
+                    // Navigate to /payment-success passing paymentId in query parameters
+                    navigate(`/payment-success?paymentId=${data.data.paymentId}`);
+                } else {
+                    setErrors({ submit: 'Payment was recorded as FAILED because OTP verification was not completed.' });
+                }
             } else {
                 if (data.errors) {
                     setErrors(data.errors);
@@ -312,56 +411,88 @@ export default function CardPayment() {
                 }
             }
         } catch (err) {
-            console.warn('Backend payment route not fully integrated yet, executing local simulation fallback:', err.message);
-            
-            // Simulating real-time communication response delay
-            setTimeout(() => {
-                const simulatedTxnId = `TXN-${Math.floor(10000000 + Math.random() * 90000000)}`;
-                const simulatedRefNo = `REF-${Math.floor(10000000 + Math.random() * 90000000)}`;
-                
-                setPaymentResponse({
-                    success: true,
-                    transactionId: simulatedTxnId,
-                    referenceNo: simulatedRefNo,
-                    amount: amountValue
-                });
-                setPaymentSuccess(true);
-                setIsProcessing(false);
-                sessionStorage.removeItem('pending_payment');
-                sessionStorage.removeItem('payment_initiated');
-            }, 2000);
-            return;
+            console.error('Backend payment creation failed:', err.message);
+            setErrors({ submit: 'Unable to connect to the payment server. Please ensure the backend is running and try again.' });
         }
 
         setIsProcessing(false);
     };
 
-    // Handle Pay Action with Backend Integration and robust fallback
+    // Handle Pay Action — saves state locally then navigates to OTP (no backend call yet)
     const handlePayment = async (e) => {
         if (e) e.preventDefault();
         if (!validateForm()) return;
 
-        // Save current form state to sessionStorage
-        const pendingPayment = {
-            personalDetails,
-            cardDetails,
-            agreeTerms,
-            saveCard,
-            selectedMethod,
-            totalAmount
-        };
-        sessionStorage.setItem('pending_payment', JSON.stringify(pendingPayment));
-        sessionStorage.setItem('payment_initiated', 'true');
+        setIsProcessing(true);
+        setErrors({});
 
-        // Redirect to OTP verification page
-        navigate('/otp-verification?purpose=payment');
+        try {
+            // 0. Capture Real-World Metrics (Device ID and Public IP)
+            const deviceId = getDeviceId();
+            let ipAddress = '127.0.0.1'; // fallback
+            try {
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                ipAddress = ipData.ip;
+            } catch (ipErr) {
+                console.warn("Failed to fetch public IP, using fallback", ipErr);
+            }
+
+            // 1. Save current form state and metrics to sessionStorage (no backend call yet)
+            const pendingPayment = {
+                personalDetails,
+                cardDetails,
+                agreeTerms,
+                saveCard,
+                selectedMethod,
+                totalAmount,
+                description: passedDescription,
+                currency: passedCurrency,
+                paymentMethod: passedPaymentMethod,
+                deviceId,
+                ipAddress
+            };
+            sessionStorage.setItem('pending_payment', JSON.stringify(pendingPayment));
+            sessionStorage.setItem('payment_initiated', 'true');
+
+            setIsProcessing(false);
+
+            // 2. Get user info from localStorage to pass as query params for reliability
+            const userStr = localStorage.getItem("user");
+            let userId = "";
+            let email = "";
+            if (userStr) {
+                try {
+                    const u = JSON.parse(userStr);
+                    userId = u.id || u._id || "";
+                    email = u.email || "";
+                } catch (e) { }
+            }
+
+            // 3. Redirect to OTP verification page
+            navigate(`/otp-verification?purpose=payment&userId=${userId}&email=${email}`);
+
+        } catch (err) {
+            console.error('Failed to prepare payment state:', err.message);
+            setErrors({ submit: 'An error occurred while initiating the payment. Please try again.' });
+            setIsProcessing(false);
+        }
     };
 
-    // Effect to check if we just returned from successful OTP verification
+    // Effect to check if we just returned from OTP verification (verified = true or false)
     useEffect(() => {
-        if (location.state?.verified) {
+        if (location.state?.verified !== undefined) {
+            const isVerified = location.state.verified;
+            // Clear the location state to prevent re-triggering on refresh
+            navigate(location.pathname, { replace: true, state: {} });
+
+            // ⚠️ Remove pending_payment BEFORE any async work to act as a mutex.
+            // React StrictMode (and fast re-renders) can fire this effect twice.
+            // Removing the key first ensures executePayment is only called once.
             const pendingStr = sessionStorage.getItem('pending_payment');
             if (pendingStr) {
+                sessionStorage.removeItem('pending_payment');
+                sessionStorage.removeItem('payment_initiated');
                 try {
                     const pending = JSON.parse(pendingStr);
                     setPersonalDetails(pending.personalDetails);
@@ -370,8 +501,8 @@ export default function CardPayment() {
                     setSaveCard(pending.saveCard);
                     setSelectedMethod(pending.selectedMethod);
 
-                    // Execute payment submission automatically
-                    executePayment(pending);
+                    // Create the payment record now, as COMPLETED or FAILED
+                    executePayment(pending, isVerified);
                 } catch (e) {
                     console.error('Failed to parse pending payment data', e);
                 }
@@ -379,154 +510,103 @@ export default function CardPayment() {
         }
     }, [location.state]);
 
-    // Dynamic values
-    const subtotal = 8200;
-    const platformFee = 40;
-    const totalAmount = subtotal + platformFee;
-
-    const formattedTotalAmount = totalAmount.toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-
     return (
         <div className="min-h-screen antialiased pb-12" style={{ backgroundColor: '#F8FAFC', color: '#0A192F', fontFamily: 'Inter, sans-serif' }}>
             {/* Main Container */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-                {paymentSuccess ? (
-                    /* Payment Success State Screen */
-                    <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-8 md:p-16 max-w-xl mx-auto text-center border border-gray-100">
-                        <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 text-[#10B981]">
-                            <CheckCircle className="h-12 w-12 stroke-[2.5]" />
-                        </div>
-                        <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: '#0A192F' }}>Payment Successful!</h2>
-                        <p className="text-sm mb-6 max-w-md mx-auto" style={{ color: '#64748B' }}>
-                            Your registration payment has been processed successfully.A confirmation receipt has been sent to your registered email.
-                        </p>
-                        <div className="rounded-xl p-6 text-left mb-8 border border-emerald-500/10" style={{ backgroundColor: 'rgba(16, 185, 129, 0.03)' }}>
-                            <div className="flex justify-between items-center py-2 border-b border-emerald-500/10">
-                                <span className="text-xs font-medium uppercase font-mono" style={{ color: '#64748B' }}>Transaction ID</span>
-                                <span className="text-xs font-bold font-mono" style={{ color: '#0A192F' }}>{paymentResponse?.transactionId}</span>
+
+                {/* Back Button */}
+                <button
+                    onClick={() => navigate('/payment')}
+                    className="flex items-center gap-2 text-[#64748B] hover:text-[#0A192F] transition-colors text-sm font-bold mb-8 group focus:outline-none"
+                >
+                    <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                    <span>Back to Payment Request</span>
+                </button>
+
+                {/* Checkout Payment Form Screen */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start">
+
+                    {/* Left Column: Form Details extracted to CardForm */}
+                    <CardForm
+                        personalDetails={personalDetails}
+                        handlePersonalChange={handlePersonalChange}
+                        selectedMethod={selectedMethod}
+                        setSelectedMethod={setSelectedMethod}
+                        cardDetails={cardDetails}
+                        handleCardChange={handleCardChange}
+                        agreeTerms={agreeTerms}
+                        setAgreeTerms={setAgreeTerms}
+                        saveCard={saveCard}
+                        setSaveCard={setSaveCard}
+                        errors={errors}
+                        handlePayment={handlePayment}
+                    />
+
+                    {/* Right Column: Card Visualization & Summary */}
+                    <div className="lg:col-span-5 space-y-8 lg:sticky lg:top-24">
+
+                        {/* Card visual wrapper */}
+                        <div
+                            className="hidden sm:flex relative aspect-[1.586/1] w-full rounded-2xl shadow-xl p-6 flex-col justify-between text-white overflow-hidden group hover:scale-[1.01] hover:shadow-2xl transition-all duration-300"
+                            style={{ background: 'linear-gradient(135deg, #024e3b 0%, #115e59 50%, #042f2e 100%)' }}
+                        >
+                            {/* Glossy card lines */}
+                            <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl -translate-y-12 translate-x-12 pointer-events-none"></div>
+                            <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl translate-y-12 -translate-x-12 pointer-events-none"></div>
+
+                            {/* Top card row */}
+                            <div className="flex justify-between items-center z-10">
+                                <span className="text-[10px] uppercase font-bold tracking-widest opacity-80 select-none font-mono text-white">
+                                    Card
+                                </span>
+                                <div className="flex items-center gap-2">
+                                    {/* Brand Badge */}
+                                    {cardType === 'visa' && (
+                                        <img src="https://img.icons8.com/?size=96&id=13608&format=png" className="h-5 w-auto brightness-200 contrast-200" alt="Visa" />
+                                    )}
+                                    {cardType === 'mastercard' && (
+                                        <img src={masterCardLogo} className="h-5 w-auto brightness-200 contrast-200" alt="MasterCard" />
+                                    )}
+                                    <button className="text-white/80 hover:text-white transition-colors">
+                                        <MoreHorizontal className="h-5 w-5" />
+                                    </button>
+                                </div>
                             </div>
-                            <div className="flex justify-between items-center py-2 border-b border-emerald-500/10">
-                                <span className="text-xs font-medium uppercase font-mono" style={{ color: '#64748B' }}>Total Paid</span>
-                                <span className="text-xs font-bold font-mono" style={{ color: '#0A192F' }}>LKR {formattedTotalAmount}</span>
-                            </div>
-                            <div className="flex justify-between items-center py-2">
-                                <span className="text-xs font-medium uppercase font-mono" style={{ color: '#64748B' }}>Card Used</span>
-                                <span className="text-xs font-bold flex items-center gap-1.5 font-mono" style={{ color: '#0A192F' }}>
-                                    <span className="capitalize">{cardType}</span> •••• {cardDetails.cardNumber.slice(-4) || '4242'}
+
+                            {/* Card number */}
+                            <div className="my-auto z-10">
+                                <span className="text-lg md:text-xl font-bold tracking-[0.2em] font-mono text-white select-all block">
+                                    {cardDetails.cardNumber || '•••• •••• •••• ••••'}
                                 </span>
                             </div>
-                        </div>
-                        <button
-                            onClick={() => {
-                                setPaymentSuccess(false);
-                                setCardDetails({ cardholderName: '', cardNumber: '', expiry: '', cvc: '' });
-                                setPersonalDetails({ addressLine: '', city: '', state: '', postalCode: '' });
-                                setAgreeTerms(false);
-                                setPaymentResponse(null);
-                            }}
-                            className="w-full text-white font-semibold py-3 px-6 rounded-xl hover:opacity-90 transition-opacity shadow-lg text-sm"
-                            style={{ backgroundColor: '#0A192F', fontFamily: 'Inter, sans-serif' }}
-                        >
-                            Make Another Payment
-                        </button>
-                    </div>
-                ) : (
-                    /* Checkout Payment Form Screen */
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start">
 
-                        {/* Left Column: Form Details extracted to CardForm */}
-                        <CardForm
-                            personalDetails={personalDetails}
-                            handlePersonalChange={handlePersonalChange}
-                            selectedMethod={selectedMethod}
-                            setSelectedMethod={setSelectedMethod}
-                            cardDetails={cardDetails}
-                            handleCardChange={handleCardChange}
-                            agreeTerms={agreeTerms}
-                            setAgreeTerms={setAgreeTerms}
-                            saveCard={saveCard}
-                            setSaveCard={setSaveCard}
-                            errors={errors}
-                            handlePayment={handlePayment}
-                        />
-
-                        {/* Right Column: Card Visualization & Summary */}
-                        <div className="lg:col-span-5 space-y-8 lg:sticky lg:top-24">
-
-                            {/* Card visual wrapper */}
-                            <div 
-                                className="relative aspect-[1.586/1] w-full rounded-2xl shadow-xl p-6 flex flex-col justify-between text-white overflow-hidden group hover:scale-[1.01] hover:shadow-2xl transition-all duration-300"
-                                style={{ background: 'linear-gradient(135deg, #024e3b 0%, #115e59 50%, #042f2e 100%)' }}
-                            >
-                                {/* Glossy card lines */}
-                                <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl -translate-y-12 translate-x-12 pointer-events-none"></div>
-                                <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl translate-y-12 -translate-x-12 pointer-events-none"></div>
-
-                                {/* Top card row */}
-                                <div className="flex justify-between items-center z-10">
-                                    <span className="text-[10px] uppercase font-bold tracking-widest opacity-80 select-none font-mono text-white">
-                                        Card
+                            {/* Bottom row: holder & expiry */}
+                            <div className="flex justify-between items-end z-10">
+                                <div className="flex flex-col">
+                                    <span className="text-[8px] uppercase tracking-wider opacity-60 font-mono text-white select-none">
+                                        Card Holder
                                     </span>
-                                    <div className="flex items-center gap-2">
-                                        {/* Brand Badge */}
-                                        {cardType === 'visa' && (
-                                            <img src="https://img.icons8.com/?size=96&id=13608&format=png" className="h-5 w-auto brightness-200 contrast-200" alt="Visa" />
-                                        )}
-                                        {cardType === 'mastercard' && (
-                                            <img src={masterCardLogo} className="h-5 w-auto brightness-200 contrast-200" alt="MasterCard" />
-                                        )}
-                                        <button className="text-white/80 hover:text-white transition-colors">
-                                            <MoreHorizontal className="h-5 w-5" />
-                                        </button>
-                                    </div>
+                                    <span className="text-xs md:text-sm font-semibold tracking-wide font-sans truncate max-w-[180px] text-white">
+                                        {cardDetails.cardholderName}
+                                    </span>
                                 </div>
-
-                                {/* Card Number display */}
-                                <div className="my-auto py-4 z-10">
-                                    <p className="text-xl md:text-2xl font-mono tracking-[0.18em] font-medium leading-none text-center select-all select-none text-white">
-                                        {cardDetails.cardNumber || '••••  ••••  ••••  ••••'}
-                                    </p>
-                                </div>
-
-                                {/* Bottom card row */}
-                                <div className="flex justify-between items-end z-10">
-                                    <div className="space-y-0.5 text-left">
-                                        <span className="text-[8px] uppercase tracking-wider text-emerald-300 font-bold opacity-80 font-mono">
-                                            Cardholder Name
-                                        </span>
-                                        <p className="text-sm font-semibold uppercase tracking-wider truncate max-w-[200px] font-mono text-white">
-                                            {cardDetails.cardholderName || 'Cardholder Name'}
-                                        </p>
-                                    </div>
-                                    <div className="space-y-0.5 text-right">
-                                        <span className="text-[8px] uppercase tracking-wider text-emerald-300 font-bold opacity-80 font-mono">
-                                            MM/YY
-                                        </span>
-                                        <p className="text-sm font-semibold font-mono tracking-wider text-white">
-                                            {cardDetails.expiry || 'MM/YY'}
-                                        </p>
-                                    </div>
+                                <div className="flex flex-col items-end">
+                                    <span className="text-[8px] uppercase tracking-wider opacity-60 font-mono text-white select-none">
+                                        Expires
+                                    </span>
+                                    <span className="text-xs md:text-sm font-semibold tracking-wide font-mono text-white">
+                                        {cardDetails.expiry || 'MM/YY'}
+                                    </span>
                                 </div>
                             </div>
+                        </div>
 
-                            {/* Order breakdown */}
-                            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
-                                <div className="flex justify-between items-center font-sans" style={{ color: '#64748B' }}>
-                                    <span className="text-sm font-medium">Subtotal</span>
-                                    <span className="text-base font-bold font-mono" style={{ color: '#0A192F' }}>Rs.{subtotal}</span>
-                                </div>
+                        {/* Order Summary details */}
+                        <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-6 md:p-8 border border-gray-100/50 space-y-4">
+                            <h3 className="text-base font-bold pb-2 border-b border-slate-100" style={{ color: '#0A192F' }}>Order Summary</h3>
 
-                                <div className="flex justify-between items-center font-sans" style={{ color: '#64748B' }}>
-                                    <span className="text-sm font-medium">Platform Fee</span>
-                                    <span className="text-base font-bold font-mono" style={{ color: '#0A192F' }}>Rs.{platformFee}</span>
-                                </div>
-
-                                {/* Border line separator - themed secondary */}
-                                <div className="h-0.5 w-full rounded" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}></div>
-
+                            <div className="pt-2 flex flex-col gap-1">
                                 <div className="flex justify-between items-end pt-1 font-sans">
                                     <span className="text-base font-bold" style={{ color: '#0A192F' }}>Total Amount</span>
                                     <span className="text-2xl font-black font-mono" style={{ color: '#0A192F' }}>Rs.{totalAmount}</span>
@@ -556,9 +636,8 @@ export default function CardPayment() {
                                 )}
                             </button>
                         </div>
-
                     </div>
-                )}
+                </div>
             </main>
         </div>
     );

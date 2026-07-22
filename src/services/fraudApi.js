@@ -20,6 +20,11 @@ export const getTransactions = async (params) => {
   return response.data;
 };
 
+export const deleteTransaction = async (id) => {
+  const response = await api.delete(`/fraud/transactions/${id}`);
+  return response.data;
+};
+
 export const getEntityLinkData = async (id) => {
   const response = await api.get(`/fraud/entity-link/${id}`);
   return response.data;
@@ -29,3 +34,26 @@ export const getRegionalVelocity = async () => {
   const response = await api.get('/fraud/regional-velocity');
   return response.data;
 };
+
+export const handleTransactionAction = async (id, data) => {
+  // data: { action: 'FREEZE' | 'BLOCK' | 'RELEASE', notes, performedBy }
+  const response = await api.post(`/fraud/transactions/${id}/action`, data);
+  return response.data;
+};
+
+export const addToWhitelist = async (data) => {
+  // data: { entityType, entityId, reason, expiresAt, performedBy }
+  const response = await api.post('/fraud/whitelist', data);
+  return response.data;
+};
+
+export const runLivePrediction = async (id) => {
+  const response = await api.get(`/fraud/predict/${id}`);
+  return response.data;
+};
+
+export const getMerchantProfile = async (name) => {
+  const response = await api.get(`/fraud/merchant/${name}`);
+  return response.data;
+};
+

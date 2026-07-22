@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Shield, User, Lock, Eye, EyeOff, ShieldCheck, ArrowRight, Fingerprint, UserCircle2 } from "lucide-react";
+import { Shield, User, Lock, Eye, EyeOff, ShieldCheck, Cpu, ArrowLeftRight, MessageSquareWarning } from "lucide-react";
 import useAuth from "../hooks/useAuth";
 
 const Login = () => {
@@ -27,171 +27,267 @@ const Login = () => {
       console.log("User role:", result.user.role);
       navigate(result.user.role === "admin" ? "/admin" : "/dashboard");
     } else {
-      setError(result.message);
+      setError(result.message || "Invalid credentials or unauthorized access.");
     }
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-5xl grid md:grid-cols-2 gap-10 items-center">
-        {/* Illustration panel */}
-        <div className="hidden md:flex relative items-center justify-center h-[520px]">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-slate-50 rounded-3xl" />
+    <div className="min-h-screen h-screen bg-white flex items-center justify-center px-4 py-4 overflow-hidden relative">
+      {/* Animated Background Particles */}
+      <div className="absolute inset-0 overflow-hidden">
+        {/* Floating circles */}
+        <div className="absolute top-10 left-10 w-32 h-32 border-2 border-green-400/20 rounded-full animate-float"></div>
+        <div className="absolute top-40 right-20 w-24 h-24 border-2 border-black/20 rounded-full animate-float-delay"></div>
+        <div className="absolute bottom-20 left-20 w-40 h-40 border-2 border-green-300/20 rounded-full animate-float"></div>
+        <div className="absolute bottom-40 right-10 w-28 h-28 border-2 border-black/20 rounded-full animate-float-delay"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 border-2 border-green-400/10 rounded-full animate-pulse-slow"></div>
+        
+        {/* Animated lines */}
+        <div className="absolute top-0 left-0 w-full h-full">
+          <div className="absolute top-1/4 left-0 w-1/3 h-px bg-gradient-to-r from-transparent via-green-400/30 to-transparent animate-slide-right"></div>
+          <div className="absolute bottom-1/4 right-0 w-1/3 h-px bg-gradient-to-l from-transparent via-black/20 to-transparent animate-slide-left"></div>
+          <div className="absolute top-0 left-1/3 w-px h-1/3 bg-gradient-to-b from-transparent via-green-400/30 to-transparent animate-slide-down"></div>
+          <div className="absolute bottom-0 right-1/3 w-px h-1/3 bg-gradient-to-t from-transparent via-black/20 to-transparent animate-slide-up"></div>
+        </div>
 
-          <div className="relative w-56 h-96 bg-white border-[6px] border-slate-900 rounded-[2rem] shadow-xl flex flex-col items-center pt-10 px-5 gap-4">
-            <UserCircle2 className="w-14 h-14 text-slate-300" strokeWidth={1.2} />
+        {/* Geometric shapes */}
+        <div className="absolute top-20 right-20 w-16 h-16 border-2 border-green-500/30 rounded-lg animate-spin-slow"></div>
+        <div className="absolute bottom-20 left-20 w-12 h-12 border-2 border-black/30 rounded-full animate-spin-slow-reverse"></div>
+        <div className="absolute top-1/2 left-10 w-8 h-8 border-2 border-green-400/30 transform rotate-45 animate-pulse-slow"></div>
+        <div className="absolute bottom-1/2 right-10 w-8 h-8 border-2 border-black/30 transform rotate-12 animate-pulse-slow"></div>
+      </div>
 
-            <div className="w-full flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2">
-              <div className="h-2 flex-1 bg-slate-200 rounded-full" />
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            </div>
-            <div className="w-full flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2">
-              <div className="h-2 flex-1 bg-slate-200 rounded-full" />
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            </div>
-            <div className="w-full flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2">
-              <div className="h-2 flex-1 bg-slate-200 rounded-full" />
-              <Fingerprint className="w-4 h-4 text-slate-300" />
-            </div>
+      <div className="w-full max-w-6xl h-full max-h-[90vh] grid lg:grid-cols-2 gap-6 items-stretch relative z-10">
+        
+        {/* Left Panel - Gamage Pay Gateway Branding & Info */}
+        <div className="hidden lg:flex h-full">
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 border border-gray-200 shadow-2xl relative overflow-hidden w-full flex flex-col">
+            {/* Background pattern */}
+            <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/diagonal-noise.png')]"></div>
 
-            <div className="mt-auto mb-8 w-12 h-12 rounded-full bg-emerald-600 flex items-center justify-center">
-              <ArrowRight className="w-5 h-5 text-white" />
-            </div>
-          </div>
+            <div className="relative z-10 flex flex-col h-full">
+              {/* Company Title & Description */}
+              <div className="flex items-center gap-3 mb-4 flex-shrink-0">
+                <div className="p-2.5 bg-green-100 rounded-2xl border border-green-200">
+                  <ShieldCheck className="w-7 h-7 text-green-700" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-800">Gamage Pay</h1>
+                  <p className="text-gray-600 text-[11px] mt-0.5">Enterprise Payment Processing Partner</p>
+                </div>
+              </div>
 
-          <div className="absolute top-10 left-6 w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
-            <Lock className="w-5 h-5 text-emerald-600" />
-          </div>
-          <div className="absolute bottom-16 right-4 w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
-            <Shield className="w-6 h-6 text-slate-500" />
+              {/* Main Visual Image with Green Overlay - flex-1 to take remaining space */}
+              <div className="flex-1 min-h-0 mb-4 relative overflow-hidden rounded-2xl shadow-md border border-gray-200">
+                <img 
+                  src="https://res.cloudinary.com/dt2xaqo32/image/upload/v1784609699/ChatGPT_Image_Jul_15_2026_11_47_10_AM_z0nwdu.png"
+                  alt="Gamage Pay Secure Gateway"
+                  className="w-full h-full object-cover"
+                />
+                {/* Green overlay on image */}
+                <div className="absolute inset-0 bg-green-500/10 mix-blend-overlay"></div>
+                <div className="absolute inset-0 bg-gradient-to-tr from-green-900/10 via-transparent to-green-900/5"></div>
+              </div>
+
+              {/* Gateway Feature Badges with Descriptions - flex-shrink-0 to keep at bottom */}
+              <div className="grid grid-cols-3 gap-2 flex-shrink-0">
+                <div className="bg-green-50 backdrop-blur-sm p-2.5 rounded-xl border border-green-200 text-center hover:bg-green-100 transition-all">
+                  <Cpu className="w-4 h-4 text-green-700 mx-auto mb-0.5" />
+                  <span className="text-[11px] font-semibold text-gray-800">FAST API</span>
+                  <p className="text-[9px] text-gray-600 mt-0.5 leading-tight">Real-time settlement</p>
+                </div>
+                <div className="bg-gray-50 backdrop-blur-sm p-2.5 rounded-xl border border-gray-200 text-center hover:bg-gray-100 transition-all">
+                  <ArrowLeftRight className="w-4 h-4 text-gray-700 mx-auto mb-0.5" />
+                  <span className="text-[11px] font-semibold text-gray-800">SEAMLESS</span>
+                  <p className="text-[9px] text-gray-600 mt-0.5 leading-tight">Bank-Client Bridge</p>
+                </div>
+                <div className="bg-green-50 backdrop-blur-sm p-2.5 rounded-xl border border-green-200 text-center hover:bg-green-100 transition-all">
+                  <ShieldCheck className="w-4 h-4 text-green-700 mx-auto mb-0.5" />
+                  <span className="text-[11px] font-semibold text-gray-800">PCI-DSS</span>
+                  <p className="text-[9px] text-gray-600 mt-0.5 leading-tight">Level 1 Certified</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Form panel */}
-        <div>
-          <div className="flex flex-col items-center text-center mb-6">
-            <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center mb-4">
-              <Shield className="w-6 h-6 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-slate-900">Gamage Pay</h1>
-            <p className="text-sm text-slate-500 mt-1">
-              Enterprise-grade payment orchestration for secure transactions.
-            </p>
-          </div>
-
-          <div className="border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-medium mb-5">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              SECURE ENVIRONMENT
+        {/* Right Panel - Partner / Merchant Login Form */}
+        <div className="h-full">
+          <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 border border-gray-200 shadow-2xl h-full flex flex-col">
+            {/* Header - flex-shrink-0 */}
+            <div className="mb-6 flex-shrink-0">
+              <div className="flex items-center gap-1.5 text-green-700 text-[11px] font-semibold mb-1.5">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                MERCHANT & PARTNER PORTAL
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800">Sign In to Dashboard</h2>
+              <p className="text-gray-600 text-sm mt-0.5">Manage transactions, API keys, and client integrations.</p>
             </div>
 
+            {/* Error Notification - flex-shrink-0 */}
             {error && (
-              <p className="bg-red-50 text-red-600 text-sm rounded-md px-3 py-2 mb-4">
-                {error}
-              </p>
+              <div className="bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded-md px-4 py-2.5 mb-4 flex items-center gap-2 flex-shrink-0">
+                <MessageSquareWarning className="w-4 h-4 shrink-0" />
+                <p className="text-sm">{error}</p>
+              </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Form - flex-1 to take remaining space and center content */}
+            <form onSubmit={handleSubmit} className="flex-1 flex flex-col justify-center space-y-4">
+              {/* Email / Merchant ID Input */}
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                  Email
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-700 mb-1">
+                  Partner Email / Merchant ID
                 </label>
-                <div className="flex items-center gap-2 border border-slate-300 rounded-lg px-3 py-2.5 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-emerald-500">
-                  <User className="w-4 h-4 text-slate-400 shrink-0" />
+                <div className="flex items-center gap-2 border border-gray-300 rounded-xl px-3.5 py-2.5 focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 bg-white/50 backdrop-blur-sm transition-all">
+                  <User className="w-4 h-4 text-gray-500 shrink-0" />
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="e.g. j_smith_ops"
+                    placeholder="partner@business.com"
                     required
-                    className="w-full text-sm outline-none placeholder:text-slate-400"
+                    className="w-full text-sm outline-none placeholder:text-gray-400 bg-transparent text-gray-800"
                   />
                 </div>
               </div>
 
+              {/* Password Input */}
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-medium text-slate-700">
-                    Credentials
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-700">
+                    Password
                   </label>
-                  <Link to="/otp-verification?purpose=password_forgot" className="text-xs text-emerald-600 hover:underline">
-                    Forgot Access?
+                  <Link to="/forgot-password/otp?purpose=password_forgot" className="text-[11px] text-gray-600 hover:text-green-700 font-medium transition-colors">
+                    Forgot Password?
                   </Link>
                 </div>
-                <div className="flex items-center gap-2 border border-slate-300 rounded-lg px-3 py-2.5 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-emerald-500">
-                  <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+                <div className="flex items-center gap-2 border border-gray-300 rounded-xl px-3.5 py-2.5 focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 bg-white/50 backdrop-blur-sm transition-all">
+                  <Lock className="w-4 h-4 text-gray-500 shrink-0" />
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    placeholder="Enter your password"
+                    placeholder="••••••••••••"
                     required
-                    className="w-full text-sm outline-none placeholder:text-slate-400"
+                    className="w-full text-sm outline-none placeholder:text-gray-400 bg-transparent text-gray-800"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-slate-400 hover:text-slate-600 shrink-0"
+                    className="text-gray-400 hover:text-gray-700 shrink-0 p-1 transition-colors"
+                    aria-label="Toggle password visibility"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
 
-              <button
-                type="button"
-                className="w-full flex items-center justify-center gap-2 border border-slate-300 rounded-lg py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.7-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z" />
-                  <path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.1-4 1.1-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1C3.4 21.4 7.4 24 12 24z" />
-                  <path fill="#FBBC05" d="M5.4 14.3c-.2-.7-.4-1.5-.4-2.3s.1-1.6.4-2.3V6.6H1.4C.5 8.3 0 10.1 0 12s.5 3.7 1.4 5.4l4-3.1z" />
-                  <path fill="#EA4335" d="M12 4.8c1.7 0 3.3.6 4.5 1.7l3.4-3.4C17.9 1.2 15.2 0 12 0 7.4 0 3.4 2.6 1.4 6.6l4 3.1c.9-2.8 3.5-4.9 6.6-4.9z" />
-                </svg>
-                Continue with Google
-              </button>
-
-              <div className="relative text-center">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-200" />
-                </div>
-                <span className="relative bg-white px-3 text-[11px] text-slate-400">
-                  OR SIGN IN WITH CREDENTIALS
-                </span>
-              </div>
-
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-300 text-white font-medium rounded-lg py-2.5 text-sm transition-colors"
+                className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-medium rounded-xl py-3 text-sm transition-all shadow-lg"
               >
-                <Lock className="w-4 h-4" />
-                {loading ? "Signing in..." : "Secure Sign In"}
+                {loading ? "Authenticating..." : (
+                  <>
+                    <ShieldCheck className="w-4 h-4" />
+                    Access Gateway Dashboard
+                  </>
+                )}
               </button>
 
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 pt-1">
-                <ShieldCheck className="w-3 h-3" />
-                END-TO-END ENCRYPTION ACTIVE
+              {/* Register Prompt */}
+              <div className="pt-3 border-t border-gray-200 text-center">
+                <p className="text-sm text-gray-600">
+                  New merchant wanting to integrate?{" "}
+                  <Link to="/register" className="text-green-700 font-semibold hover:underline transition-colors">
+                    Apply for Partnership
+                  </Link>
+                </p>
+              </div>
+
+              {/* Footer Links */}
+              <div className="flex items-center justify-between text-[11px] text-gray-500 pt-2 border-t border-gray-200">
+                <span>API STATUS: <strong className="text-green-700">OPERATIONAL</strong></span>
+                <Link to="/support" className="hover:text-green-700 transition-colors">Developer Support</Link>
               </div>
             </form>
           </div>
-
-          <p className="text-sm text-slate-500 text-center mt-5">
-            Don't have an account?{" "}
-            <Link to="/register" className="text-emerald-700 font-medium hover:underline">
-              Register
-            </Link>
-          </p>
-
-          <div className="flex items-center justify-center gap-4 text-[11px] text-slate-400 mt-4">
-            <span>SUPPORT PORTAL</span>
-            <span>COMPLIANCE CENTER</span>
-          </div>
         </div>
+
       </div>
+
+      {/* Add custom animations */}
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        @keyframes float-delay {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(-180deg); }
+        }
+        @keyframes pulse-slow {
+          0%, 100% { transform: scale(1); opacity: 0.5; }
+          50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        @keyframes slide-right {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        @keyframes slide-left {
+          0% { transform: translateX(100%); }
+          100% { transform: translateX(-100%); }
+        }
+        @keyframes slide-down {
+          0% { transform: translateY(-100%); }
+          100% { transform: translateY(100%); }
+        }
+        @keyframes slide-up {
+          0% { transform: translateY(100%); }
+          100% { transform: translateY(-100%); }
+        }
+        @keyframes spin-slow {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes spin-slow-reverse {
+          0% { transform: rotate(360deg); }
+          100% { transform: rotate(0deg); }
+        }
+        
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
+        }
+        .animate-float-delay {
+          animation: float-delay 7s ease-in-out infinite;
+        }
+        .animate-pulse-slow {
+          animation: pulse-slow 4s ease-in-out infinite;
+        }
+        .animate-slide-right {
+          animation: slide-right 8s linear infinite;
+        }
+        .animate-slide-left {
+          animation: slide-left 8s linear infinite;
+        }
+        .animate-slide-down {
+          animation: slide-down 10s linear infinite;
+        }
+        .animate-slide-up {
+          animation: slide-up 10s linear infinite;
+        }
+        .animate-spin-slow {
+          animation: spin-slow 12s linear infinite;
+        }
+        .animate-spin-slow-reverse {
+          animation: spin-slow-reverse 15s linear infinite;
+        }
+      `}</style>
     </div>
   );
 };

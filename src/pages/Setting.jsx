@@ -8,6 +8,8 @@ import {
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import api from "../services/api";
+import SettingsForm from "../components/SettingsForm";
+import ResetPasswordForm from "../components/ResetPasswordForm";
 
 export default function Setting() {
   // 1. Security Preferences State
@@ -29,7 +31,7 @@ export default function Setting() {
   // 4. Login Activity State
   const [activities, setActivities] = useState([]);
 
-  // 5. Status State Trackers (Inline alerts replacing popups)
+  // 5. Status State Trackers
   const [currentPasswordError, setCurrentPasswordError] = useState("");
   const [newPasswordError, setNewPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
@@ -38,7 +40,6 @@ export default function Setting() {
   const [resetEmailSuccess, setResetEmailSuccess] = useState("");
   const [resetEmailError, setResetEmailError] = useState("");
 
-  // Loading state to prevent toggle flipping on reload
   const [loadingSettings, setLoadingSettings] = useState(true);
 
   // Fetch settings on mount
@@ -57,6 +58,17 @@ export default function Setting() {
       }
     };
     fetchSettings();
+
+    const interval = setInterval(async () => {
+      try {
+        const { data } = await api.get("/settings");
+        setActivities(data.activities || []);
+      } catch (err) {
+        console.error("Failed to sync security logs:", err);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Update specific toggles
@@ -70,11 +82,12 @@ export default function Setting() {
       };
       await api.put("/settings", updatePayload);
       setter(nextValue);
-    } catch (error) {
+      const { data } = await api.get("/settings");
+      setActivities(data.activities || []);
+    } catch {
       setPreferenceError("Failed to save preference changes.");
     }
   };
-
 
   // Password validation rules
   const hasMinLength = newPassword.length >= 10;
@@ -118,7 +131,6 @@ export default function Setting() {
     progressWidth = "w-full";
     progressColor = "bg-emerald-500";
   }
-
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
@@ -184,76 +196,15 @@ export default function Setting() {
             </div>
 
             {/* 1. Security Preferences Card */}
-            <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-sm">
-              <h2 className="text-base font-semibold text-[#0A192F] mb-6">Security Preferences</h2>
-              {preferenceError && (
-                <p className="text-xs text-rose-500 mb-4 font-medium">{preferenceError}</p>
-              )}
-              {loadingSettings ? (
-                <div className="space-y-6 animate-pulse py-3">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-2 flex-1">
-                      <div className="h-4 bg-slate-100 rounded w-1/3"></div>
-                      <div className="h-3 bg-slate-100 rounded w-2/3"></div>
-                    </div>
-                    <div className="h-5 bg-slate-100 rounded-full w-10"></div>
-                  </div>
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="space-y-2 flex-1">
-                      <div className="h-4 bg-slate-100 rounded w-1/3"></div>
-                      <div className="h-3 bg-slate-100 rounded w-2/3"></div>
-                    </div>
-                    <div className="h-5 bg-slate-100 rounded-full w-10"></div>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  
-                  {/* Login Alerts Toggle */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-[#0A192F]">Login Alerts</p>
-                      <p className="text-xs text-slate-400 mt-0.5">Get notified of logins from new devices or locations.</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleTogglePreference("alerts", loginAlerts, setLoginAlerts)}
-                      className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        loginAlerts ? 'bg-[#10B981]' : 'bg-slate-200'
-                      }`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                          loginAlerts ? 'translate-x-5' : 'translate-x-0'
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  {/* Remember Device Toggle */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-[#0A192F]">Remember Device</p>
-                      <p className="text-xs text-slate-400 mt-0.5">Keep my session active on this device for 30 days.</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleTogglePreference("remember", rememberDevice, setRememberDevice)}
-                      className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        rememberDevice ? 'bg-[#10B981]' : 'bg-slate-200'
-                      }`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                          rememberDevice ? 'translate-x-5' : 'translate-x-0'
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                </div>
-              )}
-            </div>
+            <SettingsForm
+              loginAlerts={loginAlerts}
+              setLoginAlerts={setLoginAlerts}
+              rememberDevice={rememberDevice}
+              setRememberDevice={setRememberDevice}
+              loadingSettings={loadingSettings}
+              handleTogglePreference={handleTogglePreference}
+              preferenceError={preferenceError}
+            />
 
             {/* 2. Change Password Card */}
             <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-sm">
@@ -376,42 +327,13 @@ export default function Setting() {
             </div>
 
             {/* 3. Reset Password Card */}
-            <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-sm">
-              <h2 className="text-base font-semibold text-[#0A192F] mb-4">Reset Password</h2>
-              <p className="text-xs text-slate-400 mb-4">
-                A secure reset link will be sent to your registered email address.
-              </p>
-              <form onSubmit={handleSendResetLink} className="space-y-4">
-                <div>
-                  <label className="block mb-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Recovery Email</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
-                      <Mail size={15} />
-                    </span>
-                    <input
-                      type="email"
-                      value={recoveryEmail}
-                      onChange={(e) => setRecoveryEmail(e.target.value)}
-                      required
-                      className="w-full rounded-lg border border-slate-200 bg-slate-50/50 pl-10 pr-3 py-2.5 text-sm text-[#0A192F] outline-none transition focus:border-[#10B981] focus:bg-white"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full flex items-center justify-center gap-2 bg-[#F1F5F9] hover:bg-slate-200 text-slate-700 text-xs font-semibold py-2.5 rounded-lg border border-slate-200 transition-colors"
-                >
-                  <span>⊳</span> Send reset link
-                </button>
-                {resetEmailSuccess && (
-                  <p className="text-xs text-emerald-500 mt-2 font-medium">{resetEmailSuccess}</p>
-                )}
-                {resetEmailError && (
-                  <p className="text-xs text-rose-500 mt-2 font-medium">{resetEmailError}</p>
-                )}
-              </form>
-            </div>
+            <ResetPasswordForm
+              recoveryEmail={recoveryEmail}
+              setRecoveryEmail={setRecoveryEmail}
+              handleSendResetLink={handleSendResetLink}
+              resetEmailSuccess={resetEmailSuccess}
+              resetEmailError={resetEmailError}
+            />
 
             {/* 4. Security Activity Card */}
             <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-sm">
