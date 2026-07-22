@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Shield, User, Lock, Eye, EyeOff, ShieldCheck, Cpu, ArrowLeftRight, MessageSquareWarning } from "lucide-react";
 import useAuth from "../hooks/useAuth";
+import gamageLogo from "../assets/logos/gamage.PNG";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -67,15 +68,9 @@ const Login = () => {
             <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/diagonal-noise.png')]"></div>
 
             <div className="relative z-10 flex flex-col h-full">
-              {/* Company Title & Description */}
-              <div className="flex items-center gap-3 mb-4 flex-shrink-0">
-                <div className="p-2.5 bg-green-100 rounded-2xl border border-green-200">
-                  <ShieldCheck className="w-7 h-7 text-green-700" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-800">Gamage Pay</h1>
-                  <p className="text-gray-600 text-[11px] mt-0.5">Enterprise Payment Processing Partner</p>
-                </div>
+             {/* Logo header - replaces the old "Gamage Pay" title text */}
+              <div className="mb-4 flex-shrink-0">
+                <img src={gamageLogo} alt="Gamage Pay" className="h-24 w-auto object-contain" />
               </div>
 
               {/* Main Visual Image with Green Overlay - flex-1 to take remaining space */}
