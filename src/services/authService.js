@@ -1,0 +1,33 @@
+import api from "./api"; 
+
+export const registerUser = async (userData) => {
+  const res = await api.post("/auth/register", userData);
+  return res.data;
+};
+
+export const loginUser = async (credentials) => {
+  const res = await api.post("/auth/login", credentials);
+  console.log("Login service response:", res.data);
+  return res.data;
+};
+
+export const getCurrentUser = async () => {
+  const res = await api.get("/auth/me");
+  console.log("Get current user service response:", res.data);
+  return res.data;
+};
+
+export const requestPasswordReset = async (email) => {
+  const res = await api.post("/auth/forgot-password", { email });
+  return res.data;
+};
+
+export const resetPassword = async ({ email, newPassword }) => {
+  const res = await api.post("/auth/reset-password", { email, newPassword });
+  return res.data;
+};
+
+export const logoutUser = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+};
