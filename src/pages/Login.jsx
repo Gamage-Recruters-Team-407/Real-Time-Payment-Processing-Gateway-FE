@@ -70,7 +70,7 @@ const Login = () => {
             <div className="relative z-10 flex flex-col h-full">
              {/* Logo header - replaces the old "Gamage Pay" title text */}
               <div className="mb-4 flex-shrink-0">
-                <img src={gamageLogo} alt="Gamage Pay" className="h-30 w-auto object-contain" />
+                <img src={gamageLogo} alt="Gamage Pay" className="h-24 w-auto object-contain" />
               </div>
 
               {/* Main Visual Image with Green Overlay - flex-1 to take remaining space */}

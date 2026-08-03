@@ -103,7 +103,7 @@ const Register = () => {
         {/* Form panel */}
         <div>
           <div className="flex flex-col items-center text-center mb-6">
-            <img src={gamageLogo} alt="Gamage Pay" className="h-30 mb-4 object-contain" />
+            <img src={gamageLogo} alt="Gamage Pay" className="h-24 mb-4 object-contain" />
             <h1 className="text-2xl font-bold text-slate-900">Sign up for Gamage Pay</h1>
             <p className="text-sm text-slate-500 mt-1">
               Architecting secure global transactions for the modern enterprise.
