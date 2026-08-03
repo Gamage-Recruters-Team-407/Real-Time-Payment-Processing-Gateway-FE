@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Shield, User, Lock, Eye, EyeOff, ShieldCheck, Cpu, ArrowLeftRight, MessageSquareWarning } from "lucide-react";
 import useAuth from "../hooks/useAuth";
+import gamageLogo from "../assets/logos/gamage.PNG";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -67,15 +68,9 @@ const Login = () => {
             <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/diagonal-noise.png')]"></div>
 
             <div className="relative z-10 flex flex-col h-full">
-              {/* Company Title & Description */}
-              <div className="flex items-center gap-3 mb-4 flex-shrink-0">
-                <div className="p-2.5 bg-green-100 rounded-2xl border border-green-200">
-                  <ShieldCheck className="w-7 h-7 text-green-700" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-800">Gamage Pay</h1>
-                  <p className="text-gray-600 text-[11px] mt-0.5">Enterprise Payment Processing Partner</p>
-                </div>
+             {/* Logo header - replaces the old "Gamage Pay" title text */}
+              <div className="mb-4 flex-shrink-0">
+                <img src={gamageLogo} alt="Gamage Pay" className="h-30 w-auto object-contain" />
               </div>
 
               {/* Main Visual Image with Green Overlay - flex-1 to take remaining space */}
@@ -134,10 +129,10 @@ const Login = () => {
             )}
 
             {/* Form - flex-1 to take remaining space and center content */}
-            <form onSubmit={handleSubmit} className="flex-1 flex flex-col justify-center space-y-4">
+            <form onSubmit={handleSubmit} className="flex-1 flex flex-col space-y-10 mt-4">
               {/* Email / Merchant ID Input */}
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-700 mb-1">
+                <label className="block text-[12px] font-semibold uppercase tracking-wider text-gray-800 mb-1">
                   Partner Email / Merchant ID
                 </label>
                 <div className="flex items-center gap-2 border border-gray-300 rounded-xl px-3.5 py-2.5 focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 bg-white/50 backdrop-blur-sm transition-all">
@@ -211,10 +206,7 @@ const Login = () => {
               </div>
 
               {/* Footer Links */}
-              <div className="flex items-center justify-between text-[11px] text-gray-500 pt-2 border-t border-gray-200">
-                <span>API STATUS: <strong className="text-green-700">OPERATIONAL</strong></span>
-                <Link to="/support" className="hover:text-green-700 transition-colors">Developer Support</Link>
-              </div>
+            
             </form>
           </div>
         </div>
