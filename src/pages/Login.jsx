@@ -206,10 +206,7 @@ const Login = () => {
               </div>
 
               {/* Footer Links */}
-              <div className="flex items-center justify-between text-[11px] text-gray-500 pt-2 border-t border-gray-200">
-                <span>API STATUS: <strong className="text-green-700">OPERATIONAL</strong></span>
-                <Link to="/support" className="hover:text-green-700 transition-colors">Developer Support</Link>
-              </div>
+              
             </form>
           </div>
         </div>
