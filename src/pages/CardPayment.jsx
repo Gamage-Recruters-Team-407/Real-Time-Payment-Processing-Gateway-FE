@@ -327,31 +327,7 @@ export default function CardPayment() {
     const passedPaymentMethod = location.state?.paymentMethod || 'CARD';
     const passedDescription = location.state?.description || 'Card payment via Gamage-Pay';
 
-    if (passedAmount === undefined) {
-        return (
-            <div className="min-h-screen antialiased pb-12 flex items-center justify-center bg-[#F8FAFC]">
-                <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full border border-gray-100 text-center">
-                    <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500">
-                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                    </div>
-                    <h2 className="text-xl font-bold text-[#0A192F] mb-2">Invalid Checkout Session</h2>
-                    <p className="text-sm text-slate-500 mb-6">
-                        No active payment details or amount was specified. Please start your payment from the payment request page.
-                    </p>
-                    <button
-                        onClick={() => navigate('/payment')}
-                        className="w-full text-white font-semibold py-3 px-6 rounded-xl hover:opacity-90 transition-opacity bg-[#0A192F] text-sm"
-                    >
-                        Go to Payment Page
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    const subtotal = passedAmount;
+    const subtotal = passedAmount || 0;
     const platformFee = 0;
     const totalAmount = subtotal + platformFee;
 
@@ -509,6 +485,30 @@ export default function CardPayment() {
             }
         }
     }, [location.state]);
+
+    if (passedAmount === undefined) {
+        return (
+            <div className="min-h-screen antialiased pb-12 flex items-center justify-center bg-[#F8FAFC]">
+                <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full border border-gray-100 text-center">
+                    <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500">
+                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <h2 className="text-xl font-bold text-[#0A192F] mb-2">Invalid Checkout Session</h2>
+                    <p className="text-sm text-slate-500 mb-6">
+                        No active payment details or amount was specified. Please start your payment from the payment request page.
+                    </p>
+                    <button
+                        onClick={() => navigate('/payment')}
+                        className="w-full text-white font-semibold py-3 px-6 rounded-xl hover:opacity-90 transition-opacity bg-[#0A192F] text-sm"
+                    >
+                        Go to Payment Page
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen antialiased pb-12" style={{ backgroundColor: '#F8FAFC', color: '#0A192F', fontFamily: 'Inter, sans-serif' }}>
