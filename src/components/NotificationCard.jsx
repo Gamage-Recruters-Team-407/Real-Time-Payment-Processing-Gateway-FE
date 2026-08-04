@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   CheckCircle2,
   XCircle,
@@ -26,14 +27,36 @@ const ICONS = {
  *  - onClick: called with the notification's id (marks as read / navigates)
  */
 export default function NotificationCard({ notification, onClick }) {
-  const { id, type, title, message, timestamp, read, actionLabel } = notification;
+  const { id, type, title, message, timestamp, read, actionLabel, link } = notification;
   const style = NOTIFICATION_TYPES[type] || NOTIFICATION_TYPES.system;
   const Icon = ICONS[type] || Info;
+  const navigate = useNavigate();
+
+  function handleCardClick() {
+    onClick?.(id);
+    if (link) navigate(link);
+  }
+
+  function handleActionClick(e) {
+    // Action link has its own click target so it can navigate even though
+    // the whole card is also clickable — stop the event from double-firing.
+    e.stopPropagation();
+    onClick?.(id);
+    if (link) navigate(link);
+  }
 
   return (
-    <button
-      onClick={() => onClick?.(id)}
-      className="w-full flex items-start gap-3 px-4 py-3.5 text-left transition"
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={handleCardClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleCardClick();
+        }
+      }}
+      className="w-full flex items-start gap-3 px-4 py-3.5 text-left transition cursor-pointer"
       style={{
         background: read ? "transparent" : T.bg,
         fontFamily: bodyFont,
@@ -73,13 +96,25 @@ export default function NotificationCard({ notification, onClick }) {
           {actionLabel && (
             <>
               <span style={{ color: T.border }}>•</span>
-              <span className="text-[11px] font-medium" style={{ color: style.color }}>
+              <span
+                role="link"
+                tabIndex={0}
+                onClick={handleActionClick}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleActionClick(e);
+                  }
+                }}
+                className="text-[11px] font-medium hover:underline"
+                style={{ color: style.color, cursor: link ? "pointer" : "default" }}
+              >
                 {actionLabel}
               </span>
             </>
           )}
         </div>
       </div>
-    </button>
+    </div>
   );
 }
