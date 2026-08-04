@@ -167,7 +167,7 @@ export default function RealTimeEventStream({ transactions = [], onReviewClick, 
                   </td>
                   <td className="cell-transaction">
                     <div className="cell-transaction-inner">
-                      <span className="tx-amount">$ {tx.amount?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) || '0.00'}</span>
+                      <span className="tx-amount">Rs. {tx.amount?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) || '0.00'}</span>
                       <span className="tx-merchant" style={{ textTransform: 'uppercase' }}>Merchant: {tx.merchant}</span>
                     </div>
                   </td>

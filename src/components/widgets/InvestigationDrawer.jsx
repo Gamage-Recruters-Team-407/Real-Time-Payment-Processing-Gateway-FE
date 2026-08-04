@@ -185,7 +185,7 @@ export default function InvestigationDrawer({ isOpen, onClose, targetId, onActio
               </div>
               <div>
                 <div className="detail-label">AMOUNT</div>
-                <div className="detail-value">${data.transactionDetails?.amount?.toFixed(2)}</div>
+                <div className="detail-value">Rs. {data.transactionDetails?.amount?.toFixed(2)}</div>
               </div>
             </div>
 
