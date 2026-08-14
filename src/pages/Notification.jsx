@@ -1,71 +1,12 @@
-import React, { useMemo, useState } from "react";
-import { CheckCheck, Bell } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { CheckCheck, Bell, Loader2 } from "lucide-react";
 import NotificationList from "../components/NotificationList";
 import { T, displayFont, bodyFont, monoFont } from "../components/tokens";
-
-/* ---------------------------------------------------------------------- */
-/* Mock data — replace with a fetch to GET /api/notifications              */
-/* ---------------------------------------------------------------------- */
-const MOCK_NOTIFICATIONS = [
-  {
-    id: "n1",
-    type: "payment_success",
-    title: "Payment received",
-    message: "LKR 8,240.00 from Serendib Home & Living was successfully processed.",
-    timestamp: "10:42 AM",
-    read: false,
-    group: "Today",
-    actionLabel: "View receipt",
-  },
-  {
-    id: "n2",
-    type: "security",
-    title: "New device sign-in",
-    message: "Your account was accessed from a new device in Colombo, Sri Lanka.",
-    timestamp: "9:15 AM",
-    read: false,
-    group: "Today",
-    actionLabel: "Review activity",
-  },
-  {
-    id: "n3",
-    type: "otp",
-    title: "OTP verification required",
-    message: "Enter the 6-digit code sent to your registered mobile number to confirm this transaction.",
-    timestamp: "8:52 AM",
-    read: true,
-    group: "Today",
-  },
-  {
-    id: "n4",
-    type: "settlement",
-    title: "Settlement completed",
-    message: "STL-2026-08841 for Lanka Fresh Grocers has been paid out — LKR 4,701,715.",
-    timestamp: "Yesterday, 6:30 PM",
-    read: true,
-    group: "Yesterday",
-    actionLabel: "View settlement",
-  },
-  {
-    id: "n5",
-    type: "payment_failed",
-    title: "Payment declined",
-    message: "A LKR 1,176,796 settlement batch failed bank confirmation — exception EXC-4471 opened.",
-    timestamp: "Yesterday, 3:12 PM",
-    read: false,
-    group: "Yesterday",
-    actionLabel: "Resolve exception",
-  },
-  {
-    id: "n6",
-    type: "system",
-    title: "Scheduled maintenance",
-    message: "Gamage Pay will undergo scheduled maintenance on July 14, 1:00 AM – 2:00 AM.",
-    timestamp: "2 days ago",
-    read: true,
-    group: "This Week",
-  },
-];
+import {
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+} from "../services/notificationService";
 
 const FILTERS = [
   { key: "all", label: "All" },
@@ -75,26 +16,56 @@ const FILTERS = [
 ];
 
 export default function Notification() {
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const filtered = useMemo(() => {
-    if (filter === "all") return notifications;
-    if (filter === "unread") return notifications.filter((n) => !n.read);
-    const types = filter.split(",");
-    return notifications.filter((n) => types.includes(n.type));
-  }, [notifications, filter]);
+  async function loadNotifications(activeFilter = filter) {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getNotifications(activeFilter);
+      setNotifications(data);
+    } catch (err) {
+      console.error("Failed to load notifications:", err);
+      setError(
+        err.response?.data?.message || "Couldn't load notifications. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  function markAsRead(id) {
+  useEffect(() => {
+    loadNotifications(filter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter]);
+
+  async function handleItemClick(id) {
+    // Optimistic update so the UI feels instant
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
+    try {
+      await markNotificationRead(id);
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err);
+      loadNotifications(filter); // revert by re-syncing with the server
+    }
   }
 
-  function markAllRead() {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  async function handleMarkAllRead() {
+    const prev = notifications;
+    setNotifications((p) => p.map((n) => ({ ...n, read: true })));
+    try {
+      await markAllNotificationsRead();
+    } catch (err) {
+      console.error("Failed to mark all as read:", err);
+      setNotifications(prev); // revert on failure
+    }
   }
 
   return (
@@ -121,7 +92,7 @@ export default function Notification() {
             </h1>
           </div>
           <button
-            onClick={markAllRead}
+            onClick={handleMarkAllRead}
             disabled={unreadCount === 0}
             className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition"
             style={{
@@ -160,7 +131,29 @@ export default function Notification() {
           className="rounded-xl overflow-hidden"
           style={{ background: T.surface, border: `1px solid ${T.border}` }}
         >
-          <NotificationList notifications={filtered} onItemClick={markAsRead} />
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-2">
+              <Loader2 size={22} className="animate-spin" style={{ color: T.accent }} />
+              <span className="text-xs" style={{ color: T.inkSoft }}>
+                Loading notifications…
+              </span>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-2 text-center px-6">
+              <span className="text-sm font-medium" style={{ color: T.red }}>
+                {error}
+              </span>
+              <button
+                onClick={() => loadNotifications(filter)}
+                className="text-xs font-medium mt-1"
+                style={{ color: T.accent }}
+              >
+                Try again
+              </button>
+            </div>
+          ) : (
+            <NotificationList notifications={notifications} onItemClick={handleItemClick} />
+          )}
         </div>
       </div>
     </div>

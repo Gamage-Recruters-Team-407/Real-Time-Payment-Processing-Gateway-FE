@@ -1,10 +1,12 @@
 import { X } from 'lucide-react';
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAlerts } from '../../redux/slices/alertsSlice';
 
-export default function LiveFeedDrawer({ isOpen, onClose, onInvestigateClick, onReviewClick }) {
+export default function LiveFeedDrawer({ isOpen, onClose, onInvestigateClick, onReviewClick, onCardClick }) {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { items: alerts, loading } = useSelector(state => state.alerts);
 
   useEffect(() => {
@@ -12,6 +14,40 @@ export default function LiveFeedDrawer({ isOpen, onClose, onInvestigateClick, on
       dispatch(fetchAlerts());
     }
   }, [isOpen, dispatch]);
+
+  const handleViewAll = () => {
+    if (onClose) onClose();
+    navigate('/fraud-detection');
+  };
+
+  const handleExport = () => {
+    if (!alerts || alerts.length === 0) return;
+    
+    const headers = ['Timestamp', 'Account', 'Amount', 'Merchant', 'Risk Score', 'Reason'];
+    const csvRows = [headers.join(',')];
+    
+    alerts.forEach(alert => {
+      const row = [
+        new Date(alert.timestamp).toISOString(),
+        alert.accountId || 'Unknown',
+        alert.amount || 0,
+        `"${alert.merchant || 'Unknown'}"`,
+        Math.round(alert.riskScore || 0) + '%',
+        `"${alert.alertReason || ''}"`
+      ];
+      csvRows.push(row.join(','));
+    });
+    
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'unprocessed transaction.csv');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   if (!isOpen) return null;
 
@@ -37,36 +73,49 @@ export default function LiveFeedDrawer({ isOpen, onClose, onInvestigateClick, on
 
         <div className="drawer-content">
           {loading && alerts.length === 0 ? <p style={{color: 'white', padding: '20px'}}>Loading alerts...</p> : null}
-          {alerts.map((alert) => {
+          {[...alerts].sort((a, b) => {
+            return new Date(b.timestamp) - new Date(a.timestamp);
+          }).map((alert) => {
             const riskScore = alert.riskScore || 0;
-            const type = riskScore > 80 ? 'danger' : riskScore > 40 ? 'warning' : 'success';
+            const type = riskScore >= 80 ? 'danger' : riskScore >= 50 ? 'warning' : 'yellow';
             
             return (
-            <div key={alert._id || alert.transactionId} className={`alert-card border-${type}`}>
+            <div 
+              key={alert.id || alert.transactionId} 
+              className={`alert-card border-${type}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => {
+                if (onCardClick) onCardClick(alert);
+                if (onClose) onClose();
+              }}
+            >
               <div className="alert-top">
                 <span className="alert-time">{alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString() : 'Just now'}</span>
                 <span className={`alert-badge badge-${type}`}>{Math.round(riskScore)}% RISK</span>
               </div>
               <div className="alert-account">{alert.accountId || 'Unknown Account'}</div>
-              <div className="alert-amount">$ {alert.amount?.toFixed(2) || '0.00'}</div>
+              <div className="alert-amount">Rs. {alert.amount?.toFixed(2) || '0.00'}</div>
               <div className="alert-merchant">Merchant: {alert.merchant || 'Unknown'}</div>
               <div className={`alert-reason text-${type}`}>{alert.alertReason || 'Suspicious activity detected'}</div>
               
-              <div className="alert-actions">
+              <div className="alert-actions" onClick={(e) => e.stopPropagation()}>
                 {type === 'danger' && (
                   <>
-                    <button className="alert-btn btn-dark-red" onClick={() => onInvestigateClick(alert._id)}>INVESTIGATE</button>
-                    <button className="alert-btn btn-outline-red">BLOCK</button>
+                    <button className="alert-btn btn-dark-red" onClick={(e) => { e.stopPropagation(); onInvestigateClick(alert.id); }}>INVESTIGATE</button>
+                    <button className="alert-btn btn-outline-red" onClick={(e) => { e.stopPropagation(); onReviewClick(alert.id); }}>REVIEW</button>
                   </>
                 )}
                 {type === 'warning' && (
                   <>
-                    <button className="alert-btn btn-dark" onClick={() => onInvestigateClick(alert._id)}>INVESTIGATE</button>
-                    <button className="alert-btn btn-outline-yellow" onClick={onReviewClick}>REVIEW</button>
+                    <button className="alert-btn btn-dark-orange" onClick={(e) => { e.stopPropagation(); onInvestigateClick(alert.id); }}>INVESTIGATE</button>
+                    <button className="alert-btn btn-outline-orange" onClick={(e) => { e.stopPropagation(); onReviewClick(alert.id); }}>REVIEW</button>
                   </>
                 )}
-                {type === 'success' && (
-                  <button className="alert-btn btn-full-green">CLEARED</button>
+                {type === 'yellow' && (
+                  <>
+                    <button className="alert-btn btn-dark-yellow" onClick={(e) => { e.stopPropagation(); onInvestigateClick(alert.id); }}>INVESTIGATE</button>
+                    <button className="alert-btn btn-outline-yellow" onClick={(e) => { e.stopPropagation(); onReviewClick(alert.id); }}>REVIEW</button>
+                  </>
                 )}
               </div>
             </div>
@@ -74,10 +123,7 @@ export default function LiveFeedDrawer({ isOpen, onClose, onInvestigateClick, on
         </div>
 
         <div className="drawer-footer">
-          <button className="drawer-footer-btn btn-dark-red">
-            VIEW ALL ALERTS →
-          </button>
-          <button className="drawer-footer-btn btn-outline-dark">
+          <button className="drawer-footer-btn btn-dark-red" onClick={handleExport}>
             EXPORT ALERTS
           </button>
         </div>

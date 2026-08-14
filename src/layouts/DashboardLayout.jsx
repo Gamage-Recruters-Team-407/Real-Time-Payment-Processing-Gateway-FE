@@ -1,12 +1,12 @@
 import Sidebar from '../components/Sidebar';
-import Header from '../components/Header';
+import Navbar from '../components/Navbar';
 
 export default function DashboardLayout({ children }) {
   return (
     <div className="app-container">
       <Sidebar />
       <main className="main-content">
-        <Header />
+        <Navbar />
         <div className="dashboard-scroll-area">
           {children}
         </div>
