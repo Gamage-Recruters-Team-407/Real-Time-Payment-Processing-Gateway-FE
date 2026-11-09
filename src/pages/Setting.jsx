@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
-import api from "../services/api";
+import { getSettings, updateSettings, updatePassword, sendResetLink } from "../services/settingsService";
 import SettingsForm from "../components/SettingsForm";
 import ResetPasswordForm from "../components/ResetPasswordForm";
 
@@ -46,7 +46,7 @@ export default function Setting() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const { data } = await api.get("/settings");
+        const data = await getSettings();
         setLoginAlerts(data.loginAlertsEnabled);
         setRememberDevice(data.rememberDeviceEnabled);
         setRecoveryEmail(data.recoveryEmail);
@@ -61,7 +61,7 @@ export default function Setting() {
 
     const interval = setInterval(async () => {
       try {
-        const { data } = await api.get("/settings");
+        const data = await getSettings();
         setActivities(data.activities || []);
       } catch (err) {
         console.error("Failed to sync security logs:", err);
@@ -80,9 +80,9 @@ export default function Setting() {
         loginAlertsEnabled: field === "alerts" ? nextValue : loginAlerts,
         rememberDeviceEnabled: field === "remember" ? nextValue : rememberDevice
       };
-      await api.put("/settings", updatePayload);
+      await updateSettings(updatePayload);
       setter(nextValue);
-      const { data } = await api.get("/settings");
+      const data = await getSettings();
       setActivities(data.activities || []);
     } catch {
       setPreferenceError("Failed to save preference changes.");
@@ -148,12 +148,12 @@ export default function Setting() {
       return;
     }
     try {
-      await api.put("/settings/password", { currentPassword, newPassword });
+      await updatePassword(currentPassword, newPassword);
       setPasswordSuccess("Password updated successfully!");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      const { data } = await api.get("/settings");
+      const data = await getSettings();
       setActivities(data.activities || []);
       setTimeout(() => setPasswordSuccess(""), 5000);
     } catch (error) {
@@ -171,7 +171,7 @@ export default function Setting() {
     setResetEmailSuccess("");
     setResetEmailError("");
     try {
-      const { data } = await api.post("/settings/reset-link", { recoveryEmail });
+      const data = await sendResetLink(recoveryEmail);
       setResetEmailSuccess(data.message || `Reset link sent to ${recoveryEmail}`);
       setTimeout(() => setResetEmailSuccess(""), 5000);
     } catch (error) {

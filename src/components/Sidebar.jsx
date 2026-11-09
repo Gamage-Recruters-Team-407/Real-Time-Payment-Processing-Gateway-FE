@@ -147,7 +147,7 @@ const Sidebar = () => {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex min-h-screen w-64 shrink-0 flex-col justify-between border-r border-gray-100 bg-white px-4 py-6 transition-transform duration-300 md:relative md:translate-x-0 md:transition-all ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col justify-between border-r border-gray-100 bg-white px-4 py-6 transition-transform duration-300 md:relative md:translate-x-0 md:transition-all ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         } ${isCollapsed ? 'md:w-20' : 'md:w-64'}`}
       >
@@ -172,7 +172,7 @@ const Sidebar = () => {
           />
         </button>
 
-        <div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden pr-1">
           {/* Logo */}
           <div className="mb-6">
             <img
@@ -237,38 +237,44 @@ const Sidebar = () => {
           <LogOut size={16} />
           {(!isCollapsed || isMobileOpen) && 'Logout'}
         </button>
+      </aside>
 
-        {/* Custom Logout Confirmation Modal */}
-        {showLogoutModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-            <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl sm:p-6">
-              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-red-50 sm:h-12 sm:w-12">
-                <LogOut size={20} className="text-[#8A192F] sm:size-[22px]" />
-              </div>
-              <h2 className="mb-1 text-base font-bold text-[#0F1117] sm:text-lg">Log out?</h2>
-              <p className="mb-6 text-sm text-gray-500">
-                Are you sure you want to log out of your account?
-              </p>
-              <div className="flex flex-col-reverse gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={() => setShowLogoutModal(false)}
-                  className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmLogout}
-                  className="flex-1 rounded-xl bg-[#8A192F] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#711526]"
-                >
-                  Logout
-                </button>
-              </div>
+      {/* Custom Logout Confirmation Modal
+          IMPORTANT: this must live OUTSIDE <aside>. The aside has a CSS
+          `transform` (the translate-x-* classes used for the mobile slide
+          animation), and per the CSS spec, any ancestor with a transform
+          becomes the containing block for `position: fixed` descendants.
+          That's why the modal used to render squeezed inside the
+          collapsed/narrow sidebar instead of covering the full screen. */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl sm:p-6">
+            <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-red-50 sm:h-12 sm:w-12">
+              <LogOut size={20} className="text-[#8A192F] sm:size-[22px]" />
+            </div>
+            <h2 className="mb-1 text-base font-bold text-[#0F1117] sm:text-lg">Log out?</h2>
+            <p className="mb-6 text-sm text-gray-500">
+              Are you sure you want to log out of your account?
+            </p>
+            <div className="flex flex-col-reverse gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmLogout}
+                className="flex-1 rounded-xl bg-[#8A192F] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#711526]"
+              >
+                Logout
+              </button>
             </div>
           </div>
-        )}
-      </aside>
+        </div>
+      )}
     </>
   );
 };
